@@ -1,0 +1,48 @@
+<template>
+  <router-view v-slot="{ Component }">
+    <transition :name="slideTransition">
+      <vue-page-stack @back="onBack" @forward="onForward">
+        <component :is="Component" :key="$route.fullPath"></component>
+      </vue-page-stack>
+    </transition>
+  </router-view>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+
+const slideTransition = ref('slide-left')
+
+const onBack = () => {
+  console.log('back')
+  slideTransition.value = 'slide-right'
+};
+
+const onForward = () => {
+  console.log('forward')
+  slideTransition.value = 'slide-left'
+};
+</script>
+
+<style scoped>
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: all 240ms ease;
+}
+
+.slide-left-enter-from,
+.slide-left-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 240ms ease;
+}
+
+.slide-right-enter-from,
+.slide-right-leave-to {
+  transform: translateX(-100%);
+}
+</style>
