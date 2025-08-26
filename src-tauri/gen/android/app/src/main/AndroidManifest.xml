@@ -5,7 +5,7 @@
     <!-- AndroidTV support -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
 
-    <!-- 依赖摄像头 -->
+        <!-- 依赖摄像头 -->
     <uses-feature android:name="android.hardware.camera" android:required="true" />
     <!-- 对焦支持  -->
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />

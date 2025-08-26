@@ -3,12 +3,12 @@
     <v-app>
         <v-main class="d-flex flex-column overflow-hidden main-no-scroll">
 
-            <v-app-bar :color="(editorMode != 'edit') ? 'transparent':''">
+            <v-app-bar :color="editorMode === 'edit' ? '' : 'transparent'">
                 <v-btn icon @click="$router.back()" v-if="editorMode == 'edit'">
                     <v-icon>mdi-arrow-left</v-icon>
                 </v-btn>
                 <v-app-bar-title>
-                    {{ (editorMode != 'edit') ? '': '编辑' }}
+                    {{ editorMode === 'edit' ? '编辑' : '' }}
                 </v-app-bar-title>
             </v-app-bar>
 
@@ -75,7 +75,7 @@
                 <!-- 滤镜列表 -->
                 <v-item-group v-model="selectedFilter" mandatory>
                     <v-row class="flex-nowrap overflow-x-auto pr-4 pb-1 pl-5 pr-8">
-                        <v-col cols="3" md="2" v-for="(f, index) in filterList" :key="index"
+                        <v-col cols="3" md="2" lg="2" v-for="(f, index) in filterList" :key="index"
                             class="pl-3 pr-0 pt-4 pb-4">
                             <v-item v-slot="{ isSelected, toggle }">
                                 <v-card :elevation="isSelected ? 8 : 2" :class="{ 'border-primary': isSelected }"
@@ -94,29 +94,26 @@
                 </v-item-group>
 
                 <!-- 按钮栏 -->
-                <div class="d-flex flex-row justify-space-between align-center pa-3">
+                <div class="d-flex justify-space-between align-center pa-3">
                     <v-btn prepend-icon="mdi-crop-free" variant="text" size="small" stacked text="矫正"
-                        @click="editorModeChange('crop', 'crop-enter')"></v-btn>
-                    <v-btn prepend-icon="mdi-pen" variant="text" size="small" stacked text="水印"></v-btn>
-                    <v-spacer></v-spacer>
-                    <v-btn @click="saveAllImages">
-                        <v-icon size="large">mdi-check</v-icon>
-                        <span>保存全部</span>
-                    </v-btn>
+                        @click="editorModeChange('crop', 'crop-enter')" />
+                    <v-btn prepend-icon="mdi-pen" variant="text" size="small" stacked text="水印" />
+                    <v-spacer />
+                    <v-btn prepend-icon="mdi-check" text="保存全部" @click="saveAllImages" />
                 </div>
             </v-sheet>
 
             <!-- 矫正 -->
-            <v-sheet class="pt-2 pb-2" v-if="editorMode === 'crop'">
-                <div class="d-flex justify-center align-center ml-5 mr-5 mb-2 mt-2">
-                    <v-btn icon="mdi-close" size="large" @click="editorModeChange('edit', 'crop-exit')"></v-btn>
-                    <v-spacer></v-spacer>
-                    <v-btn prepend-icon="mdi-rotate-left" variant="text" size="x-small" text="左旋转" stacked></v-btn>
-                    <v-btn prepend-icon="mdi-rotate-right" variant="text" size="x-small" text="右旋转" stacked></v-btn>
-                    <v-btn prepend-icon="mdi-selection-search" variant="text" size="x-small" text="Ai框选" stacked></v-btn>
-                    <v-btn prepend-icon="mdi-undo" variant="text" size="x-small" text="重置框选" stacked></v-btn>
-                    <v-spacer></v-spacer>
-                    <v-btn icon="mdi-check" size="large" @click="editorModeChange('edit', 'crop-confirm')"></v-btn>
+            <v-sheet class="py-2" v-if="editorMode === 'crop'">
+                <div class="d-flex justify-center align-center mx-5 my-2">
+                    <v-btn icon="mdi-close" size="large" @click="editorModeChange('edit', 'crop-exit')" />
+                    <v-spacer />
+                    <v-btn prepend-icon="mdi-rotate-left" variant="text" size="x-small" text="左旋转" stacked />
+                    <v-btn prepend-icon="mdi-rotate-right" variant="text" size="x-small" text="右旋转" stacked />
+                    <v-btn prepend-icon="mdi-selection-search" variant="text" size="x-small" text="Ai框选" stacked />
+                    <v-btn prepend-icon="mdi-undo" variant="text" size="x-small" text="重置框选" stacked />
+                    <v-spacer />
+                    <v-btn icon="mdi-check" size="large" @click="editorModeChange('edit', 'crop-confirm')" />
                 </div>
             </v-sheet>
         </v-main>
@@ -152,30 +149,21 @@ const {
 
 // 使用透视矫正功能
 const {
-    tempPoints,
     containerRef,
     imageContainerRef,
     imageRef,
-    imageWidth,
-    imageHeight,
-    containerWidth,
-    containerHeight,
-    points,
     displayArea,
     svgStyle,
     displayPoints,
     displayMidPoints,
     selectionPath,
-    dragState,
     onImageLoad,
     onCornerPointerDown,
     onMidPointPointerDown,
     onMaskPointerDown,
     onMaskPointerUp,
     onMaskPointerMove,
-    performPerspectiveTransform,
-    handleCropModeChange,
-    updateContainerSize
+    handleCropModeChange
 } = useEditorCrop(imageList, swiperslideIn, currentImage, editorMode);
 
 // 使用滤镜功能
@@ -188,15 +176,12 @@ const {
 
 // 编辑模式切换处理
 const editorModeChange = (toMode: string, event?: string) => {
-    // 处理透视矫正相关事件
     handleCropModeChange(toMode, event);
 
-    // corp确认修改后 滤镜重置
     if (event === 'crop-confirm') {
         resetFilterToOriginal();
     }
 
-    // 调用基础模式切换
     baseEditorModeChange(toMode, event);
 };
 
@@ -206,55 +191,44 @@ const onSlideChange = (swiper: any) => {
     syncFilterWithImage();
 };
 
+// 生成文件夹路径
+const generateFolderPath = () => {
+    const now = new Date();
+    const dateStr = now.getFullYear().toString() +
+        (now.getMonth() + 1).toString().padStart(2, '0') +
+        now.getDate().toString().padStart(2, '0');
+    const timestampSuffix = Date.now().toString().slice(-6);
+    return `user/file/扫描文件_${dateStr}_${timestampSuffix}`;
+};
+
 // 保存全部图片
 const saveAllImages = async () => {
+    const folderPath = generateFolderPath();
+    const totalImages = imageList.value.length;
+    console.log(`开始保存 ${totalImages} 张图片到: ${folderPath}`);
     try {
-        // 生成时间戳作为文件夹名
-        const now = new Date();
-        const dateStr = now.getFullYear().toString() + 
-                       (now.getMonth() + 1).toString().padStart(2, '0') + 
-                       now.getDate().toString().padStart(2, '0');
-        const timestampSuffix = Date.now().toString().slice(-6); // 取时间戳后六位
-        const folderPath = `user/file/扫描文件_${dateStr}_${timestampSuffix}`;
-        
-        console.log(`开始保存 ${imageList.value.length} 张图片到: ${folderPath}`);
-        
-        // 保存每张图片
-        for (let i = 0; i < imageList.value.length; i++) {
+        for (let i = 0; i < totalImages; i++) {
             const image = imageList.value[i];
             const imageSrc = image.processedSrc || image.src;
-            
-            if (imageSrc) {
-                // 生成文件名（使用当前时间戳，确保每个文件名唯一）
-                const fileTimestamp = Date.now() + i; // 使用毫秒时间戳 + 索引确保唯一性
-                const fileName = `${fileTimestamp}.jpg`;
-                
-                const result = await saveBlobUrlToLocal(
-                    imageSrc,
-                    fileName,
-                    folderPath,
-                    BaseDirectory.AppData
-                );
-                
-                if (result) {
-                    console.log(`图片 ${i + 1} 保存成功: ${result}`);
-                } else {
-                    console.error(`图片 ${i + 1} 保存失败`);
-                }
-                
-                // 添加小延迟确保时间戳不同
-                if (i < imageList.value.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 5));
-                }
+
+            if (!imageSrc) continue;
+
+            const fileName = `${Date.now() + i}.jpg`;
+            const result = await saveBlobUrlToLocal(imageSrc, fileName, folderPath, BaseDirectory.AppData);
+
+            if (result) {
+                console.log(`图片 ${i + 1} 保存成功: ${result}`);
+            } else {
+                console.error(`图片 ${i + 1} 保存失败`);
+            }
+
+            if (i < totalImages - 1) {
+                await new Promise(resolve => setTimeout(resolve, 5));
             }
         }
-        
         console.log('所有图片保存完成');
-        // TODO: 可以添加成功提示
-        
     } catch (error) {
         console.error('保存图片时发生错误:', error);
-        // TODO: 可以添加错误提示
     }
 };
 
@@ -280,13 +254,16 @@ const handleBeforeLeave = (): boolean => {
     height: 100vh;
 }
 
+.mask-layer,
+.handle-point {
+    touch-action: none;
+}
+
 .mask-layer {
     pointer-events: all;
-    touch-action: none;
 }
 
 .handle-point {
     cursor: pointer;
-    touch-action: none;
 }
 </style>
