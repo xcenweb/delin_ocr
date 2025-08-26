@@ -99,7 +99,7 @@
                         @click="editorModeChange('crop', 'crop-enter')"></v-btn>
                     <v-btn prepend-icon="mdi-pen" variant="text" size="small" stacked text="水印"></v-btn>
                     <v-spacer></v-spacer>
-                    <v-btn>
+                    <v-btn @click="saveAllImages">
                         <v-icon size="large">mdi-check</v-icon>
                         <span>保存全部</span>
                     </v-btn>
@@ -135,6 +135,8 @@ import LeavePopup from '@/components/leavePopup.vue';
 import { useEditor } from '@/views/ocr/ts/editor';
 import { useEditorCrop } from '@/views/ocr/ts/editor-crop';
 import { useEditorFilter } from '@/views/ocr/ts/editor-filter';
+import { saveBlobUrlToLocal } from '@/utils/fileSystem';
+import { BaseDirectory } from '@tauri-apps/plugin-fs';
 
 // 使用编辑器通用功能
 const {
@@ -202,6 +204,58 @@ const editorModeChange = (toMode: string, event?: string) => {
 const onSlideChange = (swiper: any) => {
     baseOnSlideChange(swiper);
     syncFilterWithImage();
+};
+
+// 保存全部图片
+const saveAllImages = async () => {
+    try {
+        // 生成时间戳作为文件夹名
+        const now = new Date();
+        const dateStr = now.getFullYear().toString() + 
+                       (now.getMonth() + 1).toString().padStart(2, '0') + 
+                       now.getDate().toString().padStart(2, '0');
+        const timestampSuffix = Date.now().toString().slice(-6); // 取时间戳后六位
+        const folderPath = `user/file/扫描文件_${dateStr}_${timestampSuffix}`;
+        
+        console.log(`开始保存 ${imageList.value.length} 张图片到: ${folderPath}`);
+        
+        // 保存每张图片
+        for (let i = 0; i < imageList.value.length; i++) {
+            const image = imageList.value[i];
+            const imageSrc = image.processedSrc || image.src;
+            
+            if (imageSrc) {
+                // 生成文件名（使用当前时间戳，确保每个文件名唯一）
+                const fileTimestamp = Date.now() + i; // 使用毫秒时间戳 + 索引确保唯一性
+                const fileName = `${fileTimestamp}.jpg`;
+                
+                const result = await saveBlobUrlToLocal(
+                    imageSrc,
+                    fileName,
+                    folderPath,
+                    BaseDirectory.AppData
+                );
+                
+                if (result) {
+                    console.log(`图片 ${i + 1} 保存成功: ${result}`);
+                } else {
+                    console.error(`图片 ${i + 1} 保存失败`);
+                }
+                
+                // 添加小延迟确保时间戳不同
+                if (i < imageList.value.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 5));
+                }
+            }
+        }
+        
+        console.log('所有图片保存完成');
+        // TODO: 可以添加成功提示
+        
+    } catch (error) {
+        console.error('保存图片时发生错误:', error);
+        // TODO: 可以添加错误提示
+    }
 };
 
 // 处理浏览器物理返回键的闭包
