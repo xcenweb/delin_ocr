@@ -1,5 +1,6 @@
-# DelinBox (德邻盒子)
+# DelinBox
 
+> Simplified Chinese name: 德邻盒子
 > A powerful OpenCV-based OCR client for document and ID card scanning
 
 ## Overview

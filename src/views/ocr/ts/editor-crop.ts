@@ -1,78 +1,100 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue';
 import { perspectiveTransform, getDefaultCorners } from '@/views/ocr/ts/camera-detection';
 import type { PhotoItem } from '@/views/ocr/ts/camera';
 
-/**
- * 拖拽状态接口
- */
+/** 坐标点接口 */
+interface Point {
+    x: number;
+    y: number;
+}
+
+/** 拖拽状态接口 */
 interface DragState {
     isDragging: boolean;
     type: 'corner' | 'mid' | 'move' | null;
     index: number;
     startX: number;
     startY: number;
-    originalPoints: { x: number; y: number }[];
+    originalPoints: Point[];
+}
+
+/** 显示区域接口 */
+interface DisplayArea {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    scaleX: number;
+    scaleY: number;
 }
 
 /**
- * 透视矫正功能
+ * 透视矫正功能组合式函数
+ * @param imageList 图片列表
+ * @param swiperslideIn 当前滑块索引
+ * @param currentImage 当前图片
+ * @param editorMode 编辑模式
+ * @returns 透视矫正相关的响应式数据和方法
  */
 export function useEditorCrop(
-    imageList: any,
-    swiperslideIn: any,
-    currentImage: any,
-    editorMode: any
+    imageList: Ref<PhotoItem[]>,
+    swiperslideIn: Ref<number>,
+    currentImage: ComputedRef<PhotoItem>,
+    editorMode: Ref<string>
 ) {
-    /**
-     * 临时存储crop模式下调整中的points
-     * 只有在确认时才会真正保存到imageList中
-     */
-    const tempPoints = ref<{ x: number; y: number }[]>([]);
+    /** 临时存储矫正模式下调整中的坐标点，确认时才保存到图片列表 */
+    const tempPoints = ref<Point[]>([]);
 
-    // 选择框相关的响应式数据
+    /** DOM 元素引用 */
     const containerRef = ref<HTMLElement>();
     const imageContainerRef = ref<HTMLElement>();
     const imageRef = ref<HTMLImageElement>();
+    
+    /** 图片和容器尺寸 */
     const imageWidth = ref(0);
     const imageHeight = ref(0);
     const containerWidth = ref(0);
     const containerHeight = ref(0);
 
     /**
-     * 当前图片的选择框坐标
+     * 当前图片的选择框坐标点
+     * 在矫正模式下使用临时坐标，其他模式使用实际坐标
      */
     const points = computed({
-        get: () => {
-            // 在crop模式下使用临时points，否则使用真实数据
+        get: (): Point[] => {
             if (editorMode.value === 'crop' && tempPoints.value.length > 0) {
                 return tempPoints.value;
             }
             return currentImage.value.points || getDefaultCorners();
         },
-        set: (newPoints) => {
-            // 在crop模式下只修改临时points，不直接修改imageList
+        set: (newPoints: Point[]) => {
             if (editorMode.value === 'crop') {
                 tempPoints.value = [...newPoints];
             } else {
-                // 在edit模式下直接修改imageList
-                if (imageList.value[swiperslideIn.value]) {
-                    imageList.value[swiperslideIn.value].points = newPoints;
+                const currentImg = imageList.value[swiperslideIn.value];
+                if (currentImg) {
+                    currentImg.points = newPoints;
                 }
             }
         }
     });
 
     /**
-     * 计算实际显示区域（object-fit: contain的显示区域）
+     * 计算图片在容器中的实际显示区域（object-fit: contain 效果）
      */
-    const displayArea = computed(() => {
+    const displayArea = computed((): DisplayArea => {
+        const defaultArea: DisplayArea = { left: 0, top: 0, width: 0, height: 0, scaleX: 1, scaleY: 1 };
+        
         if (!imageWidth.value || !imageHeight.value || !containerWidth.value || !containerHeight.value) {
-            return { left: 0, top: 0, width: 0, height: 0, scaleX: 1, scaleY: 1 };
+            return defaultArea;
         }
 
-        const isWider = (imageWidth.value / imageHeight.value) > (containerWidth.value / containerHeight.value);
-        const width = isWider ? containerWidth.value : containerHeight.value * (imageWidth.value / imageHeight.value);
-        const height = isWider ? containerWidth.value / (imageWidth.value / imageHeight.value) : containerHeight.value;
+        const imageRatio = imageWidth.value / imageHeight.value;
+        const containerRatio = containerWidth.value / containerHeight.value;
+        const isWider = imageRatio > containerRatio;
+        
+        const width = isWider ? containerWidth.value : containerHeight.value * imageRatio;
+        const height = isWider ? containerWidth.value / imageRatio : containerHeight.value;
 
         return {
             left: isWider ? 0 : (containerWidth.value - width) / 2,
@@ -123,20 +145,23 @@ export function useEditorCrop(
         `M ${displayPoints.value.map((p: { x: number; y: number }) => `${p.x},${p.y}`).join(' L ')} Z`
     );
 
-    // 拖拽状态
+    /** 拖拽状态 */
     const dragState = ref<DragState>({
         isDragging: false,
         type: null,
         index: -1,
         startX: 0,
         startY: 0,
-        originalPoints: [],
+        originalPoints: []
     });
 
     /**
      * 初始化拖拽状态
+     * @param e 指针事件
+     * @param type 拖拽类型
+     * @param index 拖拽点索引
      */
-    const initDragState = (e: PointerEvent, type: DragState['type'], index = -1) => {
+    const initDragState = (e: PointerEvent, type: DragState['type'], index = -1): void => {
         e.stopPropagation();
         dragState.value = {
             isDragging: true,
@@ -149,9 +174,9 @@ export function useEditorCrop(
     };
 
     /**
-     * 图片加载完成
+     * 图片加载完成处理
      */
-    const onImageLoad = () => {
+    const onImageLoad = (): void => {
         if (!imageRef.value || !imageContainerRef.value) return;
 
         imageWidth.value = imageRef.value.naturalWidth;
@@ -159,32 +184,36 @@ export function useEditorCrop(
         updateContainerSize();
     };
 
-    // 事件处理
-    const onCornerPointerDown = (e: PointerEvent, index: number) => initDragState(e, 'corner', index);
-    const onMidPointPointerDown = (e: PointerEvent, index: number) => initDragState(e, 'mid', index);
-    const onMaskPointerDown = (e: PointerEvent) => {
+    /** 事件处理函数 */
+    const onCornerPointerDown = (e: PointerEvent, index: number): void => initDragState(e, 'corner', index);
+    const onMidPointPointerDown = (e: PointerEvent, index: number): void => initDragState(e, 'mid', index);
+    const onMaskPointerDown = (e: PointerEvent): void => {
         const target = e.target as HTMLElement;
         if (target.tagName === 'path' && !target.getAttribute('fill')?.includes('rgba')) {
             initDragState(e, 'move');
         }
     };
-    const onMaskPointerUp = () => { dragState.value.isDragging = false; };
+    const onMaskPointerUp = (): void => { dragState.value.isDragging = false; };
 
     /**
      * 坐标限制函数 - 限制在图片原始尺寸内
+     * @param x X坐标
+     * @param y Y坐标
+     * @returns 限制后的坐标点
      */
-    const clampPoint = (x: number, y: number) => ({
+    const clampPoint = (x: number, y: number): Point => ({
         x: Math.max(0, Math.min(imageWidth.value, x)),
         y: Math.max(0, Math.min(imageHeight.value, y))
     });
 
     /**
-     * 处理拖拽移动
+     * 处理拖拽移动事件
+     * @param e 指针事件
      */
-    const onMaskPointerMove = (e: PointerEvent) => {
+    const onMaskPointerMove = (e: PointerEvent): void => {
         if (!dragState.value.isDragging) return;
 
-        // 将显示区域的像素差值转换为视频坐标系的差值
+        // 将显示区域的像素差值转换为原始坐标系的差值
         const scaledDx = (e.clientX - dragState.value.startX) / displayArea.value.scaleX;
         const scaledDy = (e.clientY - dragState.value.startY) / displayArea.value.scaleY;
         const { type, index, originalPoints } = dragState.value;
@@ -224,8 +253,8 @@ export function useEditorCrop(
             };
             points.value = newPoints;
         } else if (type === 'move') {
-            // 整体移动
-            points.value = originalPoints.map((point: { x: number; y: number }) =>
+            // 整体移动选择框
+            points.value = originalPoints.map((point: Point) =>
                 clampPoint(point.x + scaledDx, point.y + scaledDy)
             );
         }
@@ -234,7 +263,7 @@ export function useEditorCrop(
     /**
      * 更新容器尺寸
      */
-    const updateContainerSize = () => {
+    const updateContainerSize = (): void => {
         if (!imageContainerRef.value) return;
         const rect = imageContainerRef.value.getBoundingClientRect();
         containerWidth.value = rect.width;
@@ -244,7 +273,7 @@ export function useEditorCrop(
     /**
      * 执行透视变换并更新processedSrc
      */
-    const performPerspectiveTransform = async () => {
+    const performPerspectiveTransform = async (): Promise<void> => {
         const currentImg = currentImage.value;
         if (!currentImg) return;
 
@@ -253,8 +282,8 @@ export function useEditorCrop(
             const img = new Image();
             img.crossOrigin = 'anonymous';
 
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
+            await new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
                 img.onerror = reject;
                 img.src = currentImg.src;
             });
@@ -288,7 +317,7 @@ export function useEditorCrop(
                     correctedCtx.putImageData(correctedImageData, 0, 0);
 
                     // 转换为blob URL
-                    correctedCanvas.toBlob(blob => {
+                    correctedCanvas.toBlob((blob: Blob | null) => {
                         if (blob) {
                             // 删除旧的processedSrc URL
                             if (currentImg.processedSrc) {
@@ -314,17 +343,19 @@ export function useEditorCrop(
 
     /**
      * 透视矫正模式切换处理
+     * @param toMode 目标模式
+     * @param event 事件类型
      */
-    const handleCropModeChange = (toMode: string, event?: string) => {
+    const handleCropModeChange = (toMode: string, event?: string): void => {
         switch (event) {
             case 'crop-enter':
-                // 进入crop模式时，初始化临时points为当前图片的points
+                // 进入矫正模式时，初始化临时坐标为当前图片的坐标
                 tempPoints.value = JSON.parse(JSON.stringify(currentImage.value.points || [
                     { x: 100, y: 100 }, { x: 700, y: 100 }, { x: 700, y: 500 }, { x: 100, y: 500 }
                 ]));
                 break;
             case 'crop-exit':
-                // 退出crop模式时，清空临时points（不保存调整）
+                // 退出矫正模式时，清空临时坐标（不保存调整）
                 tempPoints.value = [];
                 break;
             case 'exit':
@@ -332,56 +363,69 @@ export function useEditorCrop(
                 tempPoints.value = [];
                 break;
             case 'crop-confirm':
-                // 确认时，将临时points保存到imageList，然后执行透视变换
+                // 确认时，将临时坐标保存到图片列表，然后执行透视变换
                 if (tempPoints.value.length > 0 && imageList.value[swiperslideIn.value]) {
                     imageList.value[swiperslideIn.value].points = [...tempPoints.value];
                 }
                 performPerspectiveTransform();
-                tempPoints.value = []; // 清空临时points
+                tempPoints.value = []; // 清空临时坐标
                 break;
         }
     };
+
+    /** 监听容器尺寸变化 */
+    const resizeObserver = new ResizeObserver(() => {
+        updateContainerSize();
+    });
 
     // 生命周期
     onMounted(() => {
         if (containerRef.value) {
             containerRef.value.style.touchAction = 'none';
         }
-        window.addEventListener('resize', updateContainerSize);
         updateContainerSize();
+        if (imageContainerRef.value) {
+            resizeObserver.observe(imageContainerRef.value);
+        }
     });
 
     onUnmounted(() => {
-        window.removeEventListener('resize', updateContainerSize);
+        resizeObserver.disconnect();
     });
 
     return {
         // 响应式数据
         tempPoints,
-        containerRef,
-        imageContainerRef,
-        imageRef,
         imageWidth,
         imageHeight,
         containerWidth,
         containerHeight,
         points,
+        dragState,
+        
+        // DOM 引用
+        containerRef,
+        imageContainerRef,
+        imageRef,
+        
+        // 计算属性
         displayArea,
         svgStyle,
         displayPoints,
         displayMidPoints,
         selectionPath,
-        dragState,
-
-        // 方法
+        
+        // 核心方法
+        updateContainerSize,
+        handleCropModeChange,
+        performPerspectiveTransform,
+        
+        // 事件处理方法
         onImageLoad,
         onCornerPointerDown,
         onMidPointPointerDown,
         onMaskPointerDown,
         onMaskPointerUp,
-        onMaskPointerMove,
-        performPerspectiveTransform,
-        handleCropModeChange,
-        updateContainerSize
+        onMaskPointerMove
     };
 }

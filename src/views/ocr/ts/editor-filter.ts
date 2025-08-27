@@ -1,53 +1,71 @@
-import { ref, watch } from 'vue';
+import { ref, watch, type Ref } from 'vue';
+import type { PhotoItem } from '@/views/ocr/ts/camera';
+
+/** 滤镜配置接口 */
+interface FilterConfig {
+    name: string;
+    alias: string;
+    cover: string;
+}
 
 /**
- * 滤镜功能
+ * 滤镜功能组合式函数
+ * @param imageList 图片列表
+ * @param swiperslideIn 当前滑块索引
+ * @returns 滤镜相关的响应式数据和方法
  */
 export function useEditorFilter(
-    imageList: any,
-    swiperslideIn: any
+    imageList: Ref<PhotoItem[]>,
+    swiperslideIn: Ref<number>
 ) {
-    /**
-     * 当前选中的滤镜索引
-     */
+    /** 当前选中的滤镜索引 */
     const selectedFilter = ref(0);
 
-    /**
-     * 支持的滤镜列表
-     */
-    const filterList = ref([
+    /** 支持的滤镜配置列表 */
+    const filterList = ref<FilterConfig[]>([
         { name: '原图', alias: 'original', cover: '/images/editor/filter.png' },
         { name: '增强', alias: 'enhance', cover: '/images/editor/filter.png' },
         { name: '锐化', alias: 'sharpening', cover: '/images/editor/filter.png' },
         { name: '黑白', alias: 'mono', cover: '/images/editor/filter.png' },
-        { name: '去摩尔纹', alias: 'moire-pattern', cover: '/images/editor/filter.png' },
+        { name: '去摩尔纹', alias: 'moire-pattern', cover: '/images/editor/filter.png' }
     ]);
 
     /**
-     * 滤镜切换监听
+     * 监听滤镜选择变化，同步到当前图片
      */
-    watch(() => selectedFilter.value, (index) => {
-        // 用户手动更改滤镜
-        if (imageList.value[swiperslideIn.value].filter != filterList.value[index].alias) {
-            console.log('手动更换滤镜：', swiperslideIn.value, imageList.value[swiperslideIn.value].filter, '=>', filterList.value[index].alias);
-            imageList.value[swiperslideIn.value].filter = filterList.value[index].alias;
+    watch(
+        () => selectedFilter.value,
+        (index) => {
+            const currentImage = imageList.value[swiperslideIn.value];
+            const newFilter = filterList.value[index]?.alias;
+            
+            if (currentImage && newFilter && currentImage.filter !== newFilter) {
+                console.log('滤镜切换:', {
+                    imageIndex: swiperslideIn.value,
+                    from: currentImage.filter,
+                    to: newFilter
+                });
+                currentImage.filter = newFilter;
+            }
         }
-    });
+    );
 
     /**
-     * 当swiper切换时，同步滤镜选择
+     * 同步滤镜选择与当前图片的滤镜状态
      */
     const syncFilterWithImage = () => {
-        // 滤镜与图片匹配
-        const filter_name = imageList.value[swiperslideIn.value].filter;
-        selectedFilter.value = filterList.value.findIndex(f => f.alias === filter_name);
+        const currentImage = imageList.value[swiperslideIn.value];
+        if (!currentImage) return;
+        
+        const filterIndex = filterList.value.findIndex(f => f.alias === currentImage.filter);
+        selectedFilter.value = filterIndex >= 0 ? filterIndex : 0;
     };
 
     /**
-     * 重置滤镜为原图
+     * 重置当前图片滤镜为原图
      */
     const resetFilterToOriginal = () => {
-        selectedFilter.value = 0; // 将重新矫正后图片的滤镜设置为original
+        selectedFilter.value = 0;
     };
 
     return {
