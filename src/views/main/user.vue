@@ -1,7 +1,7 @@
 <template>
-    <v-app class="h-100 d-flex flex-column position-relative overflow-hidden overflow-y-auto">
-        <v-main style="padding-top: env(safe-area-inset-top);">
-            <v-card class="ma-6 rounded-lg">
+    <v-app class="">
+        <v-main>
+            <v-card class="ma-3 rounded-lg">
                 <v-card-text class="d-flex align-center">
                     <v-avatar size="64" color="white">
                         <v-img src="/images/avatar.png"></v-img>

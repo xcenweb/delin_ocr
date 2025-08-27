@@ -1,5 +1,5 @@
 <template>
-    <v-app class="h-100 d-flex flex-column position-relative overflow-hidden overflow-y-auto">
+    <v-app class="">
         <v-main>
             <!-- 顶部操作区域 -->
             <div class="d-flex justify-space-between align-center mb-4 px-4 pt-4">
@@ -19,7 +19,7 @@
             <!-- 证件分类标签 -->
             <v-slide-group v-model="selectedCategory" mandatory show-arrows="desktop" mobile-breakpoint="sm"
                 class="mb-5 swiper-no-swiping">
-                <v-spacer style="width: 10px;" class="d-sm-none"></v-spacer>
+                <v-spacer style="width: 8px;" class="d-sm-none"></v-spacer>
                 <v-slide-group-item v-slot="{ isSelected, toggle }" value="all">
                     <v-chip :color="isSelected ? 'primary' : undefined" :variant="isSelected ? 'flat' : 'outlined'"
                         class="ma-1" @click="toggle" density="compact">
@@ -59,7 +59,7 @@
                                 {{ getCertificateTypeById(certificate.typeId)?.name }}
                             </v-chip>
                             <v-spacer></v-spacer>
-                            <v-menu open-on-hover>
+                            <v-menu open-on-hover open-on-click>
                                 <template v-slot:activator="{ props }">
                                     <v-btn icon="mdi-dots-vertical" size="x-small" variant="text"
                                         v-bind="props"></v-btn>

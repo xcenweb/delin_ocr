@@ -38,7 +38,7 @@ export function useEditorFilter(
         (index) => {
             const currentImage = imageList.value[swiperslideIn.value];
             const newFilter = filterList.value[index]?.alias;
-            
+
             if (currentImage && newFilter && currentImage.filter !== newFilter) {
                 console.log('滤镜切换:', {
                     imageIndex: swiperslideIn.value,
@@ -56,7 +56,7 @@ export function useEditorFilter(
     const syncFilterWithImage = () => {
         const currentImage = imageList.value[swiperslideIn.value];
         if (!currentImage) return;
-        
+
         const filterIndex = filterList.value.findIndex(f => f.alias === currentImage.filter);
         selectedFilter.value = filterIndex >= 0 ? filterIndex : 0;
     };

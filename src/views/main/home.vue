@@ -1,5 +1,5 @@
 <template>
-    <v-app class="h-100 d-flex flex-column position-relative overflow-hidden overflow-y-auto">
+    <v-app class="">
         <v-main>
 
             <div style="background: linear-gradient(135deg, #4285F4 0%, #6366F1 50%, #8B5CF6 100%); height: 180px;">

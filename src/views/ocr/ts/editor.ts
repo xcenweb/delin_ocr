@@ -15,7 +15,7 @@ export function useEditor() {
      * - crop: 矫正模式
      * - watermark: 水印模式（待实现）
      */
-    const editorMode = ref<'edit' | 'crop' | 'watermark' | string>('edit');
+    const editorMode = ref<'edit' | 'crop' | 'watermark'>('edit');
 
     /** 编辑的图片列表 */
     const imageList = ref<PhotoItem[]>([]);

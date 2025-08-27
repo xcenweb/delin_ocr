@@ -176,7 +176,7 @@ const {
 } = useEditorFilter(imageList, swiperslideIn);
 
 // 编辑模式切换处理
-const editorModeChange = (toMode: string, event?: string) => {
+const editorModeChange = (toMode: any, event?: string) => {
     handleCropModeChange(toMode, event);
 
     if (event === 'crop-confirm') {

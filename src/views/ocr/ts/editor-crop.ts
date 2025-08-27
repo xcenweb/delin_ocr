@@ -49,7 +49,7 @@ export function useEditorCrop(
     const containerRef = ref<HTMLElement>();
     const imageContainerRef = ref<HTMLElement>();
     const imageRef = ref<HTMLImageElement>();
-    
+
     /** 图片和容器尺寸 */
     const imageWidth = ref(0);
     const imageHeight = ref(0);
@@ -84,7 +84,7 @@ export function useEditorCrop(
      */
     const displayArea = computed((): DisplayArea => {
         const defaultArea: DisplayArea = { left: 0, top: 0, width: 0, height: 0, scaleX: 1, scaleY: 1 };
-        
+
         if (!imageWidth.value || !imageHeight.value || !containerWidth.value || !containerHeight.value) {
             return defaultArea;
         }
@@ -92,7 +92,7 @@ export function useEditorCrop(
         const imageRatio = imageWidth.value / imageHeight.value;
         const containerRatio = containerWidth.value / containerHeight.value;
         const isWider = imageRatio > containerRatio;
-        
+
         const width = isWider ? containerWidth.value : containerHeight.value * imageRatio;
         const height = isWider ? containerWidth.value / imageRatio : containerHeight.value;
 
@@ -346,7 +346,7 @@ export function useEditorCrop(
      * @param toMode 目标模式
      * @param event 事件类型
      */
-    const handleCropModeChange = (toMode: string, event?: string): void => {
+    const handleCropModeChange = (toMode: any, event?: string): void => {
         switch (event) {
             case 'crop-enter':
                 // 进入矫正模式时，初始化临时坐标为当前图片的坐标
@@ -402,24 +402,24 @@ export function useEditorCrop(
         containerHeight,
         points,
         dragState,
-        
+
         // DOM 引用
         containerRef,
         imageContainerRef,
         imageRef,
-        
+
         // 计算属性
         displayArea,
         svgStyle,
         displayPoints,
         displayMidPoints,
         selectionPath,
-        
+
         // 核心方法
         updateContainerSize,
         handleCropModeChange,
         performPerspectiveTransform,
-        
+
         // 事件处理方法
         onImageLoad,
         onCornerPointerDown,

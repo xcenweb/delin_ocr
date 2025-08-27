@@ -4,6 +4,7 @@ import { ref, computed } from 'vue'
 import { readDir, BaseDirectory, stat, writeFile, mkdir, exists } from '@tauri-apps/plugin-fs'
 import { useDateFormat } from '@vueuse/core'
 import router from '@/router'
+import { getThumbnailUrl } from './thumbnail'
 
 /** 基础文件信息接口 */
 interface BaseFileInfo {
@@ -157,11 +158,12 @@ const loadDirectory = async (path: string, baseDir: BaseDirectory): Promise<void
 
                     if (fileType === 'img') {
                         // 创建图片对象
+                        const thumbnail = await getThumbnailUrl({ path: fullPath, name: entry.name })
                         fileObj = {
                             ...baseInfo,
                             type: 'img',
                             ext,
-                            thumbnail: '' // 缩略图
+                            thumbnail
                         } as ImageObject
                     } else {
                         // 创建普通文件对象
