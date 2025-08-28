@@ -37,10 +37,14 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
-        api-level: 34
-        build-tools: 34.0.0
-        ndk-version: 25.2.9519653
-        cmake-version: 3.22.1
+        cmdline-tools-version: 9477386
+        accept-android-sdk-licenses: true
+        packages: |
+          platform-tools
+          platforms;android-34
+          build-tools;34.0.0
+          ndk;25.2.9519653
+          cmake;3.22.1
 
     - name: Install dependencies
       run: npm ci
@@ -53,28 +57,13 @@ jobs:
         echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
         echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
         echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
-        echo "$ANDROID_SDK_ROOT/tools" >> $GITHUB_PATH
-        echo "$ANDROID_SDK_ROOT/tools/bin" >> $GITHUB_PATH
         echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        # Verify Android SDK structure
+        # Verify installations
         echo "Android SDK Root: $ANDROID_SDK_ROOT"
-        ls -la $ANDROID_SDK_ROOT/
-        # Verify NDK installation
-        echo "Checking NDK directory..."
-        ls -la $ANDROID_SDK_ROOT/ndk/ || echo "NDK directory not found"
-        if [ ! -d "$ANDROID_SDK_ROOT/ndk/25.2.9519653" ]; then
-          echo "NDK 25.2.9519653 not found, checking available versions..."
-          ls -la $ANDROID_SDK_ROOT/ndk/ || echo "No NDK versions found"
-          # Try to install NDK if cmdline-tools exist
-          if [ -f "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" ]; then
-            echo "Installing NDK 25.2.9519653..."
-            yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653"
-          else
-            echo "cmdline-tools not found, NDK installation may have failed"
-          fi
-        else
-          echo "NDK 25.2.9519653 found successfully"
-        fi
+        echo "Verifying NDK installation..."
+        ls -la $ANDROID_SDK_ROOT/ndk/25.2.9519653/ && echo "✅ NDK 25.2.9519653 found" || echo "❌ NDK not found"
+        echo "Verifying build-tools..."
+        ls -la $ANDROID_SDK_ROOT/build-tools/34.0.0/ && echo "✅ Build-tools 34.0.0 found" || echo "❌ Build-tools not found"
 
     - name: Generate Android project
       run: |
