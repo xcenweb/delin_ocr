@@ -16,7 +16,7 @@
             <z-swiper class="h-100 w-100 position-relative flex-grow-1" space-between="32px" :slides-per-view="1.1"
                 centered-slides @slideChange="onSlideChange" @swiper="onSwiper($event)" v-show="editorMode === 'edit'">
                 <z-swiper-item v-for="(image, i) in imageList" :key="i">
-                    <v-img :src="image.processedSrc || image.src" class="w-100 h-100" style="object-fit: contain;" />
+                    <v-img :src="image.filteredSrc || image.processedSrc || image.src" class="w-100 h-100" style="object-fit: contain;" />
                 </z-swiper-item>
             </z-swiper>
 
@@ -64,7 +64,7 @@
             <v-sheet class="pt-2" v-if="editorMode === 'edit'">
 
                 <!-- swiper控制 -->
-                <div class="text-center pb-2">
+                <div class="text-center pb-2" v-if="imageList.length > 1">
                     <v-btn icon="mdi-chevron-left" size="x-small"
                         @click="() => swiperInstance['slidePrev'].slidePrev()" />
                     <span class="mx-2">{{ swiperslideIn + 1 }}/{{ imageList.length }}</span>
@@ -117,13 +117,13 @@
                 </div>
             </v-sheet>
         </v-main>
-
-        <LeavePopup :effect="editorMode === 'edit'" :onBeforeLeave="handleBeforeLeave" />
-
+        <LeavePopup :effect="computedShouldShowLeavePopup" :onBeforeLeave="handleBeforeLeave" />
     </v-app>
 </template>
 
 <script setup lang="ts">
+import { onUnmounted, ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper';
 import '@zebra-ui/swiper/index.scss'
 
@@ -135,6 +135,17 @@ import { useEditorFilter } from '@/views/ocr/ts/editor-filter';
 
 import { saveBlobUrlToLocal } from '@/utils/fileSystem';
 import { BaseDirectory } from '@tauri-apps/plugin-fs';
+
+// 路由实例
+const router = useRouter();
+
+// 控制LeavePopup是否显示确认对话框
+const shouldShowLeavePopup = ref(true);
+
+// 计算是否应该显示LeavePopup确认对话框
+const computedShouldShowLeavePopup = computed(() => {
+    return shouldShowLeavePopup.value && editorMode.value === 'edit';
+});
 
 // 使用编辑器通用功能
 const {
@@ -171,8 +182,10 @@ const {
 const {
     selectedFilter,
     filterList,
+    applyFilterToImage,
     syncFilterWithImage,
-    resetFilterToOriginal
+    resetFilterToOriginal,
+    cleanupFilterResources
 } = useEditorFilter(imageList, swiperslideIn);
 
 // 编辑模式切换处理
@@ -187,9 +200,9 @@ const editorModeChange = (toMode: any, event?: string) => {
 };
 
 // swiper滑动切换事件处理
-const onSlideChange = (swiper: any) => {
+const onSlideChange = async (swiper: any) => {
     baseOnSlideChange(swiper);
-    syncFilterWithImage();
+    await syncFilterWithImage();
 };
 
 // 生成文件夹路径
@@ -210,7 +223,8 @@ const saveAllImages = async () => {
     try {
         for (let i = 0; i < totalImages; i++) {
             const image = imageList.value[i];
-            const imageSrc = image.processedSrc || image.src;
+            // 优先使用filteredSrc（应用滤镜后的图片），然后是processedSrc，最后是原图
+            const imageSrc = image.filteredSrc || image.processedSrc || image.src;
 
             if (!imageSrc) continue;
 
@@ -228,6 +242,21 @@ const saveAllImages = async () => {
             }
         }
         console.log('所有图片保存完成');
+
+        // 注意：保存完成后不清理滤镜资源，保持界面显示效果
+        // cleanupFilterResources(); // 只在组件卸载时清理
+
+        // 保存成功后自动返回到main页面
+        shouldShowLeavePopup.value = false; // 禁用LeavePopup确认对话框
+
+        // 连续返回两个页面回到main.vue
+        setTimeout(() => {
+            router.back(); // 第一次返回
+            setTimeout(() => {
+                router.back(); // 第二次返回
+            }, 100);
+        }, 500);
+
     } catch (error) {
         console.error('保存图片时发生错误:', error);
     }
@@ -235,14 +264,27 @@ const saveAllImages = async () => {
 
 // 处理浏览器物理返回键的闭包
 const handleBeforeLeave = (): boolean => {
+    // 如果shouldShowLeavePopup为false（保存后自动返回），直接允许离开
+    if (!shouldShowLeavePopup.value) {
+        cleanupFilterResources();
+        return true;
+    }
+
     // 如果不在edit模式，先切换到edit模式
     if (editorMode.value !== 'edit') {
         editorModeChange('edit', 'exit');
         return false; // 阻止路由离开
     }
     // 在edit模式下，允许继续路由离开流程
+    // 退出页面时清理滤镜资源
+    cleanupFilterResources();
     return true;
 };
+
+// 组件卸载时清理滤镜资源
+onUnmounted(() => {
+    cleanupFilterResources();
+});
 
 </script>
 

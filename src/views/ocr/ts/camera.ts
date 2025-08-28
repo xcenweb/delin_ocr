@@ -11,6 +11,8 @@ interface PhotoItem {
     processedSrc?: string;
     /** 当前使用的滤镜alias */
     filter?: string;
+    /** 应用滤镜后的图片blobURL */
+    filteredSrc?: string;
     /** 边框四角点坐标 [左上, 右上, 右下, 左下] */
     points: Point[];
 }
