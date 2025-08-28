@@ -33,9 +33,9 @@
 - **Rust**: 稳定版，包含 Android 目标
 - **Java JDK**: Temurin 17
 - **Android SDK**: API 34
-- **Build Tools**: 最新版本（自动检测）
-- **NDK**: 最新版本（自动检测）
-- **CMake**: 最新版本（自动检测）
+- **Build Tools**: 34.0.0
+- **NDK**: 25.2.9519653
+- **CMake**: 3.22.1
 
 3. **发布 Release**
    - 创建新的 GitHub Release
