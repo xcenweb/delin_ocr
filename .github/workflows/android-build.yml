@@ -45,7 +45,12 @@ jobs:
       run: npm ci
 
     - name: Install Tauri CLI
-      run: npm install -g @tauri-apps/cli@latest
+      run: |
+        npm install -g @tauri-apps/cli@latest
+        # Verify Tauri CLI installation
+        npx tauri --version
+        # Also install locally as fallback
+        npm install @tauri-apps/cli@latest
 
     - name: Setup Android environment
       run: |
@@ -53,8 +58,13 @@ jobs:
         echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
         echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
         echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        # Add Node.js global modules to PATH
+        echo "$(npm config get prefix)/bin" >> $GITHUB_PATH
         # Verify installations
         echo "Android SDK Root: $ANDROID_SDK_ROOT"
+        echo "Node.js version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        echo "Tauri CLI location: $(which tauri || echo 'Not found in PATH')"
         echo "Verifying NDK installation..."
         ls -la $ANDROID_SDK_ROOT/ndk/25.2.9519653/ && echo "✅ NDK 25.2.9519653 found" || echo "❌ NDK not found"
         echo "Verifying build-tools..."
@@ -63,12 +73,12 @@ jobs:
     - name: Generate Android project
       run: |
         cd src-tauri
-        tauri android init
+        npx tauri android init
 
     - name: Build Android APK
       run: |
         cd src-tauri
-        tauri android build --apk
+        npx tauri android build --apk
 
     - name: Find APK files
       id: find-apk
