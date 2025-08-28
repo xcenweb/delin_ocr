@@ -11,9 +11,7 @@ on:
       update_detail:
         description: 'Update detail'
         required: false
-        default: |
-          1. fixed bugs
-          2. new functions
+        default: ''
         type: string
 
 permissions:
@@ -86,6 +84,18 @@ jobs:
       run: |
         echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
         echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
+        
+    - name: Verify build environment
+      run: |
+        echo "Verifying Android SDK tools..."
+        ls -la $ANDROID_SDK_ROOT/build-tools/34.0.0/
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/aapt version
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/zipalign
+        echo "Java version:"
+        java -version
+        echo "Environment variables:"
+        echo "ANDROID_HOME: $ANDROID_HOME"
+        echo "NDK_HOME: $NDK_HOME"
 
     - name: Build Android APK
       run: |
@@ -98,26 +108,69 @@ jobs:
         # Decode keystore
         echo "${{ vars.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
 
-        # Find and sign APK
+        # Find APK
         APK_PATH=$(find src-tauri/gen/android -name "*.apk" -type f | head -1)
-        jarsigner -keystore keystore.jks \
-          -storepass "${{ vars.ANDROID_KEYSTORE_PASSWORD }}" \
-          -keypass "${{ vars.ANDROID_KEY_PASSWORD }}" \
-          "$APK_PATH" "${{ vars.ANDROID_KEY_ALIAS }}"
+        echo "Found APK: $APK_PATH"
+        
+        # Verify APK exists
+        if [ ! -f "$APK_PATH" ]; then
+          echo "Error: APK file not found!"
+          exit 1
+        fi
+        
+        # First align the APK
+        ALIGNED_APK="${APK_PATH%.apk}-aligned.apk"
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/zipalign -v 4 "$APK_PATH" "$ALIGNED_APK"
+        
+        # Then sign the aligned APK using apksigner with v1+v2+v3 signature schemes
+        SIGNED_APK="${APK_PATH%.apk}-signed.apk"
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
+          --ks keystore.jks \
+          --ks-pass pass:"${{ vars.ANDROID_KEYSTORE_PASSWORD }}" \
+          --key-pass pass:"${{ vars.ANDROID_KEY_PASSWORD }}" \
+          --ks-key-alias "${{ vars.ANDROID_KEY_ALIAS }}" \
+          --v1-signing-enabled true \
+          --v2-signing-enabled true \
+          --v3-signing-enabled true \
+          --out "$SIGNED_APK" \
+          "$ALIGNED_APK"
+        
+        # Verify the signature
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner verify "$SIGNED_APK"
+        
+        # Replace original APK with signed version
+        mv "$SIGNED_APK" "$APK_PATH"
+        
+        # Clean up temporary files
+        rm -f keystore.jks "$ALIGNED_APK"
+        
+        echo "APK signed and verified successfully"
 
-        # Align APK using full path
-        $ANDROID_SDK_ROOT/build-tools/34.0.0/zipalign -f 4 "$APK_PATH" "${APK_PATH%.apk}-aligned.apk"
-        mv "${APK_PATH%.apk}-aligned.apk" "$APK_PATH"
-
-        # Clean up
-        rm -f keystore.jks
-
-    - name: Find APK files
+    - name: Find and verify APK files
       id: find-apk
       run: |
         APK_PATH=$(find src-tauri/gen/android -name "*.apk" -type f | head -1)
         echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
         echo "apk_name=$(basename $APK_PATH)" >> $GITHUB_OUTPUT
+        
+        # Verify APK integrity
+        echo "Verifying APK integrity..."
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/aapt dump badging "$APK_PATH" | head -5
+        
+        # Check APK signature schemes
+        echo "Checking APK signature schemes..."
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner verify --verbose --print-certs "$APK_PATH"
+        
+        # Verify specific signature schemes
+        echo "Verifying v1 signature..."
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner verify --v1-only "$APK_PATH" && echo "✓ v1 signature valid" || echo "✗ v1 signature invalid"
+        echo "Verifying v2 signature..."
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner verify --v2-only "$APK_PATH" && echo "✓ v2 signature valid" || echo "✗ v2 signature invalid"
+        echo "Verifying v3 signature..."
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner verify --v3-only "$APK_PATH" && echo "✓ v3 signature valid" || echo "✗ v3 signature invalid"
+        
+        # Show APK size
+        echo "APK size: $(du -h "$APK_PATH" | cut -f1)"
 
     - name: Rename APK file
       id: rename-apk
