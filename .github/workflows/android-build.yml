@@ -67,59 +67,37 @@ jobs:
         npx tauri android init
         npx tauri android build --apk
 
-    - name: Decode Keystore
-      run: |
-        # Remove any whitespace and decode base64 keystore
-        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | tr -d '\n\r\t ' | base64 -d > keystore.jks
-        # Verify keystore file was created
-        if [ ! -f keystore.jks ]; then
-          echo "Failed to create keystore file"
-          exit 1
-        fi
-        echo "Keystore decoded successfully"
-
-    - name: Sign APK
-      run: |
-        # Find the unsigned APK
-        UNSIGNED_APK=$(find src-tauri/gen/android -name "*-unsigned.apk" -o -name "*.apk" | head -1)
-        if [ -z "$UNSIGNED_APK" ]; then
-          echo "No APK found to sign"
-          exit 1
-        fi
-        
-        # Create signed APK name
-        SIGNED_APK="${UNSIGNED_APK%-unsigned.apk}-signed.apk"
-        if [ "$SIGNED_APK" = "$UNSIGNED_APK" ]; then
-          SIGNED_APK="${UNSIGNED_APK%.apk}-signed.apk"
-        fi
-        
-        # Sign the APK
-        $ANDROID_HOME/build-tools/34.0.0/apksigner sign \
-          --ks keystore.jks \
-          --ks-key-alias "${{ secrets.ANDROID_KEY_ALIAS }}" \
-          --ks-pass pass:"${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-          --key-pass pass:"${{ secrets.ANDROID_KEY_PASSWORD }}" \
-          --out "$SIGNED_APK" \
-          "$UNSIGNED_APK"
-        
-        # Verify the signature
-        $ANDROID_HOME/build-tools/34.0.0/apksigner verify "$SIGNED_APK"
-        
-        echo "APK signed successfully: $SIGNED_APK"
-
-    - name: Clean up keystore
-      run: rm -f keystore.jks
-
     - name: Find APK files
       id: find-apk
       run: |
-        # Prefer signed APK over unsigned APK
-        APK_PATH=$(find src-tauri/gen/android -name "*-signed.apk" -type f | head -1)
-        if [ -z "$APK_PATH" ]; then
-          APK_PATH=$(find src-tauri/gen/android -name "*.apk" -type f | head -1)
-        fi
+        APK_PATH=$(find src-tauri/gen/android -name "*.apk" -type f | head -1)
         echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
         echo "apk_name=$(basename $APK_PATH)" >> $GITHUB_OUTPUT
+
+    - name: Decode keystore
+      run: |
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android-keystore.jks
+
+    - name: Sign APK
+      run: |
+        APK_PATH="${{ steps.find-apk.outputs.apk_path }}"
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore android-keystore.jks \
+          -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+          -keypass "${{ secrets.ANDROID_KEY_PASSWORD }}" \
+          "$APK_PATH" "${{ secrets.ANDROID_KEY_ALIAS }}"
+        
+        # Verify the signature
+        jarsigner -verify -verbose -certs "$APK_PATH"
+        
+        # Align the APK
+        zipalign -v 4 "$APK_PATH" "${APK_PATH%.apk}-aligned.apk"
+        mv "${APK_PATH%.apk}-aligned.apk" "$APK_PATH"
+
+    - name: Clean up keystore
+      if: always()
+      run: |
+        rm -f android-keystore.jks
 
     - name: Rename APK file
       id: rename-apk
