@@ -48,12 +48,6 @@ jobs:
         cd src-tauri
         npx tauri build --target x86_64-pc-windows-msvc
 
-    - name: Get current date
-      id: date
-      run: |
-        $date = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-        echo "date=$date" >> $env:GITHUB_OUTPUT
-
     - name: Find executable files
       id: find-exe
       run: |
