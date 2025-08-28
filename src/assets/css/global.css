@@ -1,7 +1,4 @@
 :root {
-    --inset-top: env(safe-area-inset-top);
-    --inset-bottom: env(safe-area-inset-bottom);
-
     -webkit-touch-callout: none !important;
     -webkit-user-select: none !important;
     -moz-user-select: none !important;

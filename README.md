@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="app-icon.png" alt="DelinBox Logo" width="120" height="120">
+  <img src="src\assets\logo.svg" alt="DelinBox Logo" width="110" height="110">
 
   # DelinBox
 

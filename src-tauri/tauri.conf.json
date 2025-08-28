@@ -47,6 +47,10 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "fileAssociations": []
+    "fileAssociations": [],
+    "android": {
+      "versionCode": 1000,
+      "minSdkVersion": 24
+    }
   }
 }

@@ -1,7 +1,6 @@
 // 文件列表组件
-
-《<template>
-    <v-row class="px-3 pt-3" v-if="sortedFiles.length > 0">
+<template>
+    <v-row class="px-3 pt-1" v-if="sortedFiles.length > 0">
         <v-col cols="12" sm="12" md="6" lg="4" v-for="(fso, i) in sortedFiles" :key="i" class="pb-0 pt-2">
 
             <!-- 普通文件夹 -->
