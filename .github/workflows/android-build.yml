@@ -32,6 +32,19 @@ jobs:
         node-version: '20'
         cache: 'npm'
 
+    - name: Cache Rust dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          src-tauri/target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
       with:
@@ -42,6 +55,15 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '17'
+
+    - name: Cache Android SDK
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.android/sdk
+        key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-android-sdk-
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
@@ -55,6 +77,17 @@ jobs:
 
     - name: Install Tauri CLI
       run: npm install -g @tauri-apps/cli@latest
+
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          src-tauri/gen/android/.gradle
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
 
     - name: Setup Android environment
       run: |
@@ -73,47 +106,6 @@ jobs:
         APK_PATH=$(find src-tauri/gen/android -name "*.apk" -type f | head -1)
         echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
         echo "apk_name=$(basename $APK_PATH)" >> $GITHUB_OUTPUT
-
-    - name: Decode keystore
-      run: |
-        # Check if the base64 string exists
-        if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
-          echo "Error: ANDROID_KEYSTORE_BASE64 secret is empty or not set"
-          exit 1
-        fi
-        
-        # Remove any whitespace and newlines from the base64 string
-        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | tr -d '\n\r\t ' | base64 -d > android-keystore.jks
-        
-        # Verify the keystore file was created and is not empty
-        if [ ! -f android-keystore.jks ] || [ ! -s android-keystore.jks ]; then
-          echo "Error: Failed to create keystore file or file is empty"
-          exit 1
-        fi
-        
-        echo "Keystore file created successfully"
-        ls -la android-keystore.jks
-
-    - name: Sign APK
-      run: |
-        APK_PATH="${{ steps.find-apk.outputs.apk_path }}"
-        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
-          -keystore android-keystore.jks \
-          -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
-          -keypass "${{ secrets.ANDROID_KEY_PASSWORD }}" \
-          "$APK_PATH" "${{ secrets.ANDROID_KEY_ALIAS }}"
-        
-        # Verify the signature
-        jarsigner -verify -verbose -certs "$APK_PATH"
-        
-        # Align the APK
-        zipalign -v 4 "$APK_PATH" "${APK_PATH%.apk}-aligned.apk"
-        mv "${APK_PATH%.apk}-aligned.apk" "$APK_PATH"
-
-    - name: Clean up keystore
-      if: always()
-      run: |
-        rm -f android-keystore.jks
 
     - name: Rename APK file
       id: rename-apk
