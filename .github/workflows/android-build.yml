@@ -69,7 +69,14 @@ jobs:
 
     - name: Decode Keystore
       run: |
-        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+        # Remove any whitespace and decode base64 keystore
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | tr -d '\n\r\t ' | base64 -d > keystore.jks
+        # Verify keystore file was created
+        if [ ! -f keystore.jks ]; then
+          echo "Failed to create keystore file"
+          exit 1
+        fi
+        echo "Keystore decoded successfully"
 
     - name: Sign APK
       run: |
