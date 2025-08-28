@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android Release
 
 on:
   workflow_dispatch:
@@ -7,6 +7,11 @@ on:
         description: 'Release version'
         required: true
         default: 'v0.1.0'
+        type: string
+      update_detail:
+        description: 'Update detail'
+        required: false
+        default: '- 自动构建的 Android 版本'
         type: string
 
 permissions:
@@ -49,73 +54,48 @@ jobs:
       run: npm ci
 
     - name: Install Tauri CLI
-      run: |
-        npm install -g @tauri-apps/cli@latest
-        # Verify Tauri CLI installation
-        npx tauri --version
-        # Also install locally as fallback
-        npm install @tauri-apps/cli@latest
+      run: npm install -g @tauri-apps/cli@latest
 
     - name: Setup Android environment
       run: |
         echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
         echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
-        echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
-        echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-        # Add Node.js global modules to PATH
-        echo "$(npm config get prefix)/bin" >> $GITHUB_PATH
-        # Verify installations
-        echo "Android SDK Root: $ANDROID_SDK_ROOT"
-        echo "Node.js version: $(node --version)"
-        echo "NPM version: $(npm --version)"
-        echo "Tauri CLI location: $(which tauri || echo 'Not found in PATH')"
-        echo "Verifying NDK installation..."
-        ls -la $ANDROID_SDK_ROOT/ndk/25.2.9519653/ && echo "✅ NDK 25.2.9519653 found" || echo "❌ NDK not found"
-        echo "Verifying build-tools..."
-        ls -la $ANDROID_SDK_ROOT/build-tools/34.0.0/ && echo "✅ Build-tools 34.0.0 found" || echo "❌ Build-tools not found"
-
-    - name: Generate Android project
-      run: |
-        cd src-tauri
-        npx tauri android init
 
     - name: Build Android APK
       run: |
         cd src-tauri
+        npx tauri android init
         npx tauri android build --apk
 
     - name: Find APK files
       id: find-apk
       run: |
         APK_PATH=$(find src-tauri/gen/android -name "*.apk" -type f | head -1)
-        if [ -z "$APK_PATH" ]; then
-          echo "No APK file found!"
-          exit 1
-        fi
         echo "apk_path=$APK_PATH" >> $GITHUB_OUTPUT
         echo "apk_name=$(basename $APK_PATH)" >> $GITHUB_OUTPUT
-        echo "Found APK: $APK_PATH"
+
+    - name: Rename APK file
+      id: rename-apk
+      run: |
+        OLD_APK_PATH="${{ steps.find-apk.outputs.apk_path }}"
+        NEW_APK_NAME="delin-${{ github.event.inputs.version }}-android.apk"
+        NEW_APK_PATH="$(dirname $OLD_APK_PATH)/$NEW_APK_NAME"
+        mv "$OLD_APK_PATH" "$NEW_APK_PATH"
+        echo "renamed_apk_path=$NEW_APK_PATH" >> $GITHUB_OUTPUT
+        echo "renamed_apk_name=$NEW_APK_NAME" >> $GITHUB_OUTPUT
 
     - name: Create Release
       id: create_release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ github.event.inputs.version }}
-        name: 德邻盒子 ${{ github.event.inputs.version }}
+        name: ${{ github.event.inputs.version }}
         body: |
-          ## 德邻盒子 Android 版本 ${{ github.event.inputs.version }}
+          ## Update detail
+          ${{ github.event.inputs.update_detail }}
 
-          ### 下载说明
-          - 下载 APK 文件并安装到 Android 设备
-          - 支持 Android 7.0 (API 24) 及以上版本
-
-          ### 更新内容
-          - 自动构建的 Android 版本
-
-          ---
-          构建时间: ${{ github.run_id }}
         files: |
-          ${{ steps.find-apk.outputs.apk_path }}
+          ${{ steps.rename-apk.outputs.renamed_apk_path }}
         draft: false
         prerelease: false
       env:
@@ -124,9 +104,5 @@ jobs:
     - name: Build Summary
       run: |
         echo "## 构建完成 ✅" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
         echo "**版本:** ${{ github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
-        echo "**APK 文件:** ${{ steps.find-apk.outputs.apk_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Release 链接:** ${{ steps.create_release.outputs.url }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "APK 已成功上传到 Release，可以直接下载安装。" >> $GITHUB_STEP_SUMMARY
+        echo "**APK:** ${{ steps.rename-apk.outputs.renamed_apk_name }}" >> $GITHUB_STEP_SUMMARY
