@@ -27,6 +27,16 @@
    - 初始化 Android 项目
    - 构建 APK 文件
 
+## 构建环境
+
+- **Node.js**: v20
+- **Rust**: 稳定版，包含 Android 目标
+- **Java JDK**: Temurin 17
+- **Android SDK**: API 34
+- **Build Tools**: 最新版本（自动检测）
+- **NDK**: 最新版本（自动检测）
+- **CMake**: 最新版本（自动检测）
+
 3. **发布 Release**
    - 创建新的 GitHub Release
    - 上传 APK 文件到 Release
