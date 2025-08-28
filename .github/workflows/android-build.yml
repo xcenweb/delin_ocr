@@ -95,18 +95,18 @@ jobs:
       run: |
         # Decode keystore
         echo "${{ vars.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
-
+        
         # Find and sign APK
         APK_PATH=$(find src-tauri/gen/android -name "*.apk" -type f | head -1)
         jarsigner -keystore keystore.jks \
           -storepass "${{ vars.ANDROID_KEYSTORE_PASSWORD }}" \
           -keypass "${{ vars.ANDROID_KEY_PASSWORD }}" \
           "$APK_PATH" "${{ vars.ANDROID_KEY_ALIAS }}"
-
-        # Align APK in place
-        zipalign -f 4 "$APK_PATH" "${APK_PATH%.apk}-aligned.apk"
+        
+        # Align APK using full path
+        $ANDROID_SDK_ROOT/build-tools/34.0.0/zipalign -f 4 "$APK_PATH" "${APK_PATH%.apk}-aligned.apk"
         mv "${APK_PATH%.apk}-aligned.apk" "$APK_PATH"
-
+        
         # Clean up
         rm -f keystore.jks
 
