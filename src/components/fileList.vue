@@ -1,7 +1,7 @@
 // 文件列表组件
 
 《<template>
-    <v-row class="px-3 pt-3">
+    <v-row class="px-3 pt-3" v-if="sortedFiles.length > 0">
         <v-col cols="12" sm="12" md="6" lg="4" v-for="(fso, i) in sortedFiles" :key="i" class="pb-0 pt-2">
 
             <!-- 普通文件夹 -->
@@ -36,9 +36,9 @@
         </v-col>
     </v-row>
 
-    <div class="d-flex align-center justify-center" style="min-height: 75%;" v-if="sortedFiles.length === 0">
+    <div class="d-flex w-100 align-center justify-center" style="margin-top: 60%;" v-if="sortedFiles.length === 0">
         <div class="text-center">
-            <v-icon size="80" color="grey-lighten-2">mdi-folder-open</v-icon>
+            <v-icon size="80" color="grey-lighten-2" icon="mdi-folder-open" />
             <p class="text-h6 mt-4 mb-2">暂无文件</p>
             <p class="text-body-2 text-grey-darken-1">还没有任何文件，开始扫描文档吧</p>
         </div>

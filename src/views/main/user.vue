@@ -1,5 +1,5 @@
 <template>
-    <v-app class="">
+    <v-app class="h-100 d-flex flex-column position-relative overflow-hidden overflow-y-auto">
         <v-main>
             <v-card class="ma-3 rounded-lg">
                 <v-card-text class="d-flex align-center">
@@ -17,7 +17,3 @@
         </v-main>
     </v-app>
 </template>
-
-<script setup></script>
-
-<style scoped></style>

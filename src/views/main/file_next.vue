@@ -6,7 +6,7 @@
                 {{ $route.query.path?.toString().split('/').pop() || '' }}
             </v-app-bar-title>
         </v-app-bar>
-        <v-main>
+        <v-main style="margin-top: env(safe-area-inset-top);">
             <file-list :path="$route.query.path?.toString() || ''" />
         </v-main>
     </v-app>

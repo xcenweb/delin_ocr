@@ -1,5 +1,5 @@
 <template>
-    <v-app class="">
+    <v-app class="h-100 d-flex flex-column position-relative overflow-hidden overflow-y-auto">
         <v-main>
             <!-- 顶部操作区域 -->
             <div class="d-flex justify-space-between align-center mb-4 px-4 pt-4">

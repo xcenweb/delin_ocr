@@ -1,12 +1,12 @@
 <template>
-    <v-app style="height: 100vh; overflow: hidden;">
+    <v-app>
         <!-- pc 左侧导航栏 -->
         <v-navigation-drawer :rail="true" :mobile-breakpoint="600" :elevation="3" :touchless="true">
 
             <!-- 导航按钮 -->
-            <v-list nav v-model:selected="selectedItem">
-                <v-list-item v-for="(item, i) in navigator_list" :key="item.id" :value="item" color="primary"
-                    class="text-center" @click="() => swiperInstance.slideTo.slideTo(item.id)">
+            <v-list nav>
+                <v-list-item v-for="(item, i) in navigator_list" :key="i" :value="item" color="primary"
+                    class="text-center">
                     <template v-slot:prepend>
                         <div class="d-flex flex-column align-center">
                             <v-icon size="24" :icon="item.icon"></v-icon>
@@ -31,26 +31,26 @@
             </template>
         </v-navigation-drawer>
 
-        <v-main class="d-flex flex-column overflow-hidden" style="--v-layout-top: 0px; --v-layout-bottom: 0px; height: 100vh;">
-            <v-container fluid class="pa-0" style="height: 100%;">
+        <v-main class="d-flex flex-column overflow-hidden" style="--v-layout-top: 0px; --v-layout-bottom: 0px;">
+            <v-container fluid class="pa-0">
                 <z-swiper @swiper="onSwiper($event, 'slideTo')" @slideChange="onSlideChange"
-                    style="box-sizing: border-box; height: 100%;">
-                    <z-swiper-item style="box-sizing: border-box; height: 100%;">
+                    style="box-sizing: border-box;">
+                    <z-swiper-item style="box-sizing: border-box;">
                         <div class="swiper-page-container">
                             <home-view />
                         </div>
                     </z-swiper-item>
-                    <z-swiper-item style="box-sizing: border-box; height: 100%;">
+                    <z-swiper-item style="box-sizing: border-box;">
                         <div class="swiper-page-container">
                             <certificate-view />
                         </div>
                     </z-swiper-item>
-                    <z-swiper-item style="box-sizing: border-box; height: 100%;">
+                    <z-swiper-item style="box-sizing: border-box;">
                         <div class="swiper-page-container">
                             <file-view />
                         </div>
                     </z-swiper-item>
-                    <z-swiper-item style="box-sizing: border-box; height: 100%;">
+                    <z-swiper-item style="box-sizing: border-box;">
                         <div class="swiper-page-container">
                             <user-view />
                         </div>
@@ -101,14 +101,12 @@ const navigator_list = ref([
 // zswiper
 const swiperslideIn = ref(0)
 const swiperInstance: any = ref({})
-const selectedItem = ref([navigator_list.value[0]])
 const onSwiper = (swiper: any, name: string) => {
     swiperInstance.value[name] = swiper;
     swiperslideIn.value = 0
 }
 const onSlideChange = (swiper: any) => {
     swiperslideIn.value = swiper.activeIndex
-    selectedItem.value = [navigator_list.value[swiper.activeIndex]]
 }
 </script>
 
@@ -124,19 +122,5 @@ const onSlideChange = (swiper: any) => {
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    height: 100%;
-}
-</style>
-
-<style>
-html, body {
-    height: 100%;
-    overflow: hidden;
-    margin: 0;
-    padding: 0;
-}
-body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
 }
 </style>
