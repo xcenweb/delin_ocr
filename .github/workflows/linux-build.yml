@@ -1,0 +1,93 @@
+name: Build Linux Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        default: 'v0.1.0'
+        type: string
+      update_detail:
+        description: 'Update detail'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: x86_64-unknown-linux-gnu
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Tauri CLI
+      run: npm install -g @tauri-apps/cli@latest
+
+    - name: Build Linux executable
+      run: |
+        cd src-tauri
+        npx tauri build --target x86_64-unknown-linux-gnu
+
+    - name: Find executable files
+      id: find-bin
+      run: |
+        BIN_PATH=$(find src-tauri/target/x86_64-unknown-linux-gnu/release -type f -executable -not -path "*/deps/*" -not -path "*/build/*" | grep -v "\.so" | head -1)
+        echo "bin_path=$BIN_PATH" >> $GITHUB_OUTPUT
+        echo "bin_name=$(basename $BIN_PATH)" >> $GITHUB_OUTPUT
+
+    - name: Rename executable file
+      id: rename-bin
+      run: |
+        OLD_BIN_PATH="${{ steps.find-bin.outputs.bin_path }}"
+        NEW_BIN_NAME="delin-${{ github.event.inputs.version }}-linux"
+        NEW_BIN_PATH="$(dirname $OLD_BIN_PATH)/$NEW_BIN_NAME"
+        mv "$OLD_BIN_PATH" "$NEW_BIN_PATH"
+        echo "renamed_bin_path=$NEW_BIN_PATH" >> $GITHUB_OUTPUT
+        echo "renamed_bin_name=$NEW_BIN_NAME" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ github.event.inputs.version }}
+        name: ${{ github.event.inputs.version }}
+        body: |
+          ## Update detail
+          ${{ github.event.inputs.update_detail }}
+        files: |
+          ${{ steps.rename-bin.outputs.renamed_bin_path }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build Summary
+      run: |
+        echo "## 构建完成 ✅" >> $GITHUB_STEP_SUMMARY
+        echo "**版本:** ${{ github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "**可执行文件:** ${{ steps.rename-bin.outputs.renamed_bin_name }}" >> $GITHUB_STEP_SUMMARY

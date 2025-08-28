@@ -11,7 +11,7 @@ on:
       update_detail:
         description: 'Update detail'
         required: false
-        default: '- 自动构建的 Android 版本'
+        default: ''
         type: string
 
 permissions:
@@ -93,7 +93,6 @@ jobs:
         body: |
           ## Update detail
           ${{ github.event.inputs.update_detail }}
-
         files: |
           ${{ steps.rename-apk.outputs.renamed_apk_path }}
         draft: false
