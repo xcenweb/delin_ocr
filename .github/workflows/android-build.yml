@@ -76,7 +76,23 @@ jobs:
 
     - name: Decode keystore
       run: |
-        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android-keystore.jks
+        # Check if the base64 string exists
+        if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+          echo "Error: ANDROID_KEYSTORE_BASE64 secret is empty or not set"
+          exit 1
+        fi
+        
+        # Remove any whitespace and newlines from the base64 string
+        echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | tr -d '\n\r\t ' | base64 -d > android-keystore.jks
+        
+        # Verify the keystore file was created and is not empty
+        if [ ! -f android-keystore.jks ] || [ ! -s android-keystore.jks ]; then
+          echo "Error: Failed to create keystore file or file is empty"
+          exit 1
+        fi
+        
+        echo "Keystore file created successfully"
+        ls -la android-keystore.jks
 
     - name: Sign APK
       run: |
