@@ -98,12 +98,10 @@ jobs:
 
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ github.event.inputs.version }}
-        release_name: 德邻盒子 ${{ github.event.inputs.version }}
+        name: 德邻盒子 ${{ github.event.inputs.version }}
         body: |
           ## 德邻盒子 Android 版本 ${{ github.event.inputs.version }}
 
@@ -116,18 +114,12 @@ jobs:
 
           ---
           构建时间: ${{ github.run_id }}
+        files: |
+          ${{ steps.find-apk.outputs.apk_path }}
         draft: false
         prerelease: false
-
-    - name: Upload APK to Release
-      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ${{ steps.find-apk.outputs.apk_path }}
-        asset_name: delin-${{ github.event.inputs.version }}-android.apk
-        asset_content_type: application/vnd.android.package-archive
 
     - name: Build Summary
       run: |
@@ -135,6 +127,6 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**版本:** ${{ github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
         echo "**APK 文件:** ${{ steps.find-apk.outputs.apk_name }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Release 链接:** ${{ steps.create_release.outputs.html_url }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Release 链接:** ${{ steps.create_release.outputs.url }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "APK 已成功上传到 Release，可以直接下载安装。" >> $GITHUB_STEP_SUMMARY
