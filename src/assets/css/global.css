@@ -1,4 +1,7 @@
 :root {
+    --inset-top: env(safe-area-inset-top);
+    --inset-bottom: env(safe-area-inset-bottom);
+
     -webkit-touch-callout: none !important;
     -webkit-user-select: none !important;
     -moz-user-select: none !important;
@@ -6,29 +9,11 @@
     user-select: none !important;
 }
 
-body {
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden;
-    position: relative;
-}
-
 ::-webkit-scrollbar {
     display: none;
 }
 
-html {
-    -ms-overflow-style: none;
-    overflow-y: auto;
-}
-
-#app {
-    width: 100%;
-    overflow-x: hidden;
-}
-
-.v-navigation-drawer,
-.v-overlay__content>.v-card {
+body {
     padding-top: var(--inset-top) !important;
     padding-bottom: var(--inset-bottom) !important;
 }
@@ -39,4 +24,17 @@ html {
 
 .v-app-bar--bottom {
     padding-bottom: var(--inset-bottom) !important;
+}
+
+.v-sheet {
+    margin-bottom: var(--inset-top) !important;
+}
+
+/* 暂时允许长按复制 */
+.restore-user-select {
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
 }

@@ -1,7 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import camera_test from '@/views/test.vue'
-
 const router = createRouter({
     history: createWebHistory(),
     routes: [
@@ -33,13 +31,6 @@ const router = createRouter({
             path: '/ocr/select',
             name: 'ocr-result',
             component: () => import('@/views/ocr/select.vue')
-        },
-
-        // tests
-        {
-            path: '/test',
-            name: 'test',
-            component: camera_test
         },
 
         // setting

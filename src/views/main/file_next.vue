@@ -1,5 +1,5 @@
 <template>
-    <v-app style="margin-top: env(safe-area-inset-top);">
+    <v-app>
         <v-app-bar>
             <v-btn icon="mdi-arrow-left" @click="$router.back()" />
             <v-app-bar-title>

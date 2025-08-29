@@ -123,7 +123,6 @@ const onSlideChange = (swiper: any) => {
 .swiper-page-container {
     overflow-y: auto;
     overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
     height: 100%;
 }
 </style>
@@ -134,9 +133,5 @@ html, body {
     overflow: hidden;
     margin: 0;
     padding: 0;
-}
-body {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
 }
 </style>
