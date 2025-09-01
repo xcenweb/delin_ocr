@@ -300,10 +300,10 @@ const openFolder = (path: string) => {
 }
 
 /**
- * 打开图片文件
+ * 打开单张图片
  */
 const openImg = (path: string) => {
-    console.log('打开文件:', path)
+
 }
 
 export {
