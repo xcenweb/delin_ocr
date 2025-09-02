@@ -8,12 +8,18 @@ const router = createRouter({
             path: '/',
             name: 'main',
             component: () => import('@/views/main.vue'),
-            // component: () => import('@/views/test.vue'),
         },
         {
             path: '/file_next',
             name: 'file-next',
             component: () => import('@/views/main/file_next.vue')
+        },
+
+        // 图片预览器
+        {
+            path: '/image-viewer',
+            name: 'image-viewer',
+            component: () => import('@/views/viewer/imageViewer.vue')
         },
 
         // ocr相关功能页面
@@ -26,11 +32,6 @@ const router = createRouter({
             path: '/ocr/editor',
             name: 'ocr-editor',
             component: () => import('@/views/ocr/editor.vue'),
-        },
-        {
-            path: '/ocr/select',
-            name: 'ocr-result',
-            component: () => import('@/views/ocr/select.vue')
         },
 
         // test

@@ -21,7 +21,7 @@
             </v-card>
 
             <!-- 普通图片文件 -->
-            <v-card v-if="fso.type == 'img'" @click="openImg(fso.path)" :ripple="false">
+            <v-card v-if="fso.type == 'img'" @click="openImg(fso.fullPath)" :ripple="false">
                 <template v-slot:prepend>
                     <v-img :src="fso.thumbnail" width="60" aspect-ratio="1" cover rounded />
                 </template>
@@ -46,7 +46,6 @@
 </template>
 
 <script setup lang="ts">
-import { BaseDirectory } from '@tauri-apps/api/path';
 import { sortedFiles, formatFileSize, loadDirectory, openFolder, openImg } from "@/utils/fileSystem"
 import { onActivated, onMounted } from 'vue';
 
@@ -58,9 +57,9 @@ const props = withDefaults(defineProps<{
 });
 
 onMounted(()=>{
-    loadDirectory(props.path, BaseDirectory.AppData)
+    loadDirectory(props.path)
 })
 onActivated(()=>{
-    loadDirectory(props.path, BaseDirectory.AppData)
+    loadDirectory(props.path)
 })
 </script>

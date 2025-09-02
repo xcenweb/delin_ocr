@@ -1,15 +1,17 @@
 // app文件系统
 
-import { ref, computed } from 'vue'
-import { readDir, BaseDirectory, stat, writeFile, mkdir, exists } from '@tauri-apps/plugin-fs'
-import { useDateFormat } from '@vueuse/core'
 import router from '@/router'
+import { ref, computed } from 'vue'
+import { useDateFormat } from '@vueuse/core'
 import { getThumbnailUrl } from './thumbnail'
+import { readDir, BaseDirectory, stat, writeFile, mkdir, exists,  } from '@tauri-apps/plugin-fs'
+import { join, appDataDir } from '@tauri-apps/api/path'
 
 /** 基础文件信息接口 */
 interface BaseFileInfo {
     name: string
     path: string
+    fullPath: string
     info: {
         atime: string
         mtime: string
@@ -50,7 +52,7 @@ const currentPath_fso = ref<FileSystemObject[]>([])
 const sortType = ref<string>('name-asc')
 
 /**
- * 根据文件名判断文件类型
+ * 根据文件后缀名判断文件类型
  * @param name 文件名
  * @returns 文件类型：'dir' | 'file' | 'img'
  */
@@ -113,20 +115,22 @@ const sortedFiles = computed(() => {
  * 异步加载指定目录的文件和文件夹信息
  * - 读取 DIRECTORY_PATH 目录下的所有条目，获取文件统计信息，并为目录计算子项数量
  */
-const loadDirectory = async (path: string, baseDir: BaseDirectory): Promise<void> => {
+const loadDirectory = async (path: string): Promise<void> => {
     try {
-        const entries = await readDir(path, { baseDir })
+        const entries = await readDir(path, { baseDir:BaseDirectory.AppData })
         const result: FileSystemObject[] = []
 
         for (const entry of entries) {
             try {
-                const fullPath = `${path}/${entry.name}`
-                const fileStat = await stat(fullPath, { baseDir })
+                const relativePath = await join(path, entry.name)
+                const fullPath =  await join(await appDataDir(), relativePath)
+                const fileStat = await stat(fullPath)
 
                 // 创建基础信息对象
                 const baseInfo: BaseFileInfo = {
                     name: entry.name,
-                    path: fullPath,
+                    path: relativePath,
+                    fullPath: fullPath,
                     info: {
                         atime: useDateFormat(new Date(fileStat.atime || Date.now()), DATE_FORMAT).value,
                         mtime: useDateFormat(new Date(fileStat.mtime || Date.now()), DATE_FORMAT).value,
@@ -141,7 +145,7 @@ const loadDirectory = async (path: string, baseDir: BaseDirectory): Promise<void
                     // 创建目录对象
                     let count = 0
                     try {
-                        const subEntries = await readDir(fullPath, { baseDir })
+                        const subEntries = await readDir(fullPath)
                         count = subEntries.length
                     } catch {
                         count = 0
@@ -158,7 +162,7 @@ const loadDirectory = async (path: string, baseDir: BaseDirectory): Promise<void
 
                     if (fileType === 'img') {
                         // 创建图片对象
-                        const thumbnail = await getThumbnailUrl({ path: fullPath, name: entry.name })
+                        const thumbnail = await getThumbnailUrl({ path: relativePath, name: entry.name })
                         fileObj = {
                             ...baseInfo,
                             type: 'img',
@@ -303,7 +307,7 @@ const openFolder = (path: string) => {
  * 打开单张图片
  */
 const openImg = (path: string) => {
-
+    router.push({ name: 'image-viewer', query: { path: path } })
 }
 
 export {
