@@ -6,10 +6,13 @@
       </vue-page-stack>
     </transition>
   </router-view>
+
+  <GlobalSnackbar />
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import GlobalSnackbar from '@/components/global/Snackbar.vue'
 
 const slideTransition = ref('slide-left')
 

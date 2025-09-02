@@ -13,7 +13,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![greet]);
 
     #[cfg(desktop)]
-        let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
+    let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
 
     builder
         .run(tauri::generate_context!())

@@ -84,19 +84,13 @@
             </v-col>
         </v-row>
     </v-container>
-
-    <!-- Snackbar 消息提示 -->
-    <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000" location="bottom">
-        {{ snackbarText }}
-        <template v-slot:actions>
-            <v-btn variant="text" @click="snackbar = false">关闭</v-btn>
-        </template>
-    </v-snackbar>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { getOCRService, type OCRProgress } from '@/utils/ocrService'
+
+import { useSnackbar } from '@/components/global/snackbarService'
 
 // 定义 ref 类型
 const fileInput = ref<HTMLInputElement>()
@@ -117,17 +111,8 @@ const isInitializing = ref<boolean>(true)
 const processedCount = ref<number>(0)
 const totalCount = ref<number>(0)
 
-// Snackbar 状态
-const snackbar = ref<boolean>(false)
-const snackbarText = ref<string>('')
-const snackbarColor = ref<string>('info')
-
-// 显示 Snackbar 消息
-const showSnackbar = (message: string, color: string = 'info') => {
-    snackbarText.value = message
-    snackbarColor.value = color
-    snackbar.value = true
-}
+// 全局 Snackbar 服务
+const snackbar = useSnackbar()
 
 // OCR 服务实例
 const ocrService = getOCRService()
@@ -137,13 +122,13 @@ const initializeOCR = async () => {
     try {
         isInitializing.value = true
         error.value = ''
-        showSnackbar('正在初始化 Tesseract.js...', 'info')
+        snackbar.persistent('正在初始化 Tesseract.js...', 'primary', true)
         await ocrService.initialize()
-        showSnackbar('Tesseract.js 初始化完成', 'success')
+        snackbar.success('Tesseract.js 初始化完成')
     } catch (err) {
         console.error('初始化 OCR 失败:', err)
         error.value = '初始化失败: ' + (err as Error).message
-        showSnackbar('初始化失败，请刷新页面重试', 'error')
+        snackbar.error('初始化失败，请刷新页面重试')
     } finally {
         isInitializing.value = false
     }
@@ -200,14 +185,14 @@ const processBatch = async () => {
             img.error = ''
         })
 
-        showSnackbar(`开始批量处理 ${imageSources.length} 张图片`, 'info')
+        snackbar.persistent(`开始批量处理 ${imageSources.length} 张图片...`, 'info', true)
 
         // 执行批量识别
         const results = await ocrService.recognizeBatch(
             imageSources,
             (progress: OCRProgress) => {
                 processedCount.value = progress.current
-                showSnackbar(progress.status, 'info')
+                snackbar.updateMessage(`${progress.status} (${progress.current}/${progress.total})`)
                 // 更新对应图片的处理状态
                 if (progress.current <= images.value.length) {
                     images.value[progress.current - 1].isProcessing = false
@@ -223,22 +208,22 @@ const processBatch = async () => {
                 img.isProcessing = false
 
                 if (result.text.length > 0) {
-                    showSnackbar(`${img.file.name} 识别完成，识别到 ${result.text.length} 个字符`, 'success')
+
                 } else if (result.confidence === 0) {
                     img.error = '识别失败'
-                    showSnackbar(`${img.file.name} 识别失败`, 'error')
+
                 } else {
-                    showSnackbar(`${img.file.name} 识别完成，未识别到文字`, 'warning')
+
                 }
             }
         })
 
-        showSnackbar('批量处理完成', 'success')
+        snackbar.success('批量处理完成')
 
     } catch (err) {
         console.error('批量处理失败:', err)
         error.value = '批量处理失败: ' + (err as Error).message
-        showSnackbar('批量处理失败', 'error')
+        snackbar.error('批量处理失败')
         // 重置所有图片的处理状态
         images.value.forEach(img => {
             img.isProcessing = false
@@ -264,7 +249,7 @@ const clearAll = () => {
     error.value = ''
     processedCount.value = 0
     totalCount.value = 0
-    showSnackbar('已清除所有图片和结果', 'info')
+    snackbar.info('已清除所有图片和结果')
 }
 
 // 页面加载时初始化
