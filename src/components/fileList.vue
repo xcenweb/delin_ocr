@@ -66,7 +66,7 @@ onActivated(() => {
     loadDirectory(props.path)
 })
 
-// 文件/文件夹 列表长按响应
+// TODO: 文件/文件夹 列表长按响应
 function onLongPress() {
     alert('长按响应')
 }

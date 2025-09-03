@@ -89,7 +89,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { getOCRService, type OCRProgress } from '@/utils/ocrService'
-
 import { useSnackbar } from '@/components/global/snackbarService'
 
 // 定义 ref 类型

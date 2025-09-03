@@ -7,7 +7,7 @@ export interface SnackbarConfig {
   /** 消息文本 */
   message: string
   /** 颜色类型 */
-  color?: 'success' | 'error' | 'warning' | 'info' | 'primary'
+  color?: string
   /** 显示时长（毫秒），-1 表示持久显示 */
   timeout?: number
   /** 是否显示进度圆圈 */

@@ -25,6 +25,8 @@ const onForward = () => {
   console.log('forward')
   slideTransition.value = 'slide-left'
 };
+
+// TODO: 当前是都路由在首页，首页两次返回退出app
 </script>
 
 <style scoped>

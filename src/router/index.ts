@@ -7,7 +7,7 @@ const router = createRouter({
         {
             path: '/',
             name: 'main',
-            component: () => import('@/views/main.vue'),
+            component: () => import('@/views/workerTest.vue'),
         },
         {
             path: '/file_next',
@@ -37,10 +37,14 @@ const router = createRouter({
         // test
         {
             path: '/test',
-            name: 'test',
             component: () => import('@/views/test.vue')
         },
+        {
+            path: '/testWorker',
+            component: () => import('@/views/workerTest.vue')
+        },
 
+        // 设置页面
         {
             path: '/setting',
             name: 'setting',
