@@ -8,6 +8,7 @@
                 <v-app-bar-title>图片预览</v-app-bar-title>
                 <v-spacer />
                 <v-btn icon="mdi-share-variant" @click="shareImage" />
+                <v-btn icon="mdi-open-in-app" @click="openImagePath"></v-btn>
             </v-app-bar>
 
             <!-- 图片显示区域 -->
@@ -45,6 +46,8 @@ import { useRoute } from 'vue-router';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { share, canShare } from "@vnidrop/tauri-plugin-share";
+import { openPath } from '@tauri-apps/plugin-opener';
+import { useSnackbar } from '@/components/global/snackbarService';
 
 // 路由实例
 const route = useRoute();
@@ -119,12 +122,23 @@ const resetZoom = () => {
 const shareImage = async () => {
     const fileData = await readFile(imagePath.value);
     const fileName = imagePath.value.split('/').pop();
-    const file = new File([fileData], fileName|| '');
+    const file = new File([fileData], fileName || '');
     if (await canShare()) {
         await share({
+            title: '分享图片',
+            text: '分享图片',
             files: [file]
         });
-        console.log("Share dialog closed.");
+    }
+};
+
+// 调用外部默认程序打开图片
+const openImagePath = async () => {
+    try {
+        await openPath(imagePath.value);
+    } catch (error) {
+        // TODO: 适配安卓、ios
+        useSnackbar().error('抱歉，当前系统暂不支持，请等待后续适配！');
     }
 };
 </script>

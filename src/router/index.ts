@@ -15,7 +15,7 @@ const router = createRouter({
             component: () => import('@/views/main/file_next.vue')
         },
 
-        // 图片预览器
+        // 预览器
         {
             path: '/image-viewer',
             name: 'image-viewer',
@@ -41,11 +41,16 @@ const router = createRouter({
             component: () => import('@/views/test.vue')
         },
 
-        // setting
         {
             path: '/setting',
             name: 'setting',
             component: () => import('@/views/setting.vue')
+        },
+
+        {
+            path: '/browser',
+            name: 'browser',
+            component: () => import('@/views/browser.vue')
         }
     ]
 })

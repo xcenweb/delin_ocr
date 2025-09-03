@@ -5,7 +5,6 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "opener:default",
     "vnidrop-share:default",
 
     "fs:allow-stat",
@@ -19,6 +18,14 @@
     {
       "identifier": "fs:scope",
       "allow": [{ "path": "$APPDATA/**" }]
+    },
+
+    "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [
+        { "path": "$APPDATA/**" }
+      ]
     }
   ]
 }

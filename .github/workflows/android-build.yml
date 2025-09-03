@@ -104,7 +104,7 @@ jobs:
           --ks-key-alias "${{ vars.ANDROID_KEY_ALIAS }}" \
           --key-pass pass:"${{ vars.ANDROID_KEY_PASSWORD }}" \
           "$APK_PATH"
-        
+
         # Clean up
         rm -f keystore.jks
 
@@ -119,7 +119,7 @@ jobs:
       id: rename-apk
       run: |
         OLD_APK_PATH="${{ steps.find-apk.outputs.apk_path }}"
-        NEW_APK_NAME="delin-${{ github.event.inputs.version }}-android.apk"
+        NEW_APK_NAME="delin-${{ github.event.inputs.version }}-release.apk"
         NEW_APK_PATH="$(dirname $OLD_APK_PATH)/$NEW_APK_NAME"
         mv "$OLD_APK_PATH" "$NEW_APK_PATH"
         echo "renamed_apk_path=$NEW_APK_PATH" >> $GITHUB_OUTPUT
