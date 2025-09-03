@@ -10,6 +10,7 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_vnidrop_share::init())
         .invoke_handler(tauri::generate_handler![greet]);
 
     #[cfg(desktop)]

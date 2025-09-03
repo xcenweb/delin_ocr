@@ -12,14 +12,8 @@
 
             <!-- 图片显示区域 -->
             <div class="position-relative flex-grow-1 d-flex align-center justify-center pa-4">
-                <v-img
-                    v-if="imagePath"
-                    :src="imageUrl"
-                    class="w-100 h-100"
-                    :style="{ ...imageTransform, objectFit: 'contain' }"
-                    @load="onImageLoad"
-                    @error="onImageError"
-                />
+                <v-img v-if="imagePath" :src="imageUrl" class="w-100 h-100"
+                    :style="{ ...imageTransform, objectFit: 'contain' }" @load="onImageLoad" @error="onImageError" />
                 <div v-else class="text-center">
                     <v-icon size="64" color="grey">mdi-image-off</v-icon>
                     <p class="text-grey mt-2">无法加载图片</p>
@@ -29,11 +23,16 @@
             <!-- 底部操作栏 -->
             <v-sheet class="py-2" v-if="imagePath">
                 <div class="d-flex justify-center align-center mx-5 my-2">
-                    <v-btn prepend-icon="mdi-rotate-left" variant="text" size="small" text="左旋转" stacked @click="rotateLeft" />
-                    <v-btn prepend-icon="mdi-rotate-right" variant="text" size="small" text="右旋转" stacked @click="rotateRight" />
-                    <v-btn prepend-icon="mdi-magnify-plus" variant="text" size="small" text="放大" stacked @click="zoomIn" />
-                    <v-btn prepend-icon="mdi-magnify-minus" variant="text" size="small" text="缩小" stacked @click="zoomOut" />
-                    <v-btn prepend-icon="mdi-fit-to-screen" variant="text" size="small" text="适应" stacked @click="resetZoom" />
+                    <v-btn prepend-icon="mdi-rotate-left" variant="text" size="small" text="左旋转" stacked
+                        @click="rotateLeft" />
+                    <v-btn prepend-icon="mdi-rotate-right" variant="text" size="small" text="右旋转" stacked
+                        @click="rotateRight" />
+                    <v-btn prepend-icon="mdi-magnify-plus" variant="text" size="small" text="放大" stacked
+                        @click="zoomIn" />
+                    <v-btn prepend-icon="mdi-magnify-minus" variant="text" size="small" text="缩小" stacked
+                        @click="zoomOut" />
+                    <v-btn prepend-icon="mdi-fit-to-screen" variant="text" size="small" text="适应" stacked
+                        @click="resetZoom" />
                 </div>
             </v-sheet>
         </v-main>
@@ -44,6 +43,8 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { readFile } from '@tauri-apps/plugin-fs';
+import { share, canShare } from "@vnidrop/tauri-plugin-share";
 
 // 路由实例
 const route = useRoute();
@@ -68,7 +69,6 @@ onMounted(() => {
     const pathParam = route.query.path as string;
     if (pathParam) {
         imagePath.value = pathParam;
-        // 使用 Tauri 的 convertFileSrc 来转换文件路径为可访问的 URL
         imageUrl.value = convertFileSrc(pathParam);
     }
 });
@@ -116,18 +116,20 @@ const resetZoom = () => {
 };
 
 // 分享图片
-const shareImage = () => {
-    // TODO: 实现分享功能
-    console.log('分享图片:', imagePath.value);
+const shareImage = async () => {
+    const fileData = await readFile(imagePath.value);
+    const fileName = imagePath.value.split('/').pop();
+    const file = new File([fileData], fileName|| '');
+    if (await canShare()) {
+        await share({
+            files: [file]
+        });
+        console.log("Share dialog closed.");
+    }
 };
-
 </script>
 
 <style scoped>
-.main-no-scroll {
-    height: 100vh;
-}
-
 .v-img {
     transition: transform 0.3s ease;
 }

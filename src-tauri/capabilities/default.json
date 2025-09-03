@@ -6,6 +6,7 @@
   "permissions": [
     "core:default",
     "opener:default",
+    "vnidrop-share:default",
 
     "fs:allow-stat",
     "fs:allow-read",

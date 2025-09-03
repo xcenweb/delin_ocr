@@ -5,7 +5,8 @@
         <v-col cols="12" sm="12" md="6" lg="4" v-for="(fso, i) in sortedFiles" :key="i" class="pb-0 pt-2">
 
             <!-- 普通文件夹 -->
-            <v-card v-if="fso.type == 'dir'" @click="openFolder(fso.path)" :ripple="false">
+            <v-card v-if="fso.type == 'dir'" @click="openFolder(fso.path)" :ripple="false"
+                v-on-long-press.prevent="[onLongPress, { delay: 500, modifiers: { stop: false } }]">
                 <template v-slot:prepend>
                     <v-icon icon="mdi-folder" color="#FFA726" size="60" />
                 </template>
@@ -21,7 +22,8 @@
             </v-card>
 
             <!-- 普通图片文件 -->
-            <v-card v-if="fso.type == 'img'" @click="openImg(fso.fullPath)" :ripple="false">
+            <v-card v-if="fso.type == 'img'" @click="openImg(fso.fullPath)" :ripple="false"
+                v-on-long-press.prevent="[onLongPress, { delay: 500, modifiers: { stop: false } }]">
                 <template v-slot:prepend>
                     <v-img :src="fso.thumbnail" width="60" aspect-ratio="1" cover rounded />
                 </template>
@@ -47,7 +49,8 @@
 
 <script setup lang="ts">
 import { sortedFiles, formatFileSize, loadDirectory, openFolder, openImg } from "@/utils/fileSystem"
-import { onActivated, onMounted } from 'vue';
+import { onActivated, onMounted, shallowRef } from 'vue';
+import { vOnLongPress } from '@vueuse/components'
 
 const props = withDefaults(defineProps<{
     /** 目标路径 */
@@ -56,10 +59,15 @@ const props = withDefaults(defineProps<{
     path: '',
 });
 
-onMounted(()=>{
+onMounted(() => {
     loadDirectory(props.path)
 })
-onActivated(()=>{
+onActivated(() => {
     loadDirectory(props.path)
 })
+
+// 文件/文件夹 列表长按响应
+function onLongPress() {
+    alert('长按响应')
+}
 </script>

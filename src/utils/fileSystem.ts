@@ -4,7 +4,7 @@ import router from '@/router'
 import { ref, computed } from 'vue'
 import { useDateFormat } from '@vueuse/core'
 import { getThumbnailUrl } from './thumbnail'
-import { readDir, BaseDirectory, stat, writeFile, mkdir, exists,  } from '@tauri-apps/plugin-fs'
+import { readDir, BaseDirectory, stat, writeFile, mkdir, exists, remove } from '@tauri-apps/plugin-fs'
 import { join, appDataDir } from '@tauri-apps/api/path'
 
 /** 基础文件信息接口 */
@@ -304,10 +304,22 @@ const openFolder = (path: string) => {
 }
 
 /**
- * 打开单张图片
+ * 预览一张图片
+ * TODO: 增加可预览目录下所有图片
  */
 const openImg = (path: string) => {
     router.push({ name: 'image-viewer', query: { path: path } })
+}
+
+/**
+ * 删除文件/文件夹
+ */
+const deleteFile = async (path: string) => {
+    try {
+        await remove(path, { recursive: true })
+    } catch (error) {
+        console.error('删除文件失败:', error)
+    }
 }
 
 export {
@@ -321,4 +333,6 @@ export {
 
     openFolder,
     openImg,
+
+    deleteFile
 }
