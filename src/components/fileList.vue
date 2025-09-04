@@ -48,8 +48,8 @@
 </template>
 
 <script setup lang="ts">
-import { sortedFiles, formatFileSize, loadDirectory, openFolder, openImg } from "@/utils/fileSystem"
-import { onActivated, onMounted, shallowRef } from 'vue';
+import { sortType, sortedFiles, formatFileSize, loadDirectory, openFolder, openImg, getAllFiles } from "@/utils/fileService"
+import { onActivated, onMounted } from 'vue';
 import { vOnLongPress } from '@vueuse/components'
 
 const props = withDefaults(defineProps<{
@@ -59,15 +59,23 @@ const props = withDefaults(defineProps<{
     path: '',
 });
 
+sortType.value = 'name-dsc'
+
 onMounted(() => {
+    console.log(getAllFiles('user/file'))
     loadDirectory(props.path)
 })
 onActivated(() => {
     loadDirectory(props.path)
 })
 
+// TODO: 切换排序方式
+const selectSort = (type: string) => {
+
+}
+
 // TODO: 文件/文件夹 列表长按响应
-function onLongPress() {
+const onLongPress = () => {
     alert('长按响应')
 }
 </script>

@@ -1,4 +1,4 @@
-import Tesseract from 'tesseract.js'
+import Tesseract, { Block } from 'tesseract.js'
 
 /**
  * OCR识别结果
@@ -6,8 +6,8 @@ import Tesseract from 'tesseract.js'
 export interface OCRResult {
   /** 识别到的文本 */
   text: string
-  /** 识别置信度 */
-  confidence: number
+  /** json */
+  block: Block[] | null
 }
 
 /**
@@ -45,10 +45,7 @@ export class OCRService {
     }
 
     try {
-      this.worker = await Tesseract.createWorker(languages, 1, {
-        legacyCore: true,
-        legacyLang: true
-      })
+      this.worker = await Tesseract.createWorker(languages, Tesseract.OEM.DEFAULT, {}, {})
       await this.worker.setParameters({
         tessedit_pageseg_mode: Tesseract.PSM.AUTO,
       })
@@ -68,10 +65,10 @@ export class OCRService {
     }
 
     try {
-      const { data: result } = await this.worker.recognize(imageSource, {}, {})
+      const { data: result } = await this.worker.recognize(imageSource, {}, { blocks: true })
       return {
         text: result.text,
-        confidence: result.confidence
+        block: result.blocks,
       }
     } catch (error) {
       throw new Error(`识别失败: ${error}`)
@@ -108,7 +105,7 @@ export class OCRService {
         results.push(result)
       } catch (error) {
         // 单个图片失败不影响整体处理
-        results.push({ text: '', confidence: 0 })
+        results.push({ text: '', block: null })
       }
     }
 

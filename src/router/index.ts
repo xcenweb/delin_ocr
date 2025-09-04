@@ -7,7 +7,7 @@ const router = createRouter({
         {
             path: '/',
             name: 'main',
-            component: () => import('@/views/workerTest.vue'),
+            component: () => import('@/views/main.vue'),
         },
         {
             path: '/file_next',

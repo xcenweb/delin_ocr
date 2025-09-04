@@ -1,9 +1,10 @@
 // app文件系统
 
 import router from '@/router'
+import { getThumbnailUrl } from './thumbnailService'
+
 import { ref, computed } from 'vue'
 import { useDateFormat } from '@vueuse/core'
-import { getThumbnailUrl } from './thumbnail'
 import { readDir, BaseDirectory, stat, writeFile, mkdir, exists, remove } from '@tauri-apps/plugin-fs'
 import { join, appDataDir } from '@tauri-apps/api/path'
 
@@ -26,7 +27,7 @@ interface DirectoryObject extends BaseFileInfo {
     count: number
 }
 
-/** 普通文件对象接口 */
+/** 普通或暂不支持的其他文件对象接口 */
 interface FileObject extends BaseFileInfo {
     type: 'file'
     ext: string
@@ -63,7 +64,7 @@ const getFileType = (name: string): 'dir' | 'file' | 'img' => {
 }
 
 /**
- * 将字节数转换为人类可读的文件大小格式
+ * 将字节数转换为可读的文件大小格式
  * @param bytes 字节数
  * @returns 格式化后的文件大小字符串
  */
@@ -78,8 +79,7 @@ const formatFileSize = (bytes: number): string => {
 }
 
 /**
- * 排序后的文件列表
- * - 文件夹优先显示，然后根据选择的排序方式对文件夹和文件分别排序
+ * 对文件/文件夹列表进行排序
  */
 const sortedFiles = computed(() => {
     const files = [...currentPath_fso.value]
@@ -94,9 +94,11 @@ const sortedFiles = computed(() => {
         const isAsc = order === 'asc'
 
         if (sortBy === 'name') {
+            // 按名称排序
             return (a: FileSystemObject, b: FileSystemObject) =>
                 isAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
         } else if (sortBy === 'mtime') {
+            // 按修改时间排序
             return (a: FileSystemObject, b: FileSystemObject) => {
                 const timeA = new Date(a.info.mtime).getTime()
                 const timeB = new Date(b.info.mtime).getTime()
@@ -106,24 +108,23 @@ const sortedFiles = computed(() => {
     }
 
     const sortFn = getSortFunction()
-
-    // 分别排序文件夹和文件，然后合并（文件夹优先）
     return [...dirs.sort(sortFn), ...nonDirs.sort(sortFn)]
 })
 
 /**
- * 异步加载指定目录的文件和文件夹信息
- * - 读取 DIRECTORY_PATH 目录下的所有条目，获取文件统计信息，并为目录计算子项数量
+ * 异步加载指定目录中的文件和文件夹信息
+ * @param path 要加载的目录路径
+ * @returns Promise<void>
  */
 const loadDirectory = async (path: string): Promise<void> => {
     try {
-        const entries = await readDir(path, { baseDir:BaseDirectory.AppData })
+        const entries = await readDir(path, { baseDir: BaseDirectory.AppData })
         const result: FileSystemObject[] = []
 
         for (const entry of entries) {
             try {
                 const relativePath = await join(path, entry.name)
-                const fullPath =  await join(await appDataDir(), relativePath)
+                const fullPath = await join(await appDataDir(), relativePath)
                 const fileStat = await stat(fullPath)
 
                 // 创建基础信息对象
@@ -132,9 +133,9 @@ const loadDirectory = async (path: string): Promise<void> => {
                     path: relativePath,
                     fullPath: fullPath,
                     info: {
-                        atime: useDateFormat(new Date(fileStat.atime || Date.now()), DATE_FORMAT).value,
-                        mtime: useDateFormat(new Date(fileStat.mtime || Date.now()), DATE_FORMAT).value,
-                        birthtime: useDateFormat(new Date(fileStat.birthtime || Date.now()), DATE_FORMAT).value,
+                        atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
+                        mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
+                        birthtime: useDateFormat(new Date(fileStat.birthtime || 'null'), DATE_FORMAT).value,
                         size: fileStat.size || 0
                     }
                 }
@@ -162,7 +163,7 @@ const loadDirectory = async (path: string): Promise<void> => {
 
                     if (fileType === 'img') {
                         // 创建图片对象
-                        const thumbnail = await getThumbnailUrl({ path: relativePath, name: entry.name })
+                        const thumbnail = await getThumbnailUrl(fullPath)
                         fileObj = {
                             ...baseInfo,
                             type: 'img',
@@ -190,6 +191,48 @@ const loadDirectory = async (path: string): Promise<void> => {
         console.error('读取目录失败:', error)
     }
 }
+
+/**
+ * 获取指定路径下的所有文件列表（包含子目录）
+ * @param path - 要获取的文件列表的目录路径
+ */
+const getAllFiles = async (path: string): Promise<FileObject[]> => {
+    const result: FileObject[] = []
+
+    async function traverseDirectory(currentPath: string) {
+        try {
+            const entries = await readDir(currentPath, { baseDir: BaseDirectory.AppData })
+            for (const entry of entries) {
+                if (entry.isDirectory) {
+                    traverseDirectory(await join(currentPath, entry.name))
+                }
+                if (entry.isFile) {
+                    const relativePath = await join(currentPath, entry.name)
+                    const fileStat = await stat(await join(await appDataDir(), relativePath))
+
+                    result.push({
+                        name: entry.name,
+                        path: relativePath,
+                        fullPath: await join(await appDataDir(), relativePath),
+                        type: 'file',
+                        ext: entry.name.substring(entry.name.lastIndexOf('.') + 1),
+                        info: {
+                            atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
+                            mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
+                            birthtime: useDateFormat(new Date(fileStat.birthtime || 'null'), DATE_FORMAT).value,
+                            size: fileStat.size || 0
+                        }
+                    })
+                }
+            }
+        } catch (error) {
+            console.error('获取文件列表失败:', error)
+        }
+    }
+
+    await traverseDirectory(path)
+    return result
+};
 
 /**
  * 将 Blob URL 保存到本地文件系统
@@ -328,6 +371,7 @@ export {
     sortType,
 
     loadDirectory,
+    getAllFiles,
     formatFileSize,
     saveBlobUrlToLocal,
 

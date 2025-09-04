@@ -205,15 +205,6 @@ const processBatch = async () => {
                 const img = images.value[index]
                 img.text = result.text
                 img.isProcessing = false
-
-                if (result.text.length > 0) {
-
-                } else if (result.confidence === 0) {
-                    img.error = '识别失败'
-
-                } else {
-
-                }
             }
         })
 

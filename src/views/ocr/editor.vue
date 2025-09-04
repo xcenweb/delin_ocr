@@ -133,7 +133,7 @@ import { useEditor } from '@/views/ocr/ts/editor';
 import { useEditorCrop } from '@/views/ocr/ts/editor-crop';
 import { useEditorFilter } from '@/views/ocr/ts/editor-filter';
 
-import { saveBlobUrlToLocal } from '@/utils/fileSystem';
+import { saveBlobUrlToLocal } from '@/utils/fileService';
 import { BaseDirectory } from '@tauri-apps/plugin-fs';
 
 // 路由实例
