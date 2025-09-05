@@ -1,6 +1,5 @@
-// app文件系统
+// 文件服务
 
-import router from '@/router'
 import { getThumbnailUrl } from './thumbnailService'
 
 import { ref, computed } from 'vue'
@@ -9,55 +8,60 @@ import { readDir, BaseDirectory, stat, writeFile, mkdir, exists, remove } from '
 import { join, appDataDir } from '@tauri-apps/api/path'
 
 /** 基础文件信息接口 */
-interface BaseFileInfo {
+export interface BaseFileInfo {
+    /** 文件/文件夹名 */
     name: string
+    /** 相对路径 */
     path: string
+    /** 完整路径 */
     fullPath: string
+    /** 文件/文件夹信息 */
     info: {
+        /** 上次访问时间 */
         atime: string
+        /** 上次修改时间 */
         mtime: string
+        /** 创建时间 */
         birthtime: string
+        /** 大小（字节） */
         size: number
     }
 }
 
 /** 目录对象接口 */
-interface DirectoryObject extends BaseFileInfo {
+export interface DirectoryObject extends BaseFileInfo {
+    /** 文件夹 */
     type: 'dir'
+    /** 子目录数量 */
     count: number
 }
 
-/** 普通或暂不支持的其他文件对象接口 */
-interface FileObject extends BaseFileInfo {
-    type: 'file'
-    ext: string
-}
-
-/** 图片文件对象接口 */
-interface ImageObject extends BaseFileInfo {
-    type: 'img'
-    ext: string
+/** 文件对象接口 */
+export interface FileObject extends BaseFileInfo {
+    /** 文件类型 */
+    type: 'file' | 'img'
+    /** 文件缩略图 */
     thumbnail?: string
 }
 
 /** 文件系统对象联合类型 */
-type FileSystemObject = DirectoryObject | FileObject | ImageObject
+type FileSystemObject = DirectoryObject | FileObject
 
 /** 日期格式化模板 */
 const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
 /** 原始文件列表数据 */
-const currentPath_fso = ref<FileSystemObject[]>([])
+export const currentPath_fso = ref<FileSystemObject[]>([])
 
 /** 当前排序类型 */
-const sortType = ref<string>('name-asc')
+export const sortType = ref<string>('name-asc')
 
 /**
  * 根据文件后缀名判断文件类型
  * @param name 文件名
  * @returns 文件类型：'dir' | 'file' | 'img'
  */
-const getFileType = (name: string): 'dir' | 'file' | 'img' => {
+export const getFileType = (name: string): 'dir' | 'file' | 'img' => {
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
     const ext = name.toLowerCase().substring(name.lastIndexOf('.'))
     return imageExtensions.includes(ext) ? 'img' : 'file'
@@ -68,7 +72,7 @@ const getFileType = (name: string): 'dir' | 'file' | 'img' => {
  * @param bytes 字节数
  * @returns 格式化后的文件大小字符串
  */
-const formatFileSize = (bytes: number): string => {
+export const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B'
 
     const units = ['B', 'KB', 'MB', 'GB']
@@ -81,7 +85,7 @@ const formatFileSize = (bytes: number): string => {
 /**
  * 对文件/文件夹列表进行排序
  */
-const sortedFiles = computed(() => {
+export const sortedFiles = computed(() => {
     const files = [...currentPath_fso.value]
 
     // 分离文件夹和文件
@@ -116,7 +120,7 @@ const sortedFiles = computed(() => {
  * @param path 要加载的目录路径
  * @returns Promise<void>
  */
-const loadDirectory = async (path: string): Promise<void> => {
+export const loadDirectory = async (path: string): Promise<void> => {
     try {
         const entries = await readDir(path, { baseDir: BaseDirectory.AppData })
         const result: FileSystemObject[] = []
@@ -133,9 +137,9 @@ const loadDirectory = async (path: string): Promise<void> => {
                     path: relativePath,
                     fullPath: fullPath,
                     info: {
-                        atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
-                        mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
-                        birthtime: useDateFormat(new Date(fileStat.birthtime || 'null'), DATE_FORMAT).value,
+                        atime: useDateFormat(new Date(fileStat.atime || ''), DATE_FORMAT).value,
+                        mtime: useDateFormat(new Date(fileStat.mtime || ''), DATE_FORMAT).value,
+                        birthtime: useDateFormat(new Date(fileStat.birthtime || ''), DATE_FORMAT).value,
                         size: fileStat.size || 0
                     }
                 }
@@ -151,33 +155,15 @@ const loadDirectory = async (path: string): Promise<void> => {
                     } catch {
                         count = 0
                     }
-
+                    fileObj = { ...baseInfo, type: 'dir', count } as DirectoryObject
+                } else {
+                    // 创建文件对象
                     fileObj = {
                         ...baseInfo,
-                        type: 'dir',
-                        count
-                    } as DirectoryObject
-                } else {
-                    const ext = entry.name.substring(entry.name.lastIndexOf('.') + 1)
-                    const fileType = getFileType(entry.name)
-
-                    if (fileType === 'img') {
-                        // 创建图片对象
-                        const thumbnail = await getThumbnailUrl(fullPath)
-                        fileObj = {
-                            ...baseInfo,
-                            type: 'img',
-                            ext,
-                            thumbnail
-                        } as ImageObject
-                    } else {
-                        // 创建普通文件对象
-                        fileObj = {
-                            ...baseInfo,
-                            type: 'file',
-                            ext
-                        } as FileObject
-                    }
+                        type: getFileType(entry.name),
+                        ext: entry.name.substring(entry.name.lastIndexOf('.') + 1),
+                        thumbnail: await getThumbnailUrl(fullPath)
+                    } as FileObject
                 }
 
                 result.push(fileObj)
@@ -196,15 +182,16 @@ const loadDirectory = async (path: string): Promise<void> => {
  * 获取指定路径下的所有文件列表（包含子目录）
  * @param path - 要获取的文件列表的目录路径
  */
-const getAllFiles = async (path: string): Promise<FileObject[]> => {
+export const getAllFiles = async (path: string): Promise<FileObject[]> => {
     const result: FileObject[] = []
 
     async function traverseDirectory(currentPath: string) {
         try {
             const entries = await readDir(currentPath, { baseDir: BaseDirectory.AppData })
+
             for (const entry of entries) {
                 if (entry.isDirectory) {
-                    traverseDirectory(await join(currentPath, entry.name))
+                    await traverseDirectory(await join(currentPath, entry.name))
                 }
                 if (entry.isFile) {
                     const relativePath = await join(currentPath, entry.name)
@@ -215,7 +202,6 @@ const getAllFiles = async (path: string): Promise<FileObject[]> => {
                         path: relativePath,
                         fullPath: await join(await appDataDir(), relativePath),
                         type: 'file',
-                        ext: entry.name.substring(entry.name.lastIndexOf('.') + 1),
                         info: {
                             atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
                             mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
@@ -232,7 +218,7 @@ const getAllFiles = async (path: string): Promise<FileObject[]> => {
 
     await traverseDirectory(path)
     return result
-};
+}
 
 /**
  * 将 Blob URL 保存到本地文件系统
@@ -242,7 +228,7 @@ const getAllFiles = async (path: string): Promise<FileObject[]> => {
  * @param baseDir - 基础目录
  * @returns 成功时返回保存的完整路径，失败时返回 false
  */
-const saveBlobUrlToLocal = async (
+export const saveBlobUrlToLocal = async (
     blobUrl: string,
     fileName: string,
     targetPath: string = '',
@@ -340,43 +326,12 @@ const generateUniqueFilePath = async (
 }
 
 /**
- * 打开文件夹
- */
-const openFolder = (path: string) => {
-    router.push({ name: 'file-next', query: { path: path } })
-}
-
-/**
- * 预览一张图片
- * TODO: 增加可预览目录下所有图片
- */
-const openImg = (path: string) => {
-    router.push({ name: 'image-viewer', query: { path: path } })
-}
-
-/**
  * 删除文件/文件夹
  */
-const deleteFile = async (path: string) => {
+export const deleteFile = async (path: string) => {
     try {
         await remove(path, { recursive: true })
     } catch (error) {
-        console.error('删除文件失败:', error)
+        console.error('删除文件/文件夹失败:', error)
     }
-}
-
-export {
-    sortedFiles,
-    currentPath_fso,
-    sortType,
-
-    loadDirectory,
-    getAllFiles,
-    formatFileSize,
-    saveBlobUrlToLocal,
-
-    openFolder,
-    openImg,
-
-    deleteFile
 }

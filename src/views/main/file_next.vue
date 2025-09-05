@@ -3,7 +3,7 @@
         <v-app-bar>
             <v-btn icon="mdi-arrow-left" @click="$router.back()" />
             <v-app-bar-title>
-                {{ $route.query.path?.toString().split('/').pop() || '' }}
+                {{ $route.query.path?.toString().split(/[\\/]/).pop() || '' }}
             </v-app-bar-title>
         </v-app-bar>
         <v-main>

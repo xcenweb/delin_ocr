@@ -8,6 +8,10 @@
   "permissions": [
     "core:default",
     "vnidrop-share:default",
+
+    "sql:default",
+    "sql:allow-execute",
+
     "fs:allow-stat",
     "fs:allow-read",
     "fs:allow-read-dir",
@@ -25,6 +29,7 @@
         }
       ]
     },
+
     "opener:default",
     {
       "identifier": "opener:allow-open-path",

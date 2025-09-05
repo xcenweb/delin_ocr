@@ -18,7 +18,9 @@
         "width": 800,
         "minHeight": 600,
         "minWidth": 360,
-        "center": true
+        "center": true,
+        "backgroundThrottling": "disabled",
+        "backgroundColor": "#00000000"
       }
     ],
     "security": {
@@ -33,7 +35,9 @@
       },
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       }
     }
   },
@@ -48,7 +52,6 @@
       "icons/icon.ico"
     ],
     "fileAssociations": [],
-
     "android": {
       "versionCode": 1000,
       "minSdkVersion": 24
@@ -57,7 +60,10 @@
       "nsis": {
         "installMode": "perMachine",
         "installerIcon": "../src-tauri/icons/icon.ico",
-        "languages": [ "English", "SimpChinese"]
+        "languages": [
+          "English",
+          "SimpChinese"
+        ]
       }
     }
   }

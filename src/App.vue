@@ -6,12 +6,12 @@
       </vue-page-stack>
     </transition>
   </router-view>
-
   <GlobalSnackbar />
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import router from '@/router';
 import GlobalSnackbar from '@/components/global/Snackbar.vue'
 
 const slideTransition = ref('slide-left')
@@ -26,7 +26,8 @@ const onForward = () => {
   slideTransition.value = 'slide-left'
 };
 
-// TODO: 当前是都路由在首页，首页两次返回退出app
+// TODO: 监听当前路由'/'，两次返回（间隔2s）则退出app
+// router.currentRoute.value.path
 </script>
 
 <style scoped>

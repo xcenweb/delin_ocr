@@ -1,3 +1,4 @@
+// ocr服务
 import Tesseract, { Block } from 'tesseract.js'
 
 /**

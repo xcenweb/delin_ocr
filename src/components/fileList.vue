@@ -48,7 +48,8 @@
 </template>
 
 <script setup lang="ts">
-import { sortType, sortedFiles, formatFileSize, loadDirectory, openFolder, openImg, getAllFiles } from "@/utils/fileService"
+import router from "@/router";
+import { sortType, sortedFiles, formatFileSize, loadDirectory, getAllFiles } from "@/utils/fileService"
 import { onActivated, onMounted } from 'vue';
 import { vOnLongPress } from '@vueuse/components'
 
@@ -62,12 +63,27 @@ const props = withDefaults(defineProps<{
 sortType.value = 'name-dsc'
 
 onMounted(() => {
-    console.log(getAllFiles('user/file'))
+    // console.log(getAllFiles('user/file'))
     loadDirectory(props.path)
 })
 onActivated(() => {
     loadDirectory(props.path)
 })
+
+/**
+ * 打开文件夹
+ */
+const openFolder = (path: string) => {
+    router.push({ name: 'file-next', query: { path: path } })
+}
+
+/**
+ * 预览一张图片
+ * TODO: 增加可预览目录下所有图片
+ */
+const openImg = (path: string) => {
+    router.push({ name: 'image-viewer', query: { path: path } })
+}
 
 // TODO: 切换排序方式
 const selectSort = (type: string) => {

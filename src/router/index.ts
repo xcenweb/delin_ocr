@@ -17,9 +17,14 @@ const router = createRouter({
 
         // 预览器
         {
-            path: '/image-viewer',
+            path: '/viewer/image',
             name: 'image-viewer',
-            component: () => import('@/views/viewer/imageViewer.vue')
+            component: () => import('@/views/viewer/image.vue')
+        },
+        {
+            path: '/viewer/browser',
+            name: 'browser-viewer',
+            component: () => import('@/views/viewer/browser.vue')
         },
 
         // ocr相关功能页面
@@ -46,12 +51,6 @@ const router = createRouter({
             name: 'setting',
             component: () => import('@/views/setting.vue')
         },
-
-        {
-            path: '/browser',
-            name: 'browser',
-            component: () => import('@/views/browser.vue')
-        }
     ]
 })
 

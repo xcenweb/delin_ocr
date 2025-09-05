@@ -1,4 +1,5 @@
-// 缩略图生成读取相关
+// 文件缩略图服务
+
 import { convertFileSrc } from '@tauri-apps/api/core'
 
 /**

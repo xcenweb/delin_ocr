@@ -79,24 +79,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { useSnackbar } from '@/components/global/snackbarService';
+import { onMounted, ref, watch } from 'vue'
+import { useSnackbar } from '@/components/global/snackbarService'
 
 // https://swiper.zebraui.com/
-import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper';
+import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper'
 import '@zebra-ui/swiper/index.scss'
 
 // 导入视图组件
-import homeView from './main/home.vue';
-import certificateView from './main/certificate.vue';
-import fileView from './main/file.vue';
-import userView from './main/user.vue';
+import homeView from './main/home.vue'
+import certificateView from './main/certificate.vue'
+import fileView from './main/file.vue'
+import userView from './main/user.vue'
 
 // worker
 import { useWebWorker } from '@vueuse/core'
 import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
-
-// 导航栏列表
+import { getAllFiles } from '@/utils/fileService'
+import { ocrRecordsDB } from '@/utils/dbService'
+ocrRecordsDB
+// 导航栏列表npm
 const navigator_list = ref([
     { id: 0, text: '首页', icon: 'mdi-home' },
     { id: 1, text: '证件', icon: 'mdi-cards' },
@@ -118,12 +120,22 @@ const onSlideChange = (swiper: any) => {
 }
 
 // TODO: ocr worker
-const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
-ocrWorker.post('start')
-watch(ocrWorker.data, (result) => {
-    useSnackbar().show({ message: result })
+onMounted(async () => {
+    const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
+    ocrWorker.post({
+        type: 'init',
+        datas: {
+            languages: ['chi_sim', 'eng'],
+            allfiles: await getAllFiles('user/file'),
+            cache_path: 'user/ocr_cache'
+        }
+    })
+    watch(ocrWorker.data, (result: MessageEvent<{ type: string, datas: any }>) => {
+        if (result.type === 'inited') {
+            useSnackbar().success('OCR worker inited')
+        }
+    })
 })
-
 </script>
 
 <style scoped>
