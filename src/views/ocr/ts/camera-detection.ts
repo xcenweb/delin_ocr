@@ -1,6 +1,20 @@
 import { ref, computed } from 'vue'
 import cvReadyPromise from '@techstark/opencv-js'
 
+/**
+ * 初始化OpenCV
+ */
+async function initializeOpenCV() {
+    try {
+        cv = await cvReadyPromise
+        console.log('OpenCV.js 加载完成')
+        return true
+    } catch (error) {
+        console.error('OpenCV.js 加载失败:', error)
+        return false
+    }
+}
+
 // OpenCV 类型定义
 interface Point {
     x: number;
@@ -383,18 +397,6 @@ function startVideoProcessing(
 // 停止视频处理
 function stopVideoProcessing() {
     isProcessing = false
-}
-
-// 初始化OpenCV
-async function initializeOpenCV() {
-    try {
-        cv = await cvReadyPromise
-        console.log('OpenCV.js 加载完成')
-        return true
-    } catch (error) {
-        console.error('OpenCV.js 加载失败:', error)
-        return false
-    }
 }
 
 // 重置检测状态

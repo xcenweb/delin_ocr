@@ -131,7 +131,7 @@ let ocrServiceInstance: OCRService | null = null
 /**
  * 获取OCR服务单例
  */
-export function getOCRService(): OCRService {
+export function useOCRService(): OCRService {
   if (!ocrServiceInstance) {
     ocrServiceInstance = new OCRService()
   }

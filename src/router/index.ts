@@ -39,10 +39,6 @@ const router = createRouter({
             path: '/test',
             component: () => import('@/views/test.vue')
         },
-        {
-            path: '/testWorker',
-            component: () => import('@/views/workerTest.vue')
-        },
 
         // 设置页面
         {

@@ -88,7 +88,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { getOCRService, type OCRProgress } from '@/utils/ocrService'
+import { useOCRService, type OCRProgress } from '@/utils/ocrService'
 import { useSnackbar } from '@/components/global/snackbarService'
 
 // 定义 ref 类型
@@ -114,7 +114,7 @@ const totalCount = ref<number>(0)
 const snackbar = useSnackbar()
 
 // OCR 服务实例
-const ocrService = getOCRService()
+const ocrService = useOCRService()
 
 // 初始化 OCR 服务
 const initializeOCR = async () => {

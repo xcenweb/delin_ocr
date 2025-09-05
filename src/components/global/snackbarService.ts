@@ -34,7 +34,7 @@ class SnackbarService {
   public showProgress = ref(false)
 
   /** 当前超时定时器 */
-  private timeoutId: number | null = null
+  private timeoutId: number | NodeJS.Timeout | null = null
 
   /**
    * 显示 snackbar
@@ -46,7 +46,7 @@ class SnackbarService {
 
     // 设置配置
     this.message.value = config.message
-    this.color.value = config.color || 'info'
+    this.color.value = config.color || 'primary'
     this.timeout.value = config.timeout ?? 3000
     this.showProgress.value = config.showProgress || false
 
@@ -55,7 +55,7 @@ class SnackbarService {
 
     // 设置自动隐藏（如果不是持久显示）
     if (this.timeout.value > 0) {
-      this.timeoutId = window.setTimeout(() => {
+      this.timeoutId = setTimeout(() => {
         this.hide()
       }, this.timeout.value)
     }
@@ -159,7 +159,7 @@ class SnackbarService {
    */
   private clearTimeout(): void {
     if (this.timeoutId) {
-      window.clearTimeout(this.timeoutId)
+      clearTimeout(this.timeoutId)
       this.timeoutId = null
     }
   }

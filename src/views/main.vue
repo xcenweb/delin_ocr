@@ -31,7 +31,8 @@
             </template>
         </v-navigation-drawer>
 
-        <v-main class="d-flex flex-column overflow-hidden" style="--v-layout-top: 0px; --v-layout-bottom: 0px; height: 100vh;">
+        <v-main class="d-flex flex-column overflow-hidden"
+            style="--v-layout-top: 0px; --v-layout-bottom: 0px; height: 100vh;">
             <v-container fluid class="pa-0" style="height: 100%;">
                 <z-swiper @swiper="onSwiper($event, 'slideTo')" @slideChange="onSlideChange"
                     style="box-sizing: border-box; height: 100%;">
@@ -78,7 +79,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useSnackbar } from '@/components/global/snackbarService';
 
 // https://swiper.zebraui.com/
 import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper';
@@ -89,6 +91,10 @@ import homeView from './main/home.vue';
 import certificateView from './main/certificate.vue';
 import fileView from './main/file.vue';
 import userView from './main/user.vue';
+
+// worker
+import { useWebWorker } from '@vueuse/core'
+import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
 
 // 导航栏列表
 const navigator_list = ref([
@@ -110,6 +116,14 @@ const onSlideChange = (swiper: any) => {
     swiperslideIn.value = swiper.activeIndex
     selectedItem.value = [navigator_list.value[swiper.activeIndex]]
 }
+
+// TODO: ocr worker
+const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
+ocrWorker.post('start')
+watch(ocrWorker.data, (result) => {
+    useSnackbar().show({ message: result })
+})
+
 </script>
 
 <style scoped>
@@ -128,7 +142,8 @@ const onSlideChange = (swiper: any) => {
 </style>
 
 <style>
-html, body {
+html,
+body {
     height: 100%;
     overflow: hidden;
     margin: 0;
