@@ -38,8 +38,9 @@ export interface DirectoryObject extends BaseFileInfo {
 
 /** 文件对象接口 */
 export interface FileObject extends BaseFileInfo {
-    /** 文件类型 */
-    type: 'file' | 'img'
+    /** 文件 */
+    type: 'file'
+    ext: string
     /** 文件缩略图 */
     thumbnail?: string
 }
@@ -55,17 +56,6 @@ export const currentPath_fso = ref<FileSystemObject[]>([])
 
 /** 当前排序类型 */
 export const sortType = ref<string>('name-asc')
-
-/**
- * 根据文件后缀名判断文件类型
- * @param name 文件名
- * @returns 文件类型：'dir' | 'file' | 'img'
- */
-export const getFileType = (name: string): 'dir' | 'file' | 'img' => {
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
-    const ext = name.toLowerCase().substring(name.lastIndexOf('.'))
-    return imageExtensions.includes(ext) ? 'img' : 'file'
-}
 
 /**
  * 将字节数转换为可读的文件大小格式
@@ -160,7 +150,7 @@ export const loadDirectory = async (path: string): Promise<void> => {
                     // 创建文件对象
                     fileObj = {
                         ...baseInfo,
-                        type: getFileType(entry.name),
+                        type: 'file',
                         ext: entry.name.substring(entry.name.lastIndexOf('.') + 1),
                         thumbnail: await getThumbnailUrl(fullPath)
                     } as FileObject
@@ -198,14 +188,15 @@ export const getAllFiles = async (path: string): Promise<FileObject[]> => {
                     const fileStat = await stat(await join(await appDataDir(), relativePath))
 
                     result.push({
+                        type: 'file',
                         name: entry.name,
+                        ext: entry.name.split('.').pop() || '',
                         path: relativePath,
                         fullPath: await join(await appDataDir(), relativePath),
-                        type: 'file',
                         info: {
-                            atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
-                            mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
-                            birthtime: useDateFormat(new Date(fileStat.birthtime || 'null'), DATE_FORMAT).value,
+                            atime: useDateFormat(new Date(fileStat.atime || ''), DATE_FORMAT).value,
+                            mtime: useDateFormat(new Date(fileStat.mtime || ''), DATE_FORMAT).value,
+                            birthtime: useDateFormat(new Date(fileStat.birthtime || ''), DATE_FORMAT).value,
                             size: fileStat.size || 0
                         }
                     })

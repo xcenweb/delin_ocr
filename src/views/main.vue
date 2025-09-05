@@ -95,9 +95,8 @@ import userView from './main/user.vue'
 // worker
 import { useWebWorker } from '@vueuse/core'
 import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
-import { getAllFiles } from '@/utils/fileService'
 import { ocrRecordsDB } from '@/utils/dbService'
-ocrRecordsDB
+
 // 导航栏列表npm
 const navigator_list = ref([
     { id: 0, text: '首页', icon: 'mdi-home' },
@@ -126,8 +125,6 @@ onMounted(async () => {
         type: 'init',
         datas: {
             languages: ['chi_sim', 'eng'],
-            allfiles: await getAllFiles('user/file'),
-            cache_path: 'user/ocr_cache'
         }
     })
     watch(ocrWorker.data, (result: MessageEvent<{ type: string, datas: any }>) => {

@@ -18,7 +18,7 @@ class BaseDB {
      * 初始化数据库连接
      */
     private async init() {
-        this.db = await Database.load('sqlite:user/cache.db');
+        this.db = await Database.load('sqlite:' + 'user/cache.db');
         await this.initTables();
     }
 

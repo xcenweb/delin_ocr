@@ -6,13 +6,15 @@
       </vue-page-stack>
     </transition>
   </router-view>
+
   <GlobalSnackbar />
+  <GlobalLoadingDialog />
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import router from '@/router';
 import GlobalSnackbar from '@/components/global/Snackbar.vue'
+import GlobalLoadingDialog from '@/components/global/LoadingDialog.vue'
 
 const slideTransition = ref('slide-left')
 

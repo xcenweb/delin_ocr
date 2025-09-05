@@ -21,8 +21,8 @@
                 </template>
             </v-card>
 
-            <!-- 普通图片文件 -->
-            <v-card v-if="fso.type == 'img'" @click="openImg(fso.fullPath)" :ripple="false"
+            <!-- 普通文件 -->
+            <v-card v-if="fso.type == 'file'" @click="openFile(fso.fullPath)" :ripple="false"
                 v-on-long-press.prevent="[onLongPress, { delay: 500, modifiers: { stop: false } }]">
                 <template v-slot:prepend>
                     <v-img :src="fso.thumbnail" width="60" aspect-ratio="1" cover rounded />
@@ -81,7 +81,7 @@ const openFolder = (path: string) => {
  * 预览一张图片
  * TODO: 增加可预览目录下所有图片
  */
-const openImg = (path: string) => {
+const openFile = (path: string) => {
     router.push({ name: 'image-viewer', query: { path: path } })
 }
 
