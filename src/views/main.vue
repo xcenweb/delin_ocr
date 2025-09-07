@@ -92,11 +92,6 @@ import certificateView from './main/certificate.vue'
 import fileView from './main/file.vue'
 import userView from './main/user.vue'
 
-// worker
-import { useWebWorker } from '@vueuse/core'
-import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
-import { ocrRecordsDB } from '@/utils/dbService'
-
 // 导航栏列表npm
 const navigator_list = ref([
     { id: 0, text: '首页', icon: 'mdi-home' },
@@ -119,6 +114,8 @@ const onSlideChange = (swiper: any) => {
 }
 
 // TODO: ocr worker
+import { useWebWorker } from '@vueuse/core'
+import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
 onMounted(async () => {
     const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
     ocrWorker.post({

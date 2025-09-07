@@ -39,7 +39,7 @@ class ImageFilterProcessor {
                     } else {
                         reject(new Error('Failed to create blob'));
                     }
-                }, 'image/jpeg', 0.9);
+                }, 'image/png');
             };
 
             img.onerror = () => reject(new Error('Failed to load image'));

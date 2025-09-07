@@ -1,8 +1,7 @@
 // TODO: 监听文件列表，无cache则生成 {uuid}.cache，有cache但无文件需要删除cache
 // TODO: 加密
 
-import { useOCRService } from "@/utils/ocrService";
-import { ocrRecordsDB } from '@/utils/dbService'
+import { useOCRService } from "@/utils/ocrService"
 
 const ocrService = useOCRService()
 
@@ -21,4 +20,4 @@ self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
     }
 };
 
-export type { };
+export type { }

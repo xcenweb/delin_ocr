@@ -18,7 +18,7 @@
 
                     <video autoplay playsinline muted ref="videoElement" class="w-100 h-100 left-0 top-0"
                         :srcObject="stream" @loadedmetadata="onVideoMetadataLoaded"
-                        style="object-fit: contain;"></video>
+                        style="object-fit: contain;" :style="{ imageRendering: 'pixelated' }"></video>
 
                     <canvas ref="canvasElement" class="position-absolute"
                         :style="`left: ${displayArea.left}px; top: ${displayArea.top}px; width: ${displayArea.width}px; height: ${displayArea.height}px;`"></canvas>

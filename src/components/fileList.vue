@@ -1,4 +1,3 @@
-// 文件列表组件
 <template>
     <v-row class="px-3 pt-3" v-if="sortedFiles.length > 0">
 
@@ -49,7 +48,7 @@
 
 <script setup lang="ts">
 import router from "@/router";
-import { sortType, sortedFiles, formatFileSize, loadDirectory, getAllFiles } from "@/utils/fileService"
+import { sortType, sortedFiles, formatFileSize, loadDirectory, getFileType } from "@/utils/fileService"
 import { onActivated, onMounted } from 'vue';
 import { vOnLongPress } from '@vueuse/components'
 
@@ -78,11 +77,20 @@ const openFolder = (path: string) => {
 }
 
 /**
- * 预览一张图片
- * TODO: 增加可预览目录下所有图片
+ * 打开文件
+ * @param path 文件路径
  */
 const openFile = (path: string) => {
-    router.push({ name: 'image-viewer', query: { path: path } })
+    // 根据文件扩展名判断是否为图片
+    const fileType = getFileType(path);
+    if (fileType === 'img') {
+        // 如果是图片文件，使用图片查看器
+        router.push({ name: 'image-viewer', query: { path: path } })
+    } else {
+        // TODO: 对于非图片文件，可以添加其他处理逻辑
+        // 例如使用浏览器打开或者提示不支持的文件类型
+        console.log('暂不支持的文件类型:', path)
+    }
 }
 
 // TODO: 切换排序方式

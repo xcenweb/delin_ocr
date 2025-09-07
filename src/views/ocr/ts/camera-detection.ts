@@ -516,14 +516,14 @@ function perspectiveTransform(
         const dst = new cv.Mat()
         const dsize = new cv.Size(outputWidth, outputHeight)
 
-        // 执行透视变换
-        cv.warpPerspective(src, dst, transformMatrix, dsize)
+        // 执行透视变换+使用高质量插值
+        cv.warpPerspective(src, dst, transformMatrix, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar())
 
         // 转换为ImageData
         const canvas = document.createElement('canvas')
         canvas.width = outputWidth
         canvas.height = outputHeight
-        const ctx = canvas.getContext('2d')
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
         if (!ctx) {
             src.delete()

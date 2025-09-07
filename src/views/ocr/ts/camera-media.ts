@@ -15,8 +15,8 @@ const facingMode = ref('environment')
 // 摄像头相关
 const constraints = reactive({
     video: {
-        // width: { ideal: 720 },
-        // height: { ideal: 1280 },
+        width: { min: 1280, ideal: 1920, max: 3840 },
+        height: { min: 720, ideal: 1080, max: 2160 },
         frameRate: { ideal: 30 },
     } as MediaTrackConstraints,
     audio: false,

@@ -48,7 +48,7 @@ const videoElement = ref<HTMLVideoElement>();
 const takePhoto = () => {
     const videoEl: any = videoElement.value
     const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
     if (!ctx) return
 
@@ -84,11 +84,13 @@ const takePhoto = () => {
         // 如果透视变换成功，生成校正后的图片
         if (correctedImageData) {
             const correctedCanvas = document.createElement('canvas')
-            const correctedCtx = correctedCanvas.getContext('2d')
+            const correctedCtx = correctedCanvas.getContext('2d', { willReadFrequently: true })
 
             if (correctedCtx) {
                 correctedCanvas.width = correctedImageData.width
                 correctedCanvas.height = correctedImageData.height
+
+                correctedCtx.imageSmoothingEnabled = false // 在文档校正结果上禁用图像平滑以保持文字清晰度FUCK
                 correctedCtx.putImageData(correctedImageData, 0, 0)
 
                 // 转换为blob URL
@@ -108,7 +110,7 @@ const takePhoto = () => {
                         console.log('📍 显示区域坐标:', points)
                         console.log('📍 视频坐标系坐标:', videoPoints)
                     }
-                }, 'image/jpeg')
+                }, 'image/png')
             } else {
                 // 无法获取校正canvas上下文，只保存原图
                 const photoItem: PhotoItem = {
@@ -131,11 +133,12 @@ const takePhoto = () => {
             console.log('📍 视频坐标系坐标:', videoPoints)
             console.warn('⚠️ 文档校正失败，仅保存原图')
         }
-    }, 'image/jpeg')
+    }, 'image/png') // 改为PNG格式
 }
 
 export {
     type PhotoItem,
+
     videoElement,
     takedPhotos,
     takePhotoModel,

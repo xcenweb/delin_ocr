@@ -38,9 +38,8 @@ export interface DirectoryObject extends BaseFileInfo {
 
 /** 文件对象接口 */
 export interface FileObject extends BaseFileInfo {
-    /** 文件 */
+    /** 文件类型 */
     type: 'file'
-    ext: string
     /** 文件缩略图 */
     thumbnail?: string
 }
@@ -56,6 +55,18 @@ export const currentPath_fso = ref<FileSystemObject[]>([])
 
 /** 当前排序类型 */
 export const sortType = ref<string>('name-asc')
+
+/**
+ * 根据文件后缀名判断文件类型
+ * @param name 文件名
+ * @returns 文件类型：'dir' | 'file'
+ */
+export const getFileType = (name: string) => {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
+    const pdf = ['.pdf']
+    const ext = name.toLowerCase().substring(name.lastIndexOf('.'))
+    return imageExtensions.includes(ext) ? 'img' : pdf.includes(ext) ? 'pdf' : 'file'
+}
 
 /**
  * 将字节数转换为可读的文件大小格式
@@ -121,7 +132,7 @@ export const loadDirectory = async (path: string): Promise<void> => {
                 const fullPath = await join(await appDataDir(), relativePath)
                 const fileStat = await stat(fullPath)
 
-                // 创建基础信息对象
+                // 基础信息对象
                 const baseInfo: BaseFileInfo = {
                     name: entry.name,
                     path: relativePath,
@@ -137,8 +148,8 @@ export const loadDirectory = async (path: string): Promise<void> => {
                 let fileObj: FileSystemObject
 
                 if (entry.isDirectory) {
-                    // 创建目录对象
-                    let count = 0
+                    // 目录
+                    let count
                     try {
                         const subEntries = await readDir(fullPath)
                         count = subEntries.length
@@ -147,7 +158,7 @@ export const loadDirectory = async (path: string): Promise<void> => {
                     }
                     fileObj = { ...baseInfo, type: 'dir', count } as DirectoryObject
                 } else {
-                    // 创建文件对象
+                    // 文件
                     fileObj = {
                         ...baseInfo,
                         type: 'file',
@@ -188,15 +199,14 @@ export const getAllFiles = async (path: string): Promise<FileObject[]> => {
                     const fileStat = await stat(await join(await appDataDir(), relativePath))
 
                     result.push({
-                        type: 'file',
                         name: entry.name,
-                        ext: entry.name.split('.').pop() || '',
                         path: relativePath,
                         fullPath: await join(await appDataDir(), relativePath),
+                        type: 'file',
                         info: {
-                            atime: useDateFormat(new Date(fileStat.atime || ''), DATE_FORMAT).value,
-                            mtime: useDateFormat(new Date(fileStat.mtime || ''), DATE_FORMAT).value,
-                            birthtime: useDateFormat(new Date(fileStat.birthtime || ''), DATE_FORMAT).value,
+                            atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
+                            mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
+                            birthtime: useDateFormat(new Date(fileStat.birthtime || 'null'), DATE_FORMAT).value,
                             size: fileStat.size || 0
                         }
                     })

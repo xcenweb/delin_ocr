@@ -1,7 +1,6 @@
 // 文件缩略图服务
 
 import { convertFileSrc } from '@tauri-apps/api/core'
-import { get } from 'http'
 
 /**
  * 缩略图存储根路径

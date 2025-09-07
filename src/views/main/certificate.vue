@@ -36,12 +36,12 @@
             </v-slide-group>
 
             <!-- 证件列表 -->
-            <v-row v-if="filteredCertificates.length > 0" class="px-3">
+            <v-row v-if="filteredCertificates.length > 0" class="px-5">
                 <v-col cols="6" sm="4" md="3" lg="2" v-for="certificate in filteredCertificates" :key="certificate.id"
-                    class="pt-0">
+                    class="pt-1 px-2">
 
                     <v-card @click="viewCertificate(certificate)">
-                        <v-img :src="certificate.thumbnail" aspect-ratio="1.9" cover>
+                        <v-img :src="certificate.thumbnail" aspect-ratio="1.95" cover>
                             <template v-slot:placeholder>
                                 <div class="d-flex align-center justify-center fill-height">
                                     <v-progress-circular color="grey-lighten-4" indeterminate></v-progress-circular>
