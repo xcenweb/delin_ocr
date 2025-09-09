@@ -16,6 +16,7 @@ import { ref } from 'vue'
 import GlobalSnackbar from '@/components/global/Snackbar.vue'
 import GlobalLoadingDialog from '@/components/global/LoadingDialog.vue'
 
+// TODO: 完善动画
 const slideTransition = ref('slide-left')
 
 const onBack = () => {

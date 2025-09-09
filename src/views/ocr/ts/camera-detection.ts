@@ -1,5 +1,7 @@
 import { ref, computed } from 'vue'
-import cvReadyPromise from '@techstark/opencv-js'
+import cvReadyPromise, { type CV } from '@techstark/opencv-js'
+
+let cv: CV
 
 /**
  * 初始化OpenCV
@@ -27,8 +29,6 @@ interface Corners {
     bottomLeftCorner: Point | null;
     bottomRightCorner: Point | null;
 }
-
-let cv: any
 
 // OpenCV 检测相关变量和常量
 let isProcessing = false

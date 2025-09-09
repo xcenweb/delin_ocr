@@ -22,7 +22,7 @@
             <v-card class="position-relative mt-n16 ma-4 pa-4">
                 <v-row>
                     <v-col cols="4" v-for="feature in features" :key="feature.title">
-                        <div class="text-center pa-0" :hover="true">
+                        <div class="text-center pa-0" :hover="true" @click="goToFeature(feature.route)">
                             <v-icon :icon="feature.icon" color="#4285F4" size="45" class="mb-2" />
                             <p>{{ feature.title }}</p>
                         </div>
@@ -63,22 +63,25 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const features = ref([
     {
         title: '在线导入',
         icon: 'mdi-cloud-upload-outline',
-        color: '#4285F4'
+        route: 'online-import'
     },
     {
         title: '文件导入',
         icon: 'mdi-file-upload-outline',
-        color: '#4285F4'
+        route: null // TODO: 添加文件导入页面路由
     },
     {
         title: '扫描导入',
         icon: 'mdi-camera-outline',
-        color: '#4285F4'
+        route: 'ocr-camera'
     }
 ])
 
@@ -168,6 +171,13 @@ const recentFiles = ref([
         cover: 'https://picsum.photos/200/300?random=5'
     }
 ])
+
+// 跳转到功能页面
+const goToFeature = (routeName) => {
+    if (routeName) {
+        router.push({ name: routeName })
+    }
+}
 
 // TODO: 获取最近浏览文件
 </script>

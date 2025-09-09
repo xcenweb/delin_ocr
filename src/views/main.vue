@@ -124,9 +124,9 @@ onMounted(async () => {
             languages: ['chi_sim', 'eng'],
         }
     })
-    watch(ocrWorker.data, (result: MessageEvent<{ type: string, datas: any }>) => {
+    watch(ocrWorker.data, (result: { type: string, datas: any }) => {
         if (result.type === 'inited') {
-            useSnackbar().success('OCR worker inited')
+            useSnackbar().success('OCRWorker: ' + result.datas)
         }
     })
 })

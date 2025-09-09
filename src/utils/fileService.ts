@@ -236,14 +236,6 @@ export const saveBlobUrlToLocal = async (
     baseDir: BaseDirectory
 ): Promise<string | false> => {
     try {
-        // 输入参数验证
-        if (!blobUrl || !blobUrl.startsWith('blob:')) {
-            throw new Error('无效的 Blob URL')
-        }
-        if (!fileName || fileName.trim() === '') {
-            throw new Error('文件名不能为空')
-        }
-
         // 从 Blob URL 获取数据
         const response = await fetch(blobUrl)
         if (!response.ok) {

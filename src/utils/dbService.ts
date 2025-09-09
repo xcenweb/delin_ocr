@@ -1,5 +1,6 @@
 // 数据库缓存服务
 import Database from '@tauri-apps/plugin-sql';
+import { useDateFormat } from '@vueuse/core';
 
 import { FileObject } from './fileService';
 import { OCRResult } from './ocrService';
@@ -26,25 +27,45 @@ class BaseDB {
      * 初始化数据表
      */
     private async initTables() {
+
         await this.db.execute(`
-            CREATE TABLE IF NOT EXISTS "ocr_records" (
+            CREATE TABLE IF NOT EXISTS "files_list" (
                 "id"	INTEGER UNIQUE,
-                "name"	TEXT NOT NULL,
                 "type"	TEXT NOT NULL,
                 "relative_path"	TEXT NOT NULL UNIQUE,
                 "tags"	TEXT DEFAULT '',
-                "ocr_text"	TEXT DEFAULT '',
-                "ocr_block"	TEXT DEFAULT '',
-                "info_atme"	TEXT DEFAULT '',
-                "info_mtime"	TEXT DEFAULT '',
-                "info_birthtime"	TEXT DEFAULT '',
-                "info_size"	INTEGER DEFAULT 0,
+                "atime"	TEXT DEFAULT '',
+                "mtime"	TEXT DEFAULT '',
+                "birthtime"	TEXT DEFAULT '',
+                PRIMARY KEY("id" AUTOINCREMENT)
+            );
+            CREATE TABLE IF NOT EXISTS "ocr_records" (
+                "id"	INTEGER UNIQUE,
+                "relative_path"	TEXT NOT NULL UNIQUE,
+                "text"	TEXT DEFAULT '',
+                "block"	TEXT DEFAULT '',
                 "create_time"	TEXT,
                 "update_time"	TEXT,
-                "is_processed"	INTEGER DEFAULT 0,
                 PRIMARY KEY("id" AUTOINCREMENT)
             );
         `);
+    }
+
+    /**
+     * 通用: 路径标准化
+     * @param path 路径
+     * @param separator '/' 分隔符
+     * @returns 标准化后的路径
+     */
+    public normalizedPath(path: string, separator = '/') {
+        return path.replace(/\\/g, separator);
+    }
+
+    /**
+     * 通用：获取当前时间
+     */
+    public getCurrentTime() {
+        return useDateFormat(new Date(), 'YYYY-MM-DD HH:mm:ss')
     }
 
     /**
@@ -60,21 +81,52 @@ class BaseDB {
  */
 class OCRRecords extends BaseDB {
 
+    tableName = 'ocr_records';
+
     /**
-     * 统一文件路径为 'xxx/xxx'
+     * 更新文件的OCR识别缓存
+     * @param relative_path 相对路径
+     * @param ocrResult OCR识别结果
      */
-    normalizedPath(path: string) {
-        return path.replace(/\\/g, '/');
+    async update(relative_path: string, ocrResult: OCRResult) {
+        return await this.db.execute(`UPDATE ${this.tableName} SET ocr_text = $1, ocr_block = $2, is_processed = 1 WHERE relative_path = $3`, [
+            ocrResult.text, JSON.stringify(ocrResult.block), relative_path
+        ])
     }
+
+    /**
+     * 获取文件的OCR识别缓存
+     * @param relative_path 相对路径
+     */
+    async get(relative_path: string) {
+        return await this.db.execute(`SELECT * FROM ${this.tableName} WHERE relative_path = $1`, [this.normalizedPath(relative_path)])
+    }
+
+    /**
+     * 删除文件的OCR识别缓存
+     * @param relative_path 相对路径
+     * @returns
+     */
+    async delete(relative_path: string) {
+        return await this.db.execute(`DELETE FROM ${this.tableName} WHERE relative_path = `, [this.normalizedPath(relative_path)])
+    }
+}
+
+/**
+ * 文件列表记录
+ */
+class FilesList extends BaseDB {
+
+    tableName = 'files_list'
 
     /**
      * 插入文件
      * @param fileInfo 文件信息
      */
-    async addFile(fileInfo: FileObject) {
-        await this.db.execute(`
-            INSERT INTO ocr_records (
-                name, type, relative_path, info_atme, info_mtime, info_birthtime, info_size, create_time, update_time
+    async add(fileInfo: FileObject) {
+        return await this.db.execute(`
+            INSERT INTO ${this.tableName} (
+                name, type, relative_path, atime, create_time, update_time
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `, [
             fileInfo.name, fileInfo.type, this.normalizedPath(fileInfo.path), fileInfo.info.atime, fileInfo.info.mtime, fileInfo.info.birthtime, fileInfo.info.size, new Date(), new Date(),
@@ -82,53 +134,40 @@ class OCRRecords extends BaseDB {
     }
 
     /**
-     * 更新文件
-     * @param relative_path 相对路径
-     * @param fileInfo 文件信息
-     */
-    async updateFile(relative_path: string, fileInfo: FileObject) {
-
-    }
-
-    /**
      * 删除文件
+     * @param relative_path 相对路径
      */
-    async removeFile(relative_path: string) {
-        await this.db.execute(`DELETE FROM ocr_records WHERE relative_path = `, [this.normalizedPath(relative_path)])
+    async remove(relative_path: string) {
+        return await this.db.execute(`DELETE FROM ${this.tableName} WHERE relative_path = `, [this.normalizedPath(relative_path)])
     }
 
     /**
-     * 更新OCR识别结果缓存
-     * @param relative_path 相对路径
-     * @param ocrResult OCR识别结果
+     * 获取最近访问的前 limit 个文件
+     * @param limit 个数
      */
-    async updateRecord(relative_path: string, ocrResult: OCRResult) {
-        await this.db.execute(`UPDATE ocr_records SET ocr_text = $1, ocr_block = $2, is_processed = 1 WHERE relative_path = $3`, [
-            ocrResult.text, JSON.stringify(ocrResult.block), relative_path
+    async getRecent(limit: number = 10) {
+        return await this.db.execute(`SELECT * FROM ${this.tableName} ORDER BY last_viewed DESC LIMIT $1`, [limit])
+    }
+
+    /**
+     * 更新文件标签
+     * @param relative_path 相对路径
+     * @param tags 标签字符串（逗号分隔）
+     */
+    async updateTags(relative_path: string, tags: string) {
+        return await this.db.execute(`UPDATE ${this.tableName} SET tags = $1 WHERE relative_path = $2`, [
+            tags, this.normalizedPath(relative_path)
         ])
     }
 
     /**
-     * 获取图片的OCR识别结果缓存
-     * @param relative_path 相对路径
+     * 根据标签查找文件
+     * @param tag 标签名称
      */
-    async getRecord(relative_path: string) {
-        const result = await this.db.execute(`SELECT * FROM ocr_records WHERE relative_path = $1`, [this.normalizedPath(relative_path)])
-    }
-
-    /**
-     * 获取未处理的图片列表
-     */
-    async getUnprocessedImages() {
-        const records = await this.db.select('SELECT * from ocr_records WHERE is_processed = 0')
-    }
-
-    /**
-     * 获取最近访问的前 limit 个图片
-     */
-    async getRecentViewedImages(limit: number) {
-        const records = await this.db.select(`SELECT * FROM ocr_records ORDER BY info_atime DESC LIMIT $1`, [limit])
+    async getFilesByTag(tag: string) {
+        return await this.db.select(`SELECT * FROM ${this.tableName} WHERE tags LIKE $1`, [`%${tag}%`])
     }
 }
 
 export const ocrRecordsDB = new OCRRecords();
+export const filesListDB = new FilesList();

@@ -27,7 +27,7 @@ const router = createRouter({
             component: () => import('@/views/viewer/browser.vue')
         },
 
-        // ocr相关功能页面
+        // ocr相关功能
         {
             path: '/ocr/camera',
             name: 'ocr-camera',
@@ -37,6 +37,13 @@ const router = createRouter({
             path: '/ocr/editor',
             name: 'ocr-editor',
             component: () => import('@/views/ocr/editor.vue'),
+        },
+
+        // 在线导入证书
+        {
+            path: '/online-import',
+            name: 'online-import',
+            component: () => import('@/views/online/index.vue')
         },
 
         // test
