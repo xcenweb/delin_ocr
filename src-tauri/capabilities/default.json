@@ -7,26 +7,10 @@
   ],
   "permissions": [
     "core:default",
-    "core:webview:default",
-    "core:webview:allow-create-webview",
-    "core:webview:allow-create-webview-window",
-    "core:webview:allow-webview-position",
-    "core:webview:allow-webview-size",
-    "core:webview:allow-set-webview-position",
-    "core:webview:allow-set-webview-size",
-    "core:webview:allow-webview-close",
-    "core:webview:allow-webview-show",
-    "core:webview:allow-set-webview-focus",
-    "core:webview:allow-set-webview-zoom",
-    "core:webview:allow-print",
-    "core:webview:allow-reparent",
-    "core:webview:allow-get-all-webviews",
-    "core:webview:allow-internal-toggle-devtools",
-
     "vnidrop-share:default",
-
     "sql:default",
     "sql:allow-execute",
+    "os:default",
 
     "fs:allow-stat",
     "fs:allow-read",
