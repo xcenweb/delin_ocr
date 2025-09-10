@@ -24,7 +24,11 @@
             <v-card v-if="fso.type == 'file'" @click="openFile(fso.fullPath)" :ripple="false"
                 v-on-long-press.prevent="[onLongPress, { delay: 500, modifiers: { stop: false } }]">
                 <template v-slot:prepend>
-                    <v-img :src="fso.thumbnail" width="60" aspect-ratio="1" cover rounded />
+                    <v-img :src="fso.thumbnail" width="60" aspect-ratio="1" cover rounded>
+                        <template v-slot:error>
+                            <v-icon icon="mdi-file" color="grey" size="55" />
+                        </template>
+                    </v-img>
                 </template>
                 <template v-slot:title>
                     <p class="text-subtitle-1 text-truncate">{{ fso.name }}</p>
