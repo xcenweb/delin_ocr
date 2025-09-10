@@ -30,6 +30,10 @@ body {
     margin-bottom: var(--inset-top) !important;
 }
 
+.v-snackbar {
+    margin-top: calc(20px + var(--inset-top)) !important;
+}
+
 /* 暂时允许长按复制 */
 .restore-user-select {
     -webkit-touch-callout: none !important;
