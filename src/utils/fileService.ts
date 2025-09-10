@@ -271,6 +271,7 @@ export const saveBlobUrlToLocal = async (
         console.log(`文件已成功保存到: ${fullPath} (大小: ${formatFileSize(arrayBuffer.byteLength)})`)
         return fullPath
     } catch (error) {
+        alert(error)
         const errorMessage = error instanceof Error ? error.message : String(error)
         console.error('保存文件失败:', errorMessage)
         return false
