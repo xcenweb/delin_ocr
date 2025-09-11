@@ -1,7 +1,6 @@
 <template>
     <v-app class="h-100 d-flex flex-column position-relative overflow-hidden overflow-y-auto">
-        <v-main>
-            <!-- 文件列表展示 -->
+        <v-main style="padding-bottom: 80px;">
             <file-list path="user/file"></file-list>
         </v-main>
     </v-app>

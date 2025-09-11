@@ -14,7 +14,6 @@
                     </v-btn>
                 </v-card-text>
             </v-card>
-            <!-- 版本信息 -->
             <v-card class="ma-3 rounded-lg">
                 <v-card-text class="d-flex align-center">
                     <div class="text-h6 font-weight-bold">版本信息</div>

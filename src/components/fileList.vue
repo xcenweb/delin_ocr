@@ -1,16 +1,16 @@
 <template>
     <v-row class="px-3 pt-3" v-if="sortedFiles.length > 0">
 
-        <v-col cols="12" sm="12" md="6" lg="4" v-for="(fso, i) in sortedFiles" :key="i" class="pb-0 pt-2">
+        <v-col cols="12" sm="12" md="6" lg="4" v-for="(fso, i) in sortedFiles" :key="i" class="pb-0 pt-3">
 
             <!-- 普通文件夹 -->
             <v-card v-if="fso.type == 'dir'" @click="openFolder(fso.path)" :ripple="false"
-                v-on-long-press.prevent="[onLongPress, { delay: 500, modifiers: { stop: false } }]">
+                v-on-long-press.prevent="[() => onLongPress(fso.path), { delay: 500 }]">
                 <template v-slot:prepend>
-                    <v-icon icon="mdi-folder" color="#FFA726" size="60" />
+                    <v-icon icon="mdi-folder" color="#FFA726" size="55" />
                 </template>
                 <template v-slot:title>
-                    <p class="text-subtitle-1 text-truncate">{{ fso.name }}</p>
+                    <p class="text-subtitle-2 text-truncate">{{ fso.name }}</p>
                 </template>
                 <template v-slot:subtitle>
                     <p class="text-grey-darken-1 text-truncate">{{ fso.count }} 项</p>
@@ -22,16 +22,16 @@
 
             <!-- 普通文件 -->
             <v-card v-if="fso.type == 'file'" @click="openFile(fso.fullPath)" :ripple="false"
-                v-on-long-press.prevent="[onLongPress, { delay: 500, modifiers: { stop: false } }]">
+                v-on-long-press.prevent="[() => onLongPress(fso.fullPath), { delay: 500 }]">
                 <template v-slot:prepend>
-                    <v-img :src="fso.thumbnail" width="60" aspect-ratio="1" cover rounded>
+                    <v-img :src="fso.thumbnail" width="55" aspect-ratio="1" cover rounded class="mr-1">
                         <template v-slot:error>
                             <v-icon icon="mdi-file" color="grey" size="55" />
                         </template>
                     </v-img>
                 </template>
                 <template v-slot:title>
-                    <p class="text-subtitle-1 text-truncate">{{ fso.name }}</p>
+                    <p class="text-subtitle-2 text-truncate">{{ fso.name }}</p>
                 </template>
                 <template v-slot:subtitle>
                     <p class="text-caption text-grey">{{ fso.info.mtime }} · {{ formatFileSize(fso.info.size) }}</p>
@@ -55,6 +55,7 @@ import router from "@/router";
 import { sortType, sortedFiles, formatFileSize, loadDirectory, getFileType } from "@/utils/fileService"
 import { onActivated, onMounted } from 'vue';
 import { vOnLongPress } from '@vueuse/components'
+import { useSnackbar } from "./global/snackbarService";
 
 const props = withDefaults(defineProps<{
     /** 目标路径 */
@@ -66,7 +67,6 @@ const props = withDefaults(defineProps<{
 sortType.value = 'name-dsc'
 
 onMounted(() => {
-    // console.log(getAllFiles('user/file'))
     loadDirectory(props.path)
 })
 onActivated(() => {
@@ -92,18 +92,12 @@ const openFile = (path: string) => {
         router.push({ name: 'image-viewer', query: { path: path } })
     } else {
         // TODO: 对于非图片文件，可以添加其他处理逻辑
-        // 例如使用浏览器打开或者提示不支持的文件类型
-        console.log('暂不支持的文件类型:', path)
+        useSnackbar().info('暂不支持的文件类型')
     }
 }
 
-// TODO: 切换排序方式
-const selectSort = (type: string) => {
-
-}
-
 // TODO: 文件/文件夹 列表长按响应
-const onLongPress = () => {
-    alert('长按响应')
+const onLongPress = (path: string) => {
+    alert('长按响应' + path)
 }
 </script>

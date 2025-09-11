@@ -1,6 +1,3 @@
-// TODO: 监听文件列表，无cache则生成 {uuid}.cache，有cache但无文件需要删除cache
-// TODO: 加密
-
 import Tesseract from 'tesseract.js'
 
 let worker: Tesseract.Worker | null = null
@@ -18,22 +15,22 @@ const init = async (languages: string[]) => {
         isInitialized = true
         return true
     } catch (error) {
-        console.error('OCR Worker 初始化失败:', error)
+        console.error(error)
         return false
     }
 }
 
 self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
-    // 初始化
-    if (event.data.type === 'init' && !isInitialized) {
-        const result = await init(event.data.datas.languages)
-        self.postMessage({ type: 'inited', datas: result })
-    }
+    try {
+        // 初始化
+        if (event.data.type === 'init' && !isInitialized) {
+            const result = await init(event.data.datas.languages)
+            self.postMessage({ type: 'inited', datas: result })
+        }
 
-    // 识别文本
-    if (event.data.type === 'recognize' && isInitialized && worker) {
-        try {
-            const { data: result } = await worker.recognize(event.data.datas.image)
+        // 识别一次
+        if (event.data.type === 'recognize' && isInitialized && worker) {
+            const { data: result } = await worker.recognize(event.data.datas.image, {}, { blocks: true })
             self.postMessage({
                 type: 'recognized',
                 datas: {
@@ -41,20 +38,17 @@ self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
                     blocks: result.blocks
                 }
             })
-        } catch (error) {
-            self.postMessage({
-                type: 'error',
-                datas: { error: (error as Error).message }
-            })
         }
-    }
 
-    // 销毁
-    if (event.data.type === 'destroy' && worker) {
-        await worker.terminate()
-        worker = null
-        isInitialized = false
-        self.postMessage({ type: 'destroyed', datas: true })
+        // 销毁
+        if (event.data.type === 'destroy' && worker) {
+            await worker.terminate()
+            worker = null
+            isInitialized = false
+        }
+    } catch (error) {
+        console.error(error)
+        self.postMessage({ type: 'error', datas: error })
     }
 }
 

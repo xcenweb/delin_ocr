@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onActivated, onMounted, ref, watch } from 'vue'
 import { useSnackbar } from '@/components/global/snackbarService'
 
 // https://swiper.zebraui.com/
@@ -115,9 +115,10 @@ const onSlideChange = (swiper: any) => {
 
 // TODO: ocr worker
 import { useWebWorker } from '@vueuse/core'
+import { getAllFiles } from '@/utils/fileService'
 import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
-onMounted(async () => {
-    const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
+const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
+onMounted(() => {
     ocrWorker.post({
         type: 'init',
         datas: {
@@ -125,10 +126,16 @@ onMounted(async () => {
         }
     })
     watch(ocrWorker.data, (result: { type: string, datas: any }) => {
+        if (result.type === 'error') {
+            useSnackbar().error('OCRWorker: ' + result.datas)
+        }
         if (result.type === 'inited') {
             useSnackbar().success('OCRWorker: ' + result.datas)
         }
     })
+})
+onActivated(async () => {
+    console.log(await getAllFiles('user/file'))
 })
 </script>
 

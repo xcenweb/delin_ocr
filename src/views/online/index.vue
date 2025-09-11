@@ -7,9 +7,9 @@
         <v-main>
             <v-row class="pa-3">
                 <v-col v-for="site in sites" :key="site.url" cols="12" sm="6" md="4" lg="3">
-                    <v-card>
+                    <v-card @click="useSnackbar().info('我们正在完善该功能...')">
                         <template v-slot:prepend>
-                            <v-avatar size="40" class="mr-1"></v-avatar>
+                            <v-avatar size="40" class="mr-1" :image="site.ico"></v-avatar>
                         </template>
                         <template v-slot:title>
                             <p class="text-subtitle-1 text-truncate">{{ site.name }}</p>
@@ -25,14 +25,10 @@
 </template>
 
 <script lang="ts" setup>
+import { useSnackbar } from '@/components/global/snackbarService';
 import { ref } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-
-invoke('get_input').then(res => {
-    console.log(res)
-})
 
 const sites = ref([
-    { name: '到梦空间', url: '', desc: '实信网实践证书查询/第二课堂成绩单纪念证书查询', ico: '' },
+    { name: '到梦空间', url: '', desc: '实信网实践证书查询/第二课堂成绩单纪念证书查询', ico: 'https://www.5idream.net/static/images/favicon.ico' },
 ])
 </script>
