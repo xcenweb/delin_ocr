@@ -12,7 +12,7 @@
                 </v-app-bar-title>
             </v-app-bar>
 
-            <!-- 多图片 -->
+            <!-- 多图片显示 -->
             <z-swiper class="h-100 w-100 position-relative flex-grow-1" space-between="32px" :slides-per-view="1.1"
                 centered-slides @slideChange="onSlideChange" @swiper="onSwiper($event)" v-show="editorMode === 'edit'">
                 <z-swiper-item v-for="(image, i) in imageList" :key="i">
@@ -223,12 +223,11 @@ const saveAllImages = async () => {
     try {
         for (let i = 0; i < totalImages; i++) {
             const image = imageList.value[i];
-            // 优先使用filteredSrc（应用滤镜后的图片），然后是processedSrc，最后是原图
-            const imageSrc = image.filteredSrc || image.processedSrc || image.src;
+            const imageSrc = image.filteredSrc || image.processedSrc || image.src; // 优先使用filteredSrc，然后是processedSrc，最后是原图
 
             if (!imageSrc) continue;
 
-            const fileName = `${Date.now() + i}.jpg`;
+            const fileName = `${Date.now() + i}.png`;
             const result = await saveBlobUrlToLocal(imageSrc, fileName, folderPath, BaseDirectory.AppData);
 
             if (result) {
@@ -242,9 +241,6 @@ const saveAllImages = async () => {
             }
         }
         console.log('所有图片保存完成');
-
-        // 注意：保存完成后不清理滤镜资源，保持界面显示效果
-        // cleanupFilterResources(); // 只在组件卸载时清理
 
         // 保存成功后自动返回到main页面
         shouldShowLeavePopup.value = false; // 禁用LeavePopup确认对话框
