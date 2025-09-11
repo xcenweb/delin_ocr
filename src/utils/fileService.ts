@@ -236,6 +236,7 @@ export const saveBlobUrlToLocal = async (
     baseDir: BaseDirectory
 ): Promise<string | false> => {
     try {
+        alert(blobUrl)
         // 从 Blob URL 获取数据
         const response = await fetch(blobUrl)
         if (!response.ok) {

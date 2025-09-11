@@ -32,22 +32,13 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
 
-interface SiteItem {
-    name: string
-    url: string
-    desc: string
-    icon: string
-}
+invoke('get_input').then(res => {
+    console.log(res)
+})
 
-const sites = ref<SiteItem[]>([
-    { name: '到梦空间-实信网实践证书查询', url: '', desc: '到梦空间-实信网实践证书查询', icon: 'mdi-' },
+const sites = ref([
+    { name: '到梦空间', url: '', desc: '实信网实践证书查询/第二课堂成绩单纪念证书查询', icon: '' },
 ])
 </script>
-
-<style scoped>
-/* 根据需要微调卡片交互反馈 */
-.v-card:hover {
-    cursor: pointer;
-}
-</style>

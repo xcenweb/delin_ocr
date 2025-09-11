@@ -31,7 +31,7 @@
             </v-card>
 
             <div class="d-flex justify-space-between align-center mb-4 ml-5 mt-8">
-                <h3 class="font-weight-bold">最近浏览</h3>
+                <h3 class="font-weight-bold">最近文件</h3>
                 <v-chip class="mr-4" append-icon="mdi-chevron-right" size="small" variant="outlined">
                     查看全部
                 </v-chip>
@@ -64,6 +64,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useFileDialog } from '@vueuse/core'
+import { useSnackbar } from '@/components/global/snackbarService'
 
 const router = useRouter()
 
@@ -76,7 +78,7 @@ const features = ref([
     {
         title: '文件导入',
         icon: 'mdi-file-upload-outline',
-        route: null // TODO: 添加文件导入页面路由
+        route: 'select-file'
     },
     {
         title: '扫描导入',
@@ -174,6 +176,16 @@ const recentFiles = ref([
 
 // 跳转到功能页面
 const goToFeature = (routeName) => {
+    if (routeName === 'select-file') {
+        const { files, open, reset, onCancel, onChange } = useFileDialog({
+            accept: 'image/*,.pdf',
+            directory: false,
+        })
+        open()
+        onChange((files) => {
+            useSnackbar().info('TODO:暂不支持...')
+        })
+    }
     if (routeName) {
         router.push({ name: routeName })
     }

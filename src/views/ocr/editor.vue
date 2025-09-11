@@ -243,13 +243,11 @@ const saveAllImages = async () => {
         console.log('所有图片保存完成');
 
         // 保存成功后自动返回到main页面
-        shouldShowLeavePopup.value = false; // 禁用LeavePopup确认对话框
-
-        // 连续返回两个页面回到main.vue
+        shouldShowLeavePopup.value = false;
         setTimeout(() => {
-            router.back(); // 第一次返回
+            router.back();
             setTimeout(() => {
-                router.back(); // 第二次返回
+                router.back();
             }, 100);
         }, 500);
 

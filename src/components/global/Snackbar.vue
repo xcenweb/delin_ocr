@@ -1,7 +1,7 @@
 <template>
   <!-- 全局 Snackbar 消息提示组件 -->
   <v-snackbar v-model="snackbarService.visible.value" :color="snackbarService.color.value"
-    :timeout="snackbarService.timeout.value" location="top">
+    :timeout="snackbarService.timeout.value" location="top" transition="slide-y-transition">
     <v-row align="center" no-gutters>
       <!-- 进度圆圈 -->
       <v-col cols="auto" v-if="snackbarService.showProgress.value">
