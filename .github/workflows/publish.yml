@@ -38,7 +38,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: lts/*
-          cache: yarn
+          cache: npm
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -50,13 +50,13 @@ jobs:
         with:
           workspaces: ./src-tauri -> target
       - name: install frontend dependencies
-        run: yarn install
+        run: npm install
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         with:
-          tagName: app-v__VERSION__
-          releaseName: App v__VERSION__
+          tagName: delin-v__VERSION__
+          releaseName: delin v__VERSION__
           releaseBody: See the assets to download this version and install.
           releaseDraft: true
           prerelease: false
