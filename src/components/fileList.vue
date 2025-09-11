@@ -13,7 +13,7 @@
                     <p class="text-subtitle-1 text-truncate">{{ fso.name }}</p>
                 </template>
                 <template v-slot:subtitle>
-                    <p class="text-grey-darken-1">{{ fso.count }} 项</p>
+                    <p class="text-grey-darken-1 text-truncate">{{ fso.count }} 项</p>
                 </template>
                 <template v-slot:append>
                     <v-icon icon="mdi-chevron-right" color="grey-lighten-1" size="20" class="ml-2" />

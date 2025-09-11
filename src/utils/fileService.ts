@@ -1,4 +1,5 @@
 // 文件服务
+// TODO: 重构
 
 import { getThumbnailUrl } from './thumbnailService'
 
@@ -223,48 +224,34 @@ export const getAllFiles = async (path: string): Promise<FileObject[]> => {
 
 /**
  * 将 Blob URL 保存到本地文件系统
- * @param blobUrl - Blob URL 地址
- * @param fileName - 文件名（包含扩展名）
- * @param targetPath - 目标路径（相对于 baseDir）
+ * @param blobUrl
+ * @param fileName
+ * @param targetPath - 目标路径
  * @param baseDir - 基础目录
  * @returns 成功时返回保存的完整路径，失败时返回 false
  */
-export const saveBlobUrlToLocal = async (
+export const saveBlobUrlToFile = async (
     blobUrl: string,
     fileName: string,
     targetPath: string = '',
     baseDir: BaseDirectory
 ): Promise<string | false> => {
     try {
-        alert(blobUrl)
         // 从 Blob URL 获取数据
         const response = await fetch(blobUrl)
-        if (!response.ok) {
-            throw new Error(`网络请求失败: ${response.status} ${response.statusText}`)
-        }
 
         // 获取文件数据
         const arrayBuffer = await response.arrayBuffer()
-        if (arrayBuffer.byteLength === 0) {
-            throw new Error('文件数据为空')
-        }
         const uint8Array = new Uint8Array(arrayBuffer)
 
-        // 确保目标目录存在
-        if (targetPath) {
-            const dirExists = await exists(targetPath, { baseDir }) as boolean
-            if (!dirExists) {
-                await mkdir(targetPath, { baseDir, recursive: true })
-                console.log(`目录已创建: ${targetPath}`)
-            }
+        // 目录不存在则创建
+        if (!await exists(targetPath, { baseDir }) as boolean) {
+            await mkdir(targetPath, { baseDir, recursive: true })
+            console.log(`目录已创建: ${targetPath}`)
         }
 
         // 生成唯一文件路径
-        const fullPath = await generateUniqueFilePath(
-            fileName,
-            targetPath,
-            baseDir
-        )
+        const fullPath = await generateUniqueFilePath(fileName, targetPath, baseDir)
 
         // 写入文件
         await writeFile(fullPath, uint8Array, { baseDir })
@@ -272,9 +259,7 @@ export const saveBlobUrlToLocal = async (
         console.log(`文件已成功保存到: ${fullPath} (大小: ${formatFileSize(arrayBuffer.byteLength)})`)
         return fullPath
     } catch (error) {
-        alert(error)
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        console.error('保存文件失败:', errorMessage)
+        console.error('保存文件失败:', error)
         return false
     }
 }
@@ -286,7 +271,7 @@ export const saveBlobUrlToLocal = async (
  * @param baseDir - 基础目录
  * @returns 唯一的文件路径
  */
-const generateUniqueFilePath = async (
+export const generateUniqueFilePath = async (
     fileName: string,
     targetPath: string,
     baseDir: BaseDirectory

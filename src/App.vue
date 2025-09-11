@@ -26,9 +26,6 @@ const onForward = () => {
   console.log('forward')
   slideTransition.value = 'slide-left'
 };
-
-// TODO: 监听当前路由'/'，两次返回（间隔2s）则退出app
-// router.currentRoute.value.path
 </script>
 
 <style scoped>

@@ -123,7 +123,8 @@
 
 <script setup lang="ts">
 import { onUnmounted, ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import router from '@/router';
+
 import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper';
 import '@zebra-ui/swiper/index.scss'
 
@@ -133,11 +134,9 @@ import { useEditor } from '@/views/ocr/ts/editor';
 import { useEditorCrop } from '@/views/ocr/ts/editor-crop';
 import { useEditorFilter } from '@/views/ocr/ts/editor-filter';
 
-import { saveBlobUrlToLocal } from '@/utils/fileService';
+import { saveBlobUrlToFile } from '@/utils/fileService';
 import { BaseDirectory } from '@tauri-apps/plugin-fs';
-
-// 路由实例
-const router = useRouter();
+import { useSnackbar } from '@/components/global/snackbarService';
 
 // 控制LeavePopup是否显示确认对话框
 const shouldShowLeavePopup = ref(true);
@@ -147,7 +146,7 @@ const computedShouldShowLeavePopup = computed(() => {
     return shouldShowLeavePopup.value && editorMode.value === 'edit';
 });
 
-// 使用编辑器通用功能
+// 编辑器通用功能
 const {
     editorMode,
     imageList,
@@ -159,7 +158,7 @@ const {
     onSlideChange: baseOnSlideChange
 } = useEditor();
 
-// 使用透视矫正功能
+// 透视矫正功能
 const {
     containerRef,
     imageContainerRef,
@@ -178,17 +177,16 @@ const {
     handleCropModeChange
 } = useEditorCrop(imageList, swiperslideIn, currentImage, editorMode);
 
-// 使用滤镜功能
+// 滤镜功能
 const {
     selectedFilter,
     filterList,
-    applyFilterToImage,
     syncFilterWithImage,
     resetFilterToOriginal,
     cleanupFilterResources
 } = useEditorFilter(imageList, swiperslideIn);
 
-// 编辑模式切换处理
+// 编辑模式切换
 const editorModeChange = (toMode: any, event?: string) => {
     handleCropModeChange(toMode, event);
 
@@ -224,17 +222,10 @@ const saveAllImages = async () => {
         for (let i = 0; i < totalImages; i++) {
             const image = imageList.value[i];
             const imageSrc = image.filteredSrc || image.processedSrc || image.src; // 优先使用filteredSrc，然后是processedSrc，最后是原图
-
             if (!imageSrc) continue;
 
             const fileName = `${Date.now() + i}.png`;
-            const result = await saveBlobUrlToLocal(imageSrc, fileName, folderPath, BaseDirectory.AppData);
-
-            if (result) {
-                console.log(`图片 ${i + 1} 保存成功: ${result}`);
-            } else {
-                console.error(`图片 ${i + 1} 保存失败`);
-            }
+            await saveBlobUrlToFile(imageSrc, fileName, folderPath, BaseDirectory.AppData);
 
             if (i < totalImages - 1) {
                 await new Promise(resolve => setTimeout(resolve, 5));
@@ -243,16 +234,15 @@ const saveAllImages = async () => {
         console.log('所有图片保存完成');
 
         // 保存成功后自动返回到main页面
+        useSnackbar().success('保存成功')
         shouldShowLeavePopup.value = false;
         setTimeout(() => {
-            router.back();
-            setTimeout(() => {
-                router.back();
-            }, 100);
+            router.go(-2)
         }, 500);
 
     } catch (error) {
         console.error('保存图片时发生错误:', error);
+        useSnackbar().error('保存图片时发生错误'+error)
     }
 };
 

@@ -4,10 +4,10 @@
 
             <v-app-bar>
                 <v-btn icon="mdi-arrow-left" @click="$router.back()" />
-                <template v-slot:append>
+                <!-- <template v-slot:append>
                     <v-btn icon="mdi-grid-off" />
                     <v-btn icon="mdi-selection-off" />
-                </template>
+                </template> -->
             </v-app-bar>
 
             <!-- 视频区域 -->

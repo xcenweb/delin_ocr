@@ -10,7 +10,7 @@
             </div>
 
             <!-- 搜索区域 -->
-            <div class="px-3 mb-2">
+            <div class="px-4 mb-2">
                 <v-text-field v-model="searchQuery" prepend-inner-icon="mdi-magnify" placeholder="搜索证件..."
                     variant="outlined" density="compact" clearable hide-details>
                 </v-text-field>
@@ -19,7 +19,7 @@
             <!-- 证件分类标签 -->
             <v-slide-group v-model="selectedCategory" mandatory show-arrows="desktop" mobile-breakpoint="sm"
                 class="mb-5 swiper-no-swiping">
-                <v-spacer style="width: 8px;" class="d-sm-none"></v-spacer>
+                <v-spacer style="width: 12px;" class="d-sm-none"></v-spacer>
                 <v-slide-group-item v-slot="{ isSelected, toggle }" value="all">
                     <v-chip :color="isSelected ? 'primary' : undefined" :variant="isSelected ? 'flat' : 'outlined'"
                         class="ma-1" @click="toggle" density="compact">
