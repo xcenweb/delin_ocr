@@ -40,7 +40,7 @@ self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
             })
         }
 
-        // 销毁
+        // 销毁worker
         if (event.data.type === 'destroy' && worker) {
             await worker.terminate()
             worker = null

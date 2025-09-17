@@ -41,13 +41,16 @@
 </template>
 
 <script setup lang="ts">
+import { useSnackbar } from '@/components/global/snackbarService';
 import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
+
+
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { readFile } from '@tauri-apps/plugin-fs';
-import { share, canShare } from "@vnidrop/tauri-plugin-share";
 import { openPath } from '@tauri-apps/plugin-opener';
-import { useSnackbar } from '@/components/global/snackbarService';
+
+import { share, canShare } from "@vnidrop/tauri-plugin-share";
 
 // 路由实例
 const route = useRoute();

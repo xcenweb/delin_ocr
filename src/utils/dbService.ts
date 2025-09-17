@@ -92,7 +92,7 @@ class BaseDB {
      * 通用：获取当前时间
      */
     public getCurrentTime() {
-        return useDateFormat(new Date(), 'YYYY-MM-DD HH:mm:ss')
+        return useDateFormat(new Date(), 'YYYY-MM-DD HH:mm:ss').value
     }
 
     /**
@@ -113,7 +113,7 @@ class OCRRecords extends BaseDB {
     /**
      * 插入或更新OCR记录
      */
-    async upsert(record: Omit<OCRRecord, 'id'>): Promise<number> {
+    async upsert(record: OCRRecord): Promise<number> {
         await this.ensureInitialized();
         const currentTime = this.getCurrentTime();
 
@@ -135,32 +135,6 @@ class OCRRecords extends BaseDB {
             [record.relative_path, record.text || '', record.block || '', currentTime, currentTime]
         );
         return insertResult.lastInsertId as number;
-    }
-
-    /**
-     * 插入OCR记录
-     */
-    async insert(record: Omit<OCRRecord, 'id'>): Promise<number> {
-        await this.ensureInitialized();
-        const currentTime = this.getCurrentTime();
-        const result = await this.db.execute(
-            `INSERT INTO ${this.tableName} (relative_path, text, block, create_time, update_time) VALUES (?, ?, ?, ?, ?)`,
-            [record.relative_path, record.text || '', record.block || '', currentTime, currentTime]
-        );
-        return result.lastInsertId as number;
-    }
-
-    /**
-     * 更新OCR记录
-     */
-    async update(relativePath: string, record: Partial<OCRRecord>): Promise<boolean> {
-        await this.ensureInitialized();
-        const currentTime = this.getCurrentTime();
-        const result = await this.db.execute(
-            `UPDATE ${this.tableName} SET text = ?, block = ?, update_time = ? WHERE relative_path = ?`,
-            [record.text || '', record.block || '', currentTime, relativePath]
-        );
-        return result.rowsAffected > 0;
     }
 
     /**
@@ -244,7 +218,7 @@ class FilesList extends BaseDB {
     /**
      * 插入或更新文件记录
      */
-    async upsert(record: Omit<FileRecord, 'id'>): Promise<number> {
+    async upsert(record: FileRecord): Promise<number> {
         await this.ensureInitialized();
 
         // 尝试更新
@@ -265,57 +239,6 @@ class FilesList extends BaseDB {
             [record.type, record.relative_path, record.tags || '', record.atime || '', record.mtime || '', record.birthtime || '']
         );
         return insertResult.lastInsertId as number;
-    }
-
-    /**
-     * 插入文件记录
-     */
-    async insert(record: Omit<FileRecord, 'id'>): Promise<number> {
-        await this.ensureInitialized();
-        const result = await this.db.execute(
-            `INSERT INTO ${this.tableName} (type, relative_path, tags, atime, mtime, birthtime) VALUES (?, ?, ?, ?, ?, ?)`,
-            [record.type, record.relative_path, record.tags || '', record.atime || '', record.mtime || '', record.birthtime || '']
-        );
-        return result.lastInsertId as number;
-    }
-
-    /**
-     * 更新文件记录
-     */
-    async update(relativePath: string, record: Partial<FileRecord>): Promise<boolean> {
-        await this.ensureInitialized();
-        const fields: string[] = [];
-        const values: any[] = [];
-
-        if (record.type !== undefined) {
-            fields.push('type = ?');
-            values.push(record.type);
-        }
-        if (record.tags !== undefined) {
-            fields.push('tags = ?');
-            values.push(record.tags);
-        }
-        if (record.atime !== undefined) {
-            fields.push('atime = ?');
-            values.push(record.atime);
-        }
-        if (record.mtime !== undefined) {
-            fields.push('mtime = ?');
-            values.push(record.mtime);
-        }
-        if (record.birthtime !== undefined) {
-            fields.push('birthtime = ?');
-            values.push(record.birthtime);
-        }
-
-        if (fields.length === 0) return false;
-
-        values.push(relativePath);
-        const result = await this.db.execute(
-            `UPDATE ${this.tableName} SET ${fields.join(', ')} WHERE relative_path = ?`,
-            values
-        );
-        return result.rowsAffected > 0;
     }
 
     /**
