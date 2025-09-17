@@ -46,10 +46,14 @@ const router = createRouter({
             component: () => import('@/views/online/index.vue')
         },
 
-        // test
+        // all test
         {
-            path: '/test',
-            component: () => import('@/views/test.vue')
+            path: '/test/',
+            component: () => import('@/views/test/index.vue')
+        },
+        {
+            path: '/test/db',
+            component: () => import('@/views/test/db.vue')
         },
 
         // 设置页面

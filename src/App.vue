@@ -1,11 +1,13 @@
 <template>
-  <router-view v-slot="{ Component }">
-    <transition :name="slideTransition">
-      <vue-page-stack @back="onBack" @forward="onForward">
-        <component :is="Component" :key="$route.fullPath"></component>
-      </vue-page-stack>
-    </transition>
-  </router-view>
+  <Suspense>
+    <router-view v-slot="{ Component }">
+      <transition :name="slideTransition">
+        <vue-page-stack @back="onBack" @forward="onForward">
+          <component :is="Component" :key="$route.fullPath"></component>
+        </vue-page-stack>
+      </transition>
+    </router-view>
+  </Suspense>
 
   <GlobalSnackbar />
 </template>

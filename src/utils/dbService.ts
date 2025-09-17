@@ -2,17 +2,37 @@
 import Database from '@tauri-apps/plugin-sql';
 import { useDateFormat } from '@vueuse/core';
 
-import { FileObject } from './fileService';
-import { OCRResult } from './ocrService';
+// 数据类型定义
+export interface FileRecord {
+    id?: number;
+    type: string;
+    relative_path: string;
+    tags?: string;
+    atime?: string;
+    mtime?: string;
+    birthtime?: string;
+}
+
+export interface OCRRecord {
+    id?: number;
+    relative_path: string;
+    text?: string;
+    block?: string;
+    create_time?: string;
+    update_time?: string;
+}
 
 /**
  * 数据库基础类
  */
 class BaseDB {
+    /** 数据库连接对象*/
     protected db!: Database;
+    /** 初始化数据库连接的Promise */
+    private initPromise: Promise<void>;
 
     constructor() {
-        this.init();
+        this.initPromise = this.init();
     }
 
     /**
@@ -21,6 +41,13 @@ class BaseDB {
     private async init() {
         this.db = await Database.load('sqlite:' + 'user/cache.db');
         await this.initTables();
+    }
+
+    /**
+     * 确保数据库已初始化
+     */
+    protected async ensureInitialized(): Promise<void> {
+        await this.initPromise;
     }
 
     /**
@@ -72,100 +99,327 @@ class BaseDB {
      * 注销连接
      */
     async destroy(): Promise<void> {
+        await this.ensureInitialized();
         await this.db.close();
     }
 }
 
 /**
- * OCR记录
+ * OCR识别缓存
  */
 class OCRRecords extends BaseDB {
-
     tableName = 'ocr_records';
 
     /**
-     * 更新文件的OCR识别缓存
-     * @param relative_path 相对路径
-     * @param ocrResult OCR识别结果
+     * 插入或更新OCR记录
      */
-    async update(relative_path: string, ocrResult: OCRResult) {
-        return await this.db.execute(`UPDATE ${this.tableName} SET ocr_text = $1, ocr_block = $2, is_processed = 1 WHERE relative_path = $3`, [
-            ocrResult.text, JSON.stringify(ocrResult.block), relative_path
-        ])
+    async upsert(record: Omit<OCRRecord, 'id'>): Promise<number> {
+        await this.ensureInitialized();
+        const currentTime = this.getCurrentTime();
+
+        // 尝试更新
+        const updateResult = await this.db.execute(
+            `UPDATE ${this.tableName} SET text = ?, block = ?, update_time = ? WHERE relative_path = ?`,
+            [record.text || '', record.block || '', currentTime, record.relative_path]
+        );
+
+        // 如果更新成功，获取记录ID
+        if (updateResult.rowsAffected > 0) {
+            const existing = await this.getByPath(record.relative_path);
+            return existing?.id || 0;
+        }
+
+        // 如果更新失败，插入新记录
+        const insertResult = await this.db.execute(
+            `INSERT INTO ${this.tableName} (relative_path, text, block, create_time, update_time) VALUES (?, ?, ?, ?, ?)`,
+            [record.relative_path, record.text || '', record.block || '', currentTime, currentTime]
+        );
+        return insertResult.lastInsertId as number;
     }
 
     /**
-     * 获取文件的OCR识别缓存
-     * @param relative_path 相对路径
+     * 插入OCR记录
      */
-    async get(relative_path: string) {
-        return await this.db.execute(`SELECT * FROM ${this.tableName} WHERE relative_path = $1`, [this.normalizedPath(relative_path)])
+    async insert(record: Omit<OCRRecord, 'id'>): Promise<number> {
+        await this.ensureInitialized();
+        const currentTime = this.getCurrentTime();
+        const result = await this.db.execute(
+            `INSERT INTO ${this.tableName} (relative_path, text, block, create_time, update_time) VALUES (?, ?, ?, ?, ?)`,
+            [record.relative_path, record.text || '', record.block || '', currentTime, currentTime]
+        );
+        return result.lastInsertId as number;
     }
 
     /**
-     * 删除文件的OCR识别缓存
-     * @param relative_path 相对路径
-     * @returns
+     * 更新OCR记录
      */
-    async delete(relative_path: string) {
-        return await this.db.execute(`DELETE FROM ${this.tableName} WHERE relative_path = `, [this.normalizedPath(relative_path)])
+    async update(relativePath: string, record: Partial<OCRRecord>): Promise<boolean> {
+        await this.ensureInitialized();
+        const currentTime = this.getCurrentTime();
+        const result = await this.db.execute(
+            `UPDATE ${this.tableName} SET text = ?, block = ?, update_time = ? WHERE relative_path = ?`,
+            [record.text || '', record.block || '', currentTime, relativePath]
+        );
+        return result.rowsAffected > 0;
+    }
+
+    /**
+     * 根据路径获取OCR记录
+     */
+    async getByPath(relativePath: string): Promise<OCRRecord | null> {
+        await this.ensureInitialized();
+        const result = await this.db.select<OCRRecord[]>(
+            `SELECT * FROM ${this.tableName} WHERE relative_path = ?`,
+            [relativePath]
+        );
+        return result.length > 0 ? result[0] : null;
+    }
+
+    /**
+     * 根据路径删除OCR记录
+     */
+    async deleteByPath(relativePath: string): Promise<boolean> {
+        await this.ensureInitialized();
+        const result = await this.db.execute(
+            `DELETE FROM ${this.tableName} WHERE relative_path = ?`,
+            [relativePath]
+        );
+        return result.rowsAffected > 0;
+    }
+
+    /**
+     * 获取所有OCR记录
+     */
+    async getAll(limit?: number, offset?: number): Promise<OCRRecord[]> {
+        await this.ensureInitialized();
+        let query = `SELECT * FROM ${this.tableName} ORDER BY update_time DESC`;
+        const params: any[] = [];
+
+        if (limit) {
+            query += ` LIMIT ?`;
+            params.push(limit.toString());
+            if (offset) {
+                query += ` OFFSET ?`;
+                params.push(offset.toString());
+            }
+        }
+
+        return await this.db.select<OCRRecord[]>(query, params);
+    }
+
+    /**
+     * 搜索OCR文本
+     */
+    async search(keyword: string, limit?: number): Promise<OCRRecord[]> {
+        await this.ensureInitialized();
+        let query = `SELECT * FROM ${this.tableName} WHERE text LIKE ? ORDER BY update_time DESC`;
+        const params = [`%${keyword}%`];
+
+        if (limit) {
+            query += ` LIMIT ?`;
+            params.push(limit.toString());
+        }
+
+        return await this.db.select<OCRRecord[]>(query, params);
+    }
+
+    /**
+     * 获取记录总数
+     */
+    async getCount(): Promise<number> {
+        await this.ensureInitialized();
+        const result = await this.db.select<{count: number}[]>(
+            `SELECT COUNT(*) as count FROM ${this.tableName}`
+        );
+        return result[0]?.count || 0;
     }
 }
 
 /**
- * 文件列表记录
+ * 文件列表缓存
  */
 class FilesList extends BaseDB {
-
-    tableName = 'files_list'
+    tableName = 'files_list';
 
     /**
-     * 插入文件
-     * @param fileInfo 文件信息
+     * 插入或更新文件记录
      */
-    async add(fileInfo: FileObject) {
-        return await this.db.execute(`
-            INSERT INTO ${this.tableName} (
-                name, type, relative_path, atime, create_time, update_time
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-        `, [
-            fileInfo.name, fileInfo.type, this.normalizedPath(fileInfo.path), fileInfo.info.atime, fileInfo.info.mtime, fileInfo.info.birthtime, fileInfo.info.size, new Date(), new Date(),
-        ])
+    async upsert(record: Omit<FileRecord, 'id'>): Promise<number> {
+        await this.ensureInitialized();
+
+        // 尝试更新
+        const updateResult = await this.db.execute(
+            `UPDATE ${this.tableName} SET type = ?, tags = ?, atime = ?, mtime = ?, birthtime = ? WHERE relative_path = ?`,
+            [record.type, record.tags || '', record.atime || '', record.mtime || '', record.birthtime || '', record.relative_path]
+        );
+
+        // 如果更新成功，获取记录ID
+        if (updateResult.rowsAffected > 0) {
+            const existing = await this.getByPath(record.relative_path);
+            return existing?.id || 0;
+        }
+
+        // 如果更新失败，插入新记录
+        const insertResult = await this.db.execute(
+            `INSERT INTO ${this.tableName} (type, relative_path, tags, atime, mtime, birthtime) VALUES (?, ?, ?, ?, ?, ?)`,
+            [record.type, record.relative_path, record.tags || '', record.atime || '', record.mtime || '', record.birthtime || '']
+        );
+        return insertResult.lastInsertId as number;
     }
 
     /**
-     * 删除文件
-     * @param relative_path 相对路径
+     * 插入文件记录
      */
-    async remove(relative_path: string) {
-        return await this.db.execute(`DELETE FROM ${this.tableName} WHERE relative_path = `, [this.normalizedPath(relative_path)])
+    async insert(record: Omit<FileRecord, 'id'>): Promise<number> {
+        await this.ensureInitialized();
+        const result = await this.db.execute(
+            `INSERT INTO ${this.tableName} (type, relative_path, tags, atime, mtime, birthtime) VALUES (?, ?, ?, ?, ?, ?)`,
+            [record.type, record.relative_path, record.tags || '', record.atime || '', record.mtime || '', record.birthtime || '']
+        );
+        return result.lastInsertId as number;
     }
 
     /**
-     * 获取最近访问的前 limit 个文件
-     * @param limit 个数
+     * 更新文件记录
      */
-    async getRecent(limit: number = 10) {
-        return await this.db.execute(`SELECT * FROM ${this.tableName} ORDER BY last_viewed DESC LIMIT $1`, [limit])
+    async update(relativePath: string, record: Partial<FileRecord>): Promise<boolean> {
+        await this.ensureInitialized();
+        const fields: string[] = [];
+        const values: any[] = [];
+
+        if (record.type !== undefined) {
+            fields.push('type = ?');
+            values.push(record.type);
+        }
+        if (record.tags !== undefined) {
+            fields.push('tags = ?');
+            values.push(record.tags);
+        }
+        if (record.atime !== undefined) {
+            fields.push('atime = ?');
+            values.push(record.atime);
+        }
+        if (record.mtime !== undefined) {
+            fields.push('mtime = ?');
+            values.push(record.mtime);
+        }
+        if (record.birthtime !== undefined) {
+            fields.push('birthtime = ?');
+            values.push(record.birthtime);
+        }
+
+        if (fields.length === 0) return false;
+
+        values.push(relativePath);
+        const result = await this.db.execute(
+            `UPDATE ${this.tableName} SET ${fields.join(', ')} WHERE relative_path = ?`,
+            values
+        );
+        return result.rowsAffected > 0;
     }
 
     /**
-     * 更新文件标签
-     * @param relative_path 相对路径
-     * @param tags 标签字符串（逗号分隔）
+     * 根据路径获取文件记录
      */
-    async updateTags(relative_path: string, tags: string) {
-        return await this.db.execute(`UPDATE ${this.tableName} SET tags = $1 WHERE relative_path = $2`, [
-            tags, this.normalizedPath(relative_path)
-        ])
+    async getByPath(relativePath: string): Promise<FileRecord | null> {
+        await this.ensureInitialized();
+        const result = await this.db.select<FileRecord[]>(
+            `SELECT * FROM ${this.tableName} WHERE relative_path = ?`,
+            [relativePath]
+        );
+        return result.length > 0 ? result[0] : null;
     }
 
     /**
-     * 根据标签查找文件
-     * @param tag 标签名称
+     * 根据路径删除文件记录
      */
-    async getFilesByTag(tag: string) {
-        return await this.db.select(`SELECT * FROM ${this.tableName} WHERE tags LIKE $1`, [`%${tag}%`])
+    async deleteByPath(relativePath: string): Promise<boolean> {
+        await this.ensureInitialized();
+        const result = await this.db.execute(
+            `DELETE FROM ${this.tableName} WHERE relative_path = ?`,
+            [relativePath]
+        );
+        return result.rowsAffected > 0;
+    }
+
+    /**
+     * 获取所有文件记录
+     */
+    async getAll(limit?: number, offset?: number): Promise<FileRecord[]> {
+        await this.ensureInitialized();
+        let query = `SELECT * FROM ${this.tableName} ORDER BY mtime DESC`;
+        const params: any[] = [];
+
+        if (limit) {
+            query += ` LIMIT ?`;
+            params.push(limit.toString());
+            if (offset) {
+                query += ` OFFSET ?`;
+                params.push(offset.toString());
+            }
+        }
+
+        return await this.db.select<FileRecord[]>(query, params);
+    }
+
+    /**
+     * 根据文件类型获取记录
+     */
+    async getByType(type: string, limit?: number): Promise<FileRecord[]> {
+        await this.ensureInitialized();
+        let query = `SELECT * FROM ${this.tableName} WHERE type = ? ORDER BY mtime DESC`;
+        const params = [type];
+
+        if (limit) {
+            query += ` LIMIT ?`;
+            params.push(limit.toString());
+        }
+
+        return await this.db.select<FileRecord[]>(query, params);
+    }
+
+    /**
+     * 根据标签搜索文件
+     */
+    async getByTags(tags: string[], limit?: number): Promise<FileRecord[]> {
+        await this.ensureInitialized();
+        const tagConditions = tags.map(() => 'tags LIKE ?').join(' OR ');
+        let query = `SELECT * FROM ${this.tableName} WHERE ${tagConditions} ORDER BY mtime DESC`;
+        const params = tags.map(tag => `%${tag}%`);
+
+        if (limit) {
+            query += ` LIMIT ?`;
+            params.push(limit.toString());
+        }
+
+        return await this.db.select<FileRecord[]>(query, params);
+    }
+
+    /**
+     * 搜索文件
+     */
+    async search(keyword: string, limit?: number): Promise<FileRecord[]> {
+        await this.ensureInitialized();
+        let query = `SELECT * FROM ${this.tableName} WHERE relative_path LIKE ? OR tags LIKE ? ORDER BY mtime DESC`;
+        const params = [`%${keyword}%`, `%${keyword}%`];
+
+        if (limit) {
+            query += ` LIMIT ?`;
+            params.push(limit.toString());
+        }
+
+        return await this.db.select<FileRecord[]>(query, params);
+    }
+
+    /**
+     * 获取文件总数
+     */
+    async getCount(): Promise<number> {
+        await this.ensureInitialized();
+        const result = await this.db.select<{count: number}[]>(
+            `SELECT COUNT(*) as count FROM ${this.tableName}`
+        );
+        return result[0]?.count || 0;
     }
 }
 
