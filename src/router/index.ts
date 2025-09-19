@@ -55,6 +55,14 @@ const router = createRouter({
             path: '/test/db',
             component: () => import('@/views/test/db.vue')
         },
+        {
+            path: '/test/path',
+            component: () => import('@/views/test/path.vue')
+        },
+        {
+            path: '/test/ocr-worker',
+            component: () => import('@/views/test/ocr-worker.vue')
+        },
 
         // 设置页面
         {

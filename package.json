@@ -10,6 +10,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@choochmeque/tauri-plugin-sharekit-api": "^0.2.2",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-fs": "^2.4.1",
     "@tauri-apps/plugin-opener": "^2",
@@ -18,7 +19,6 @@
     "@tauri-apps/plugin-window-state": "^2.4.0",
     "@techstark/opencv-js": "^4.11.0-release.1",
     "@types/node": "^24.3.0",
-    "@vnidrop/tauri-plugin-share": "^0.2.0",
     "@vueuse/components": "^13.9.0",
     "@vueuse/core": "^13.9.0",
     "@zebra-ui/swiper": "^3.0.2",

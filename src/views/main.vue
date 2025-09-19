@@ -1,5 +1,5 @@
 <template>
-    <v-app style="height: 100vh; overflow: hidden;">
+    <v-app>
         <!-- pc 左侧导航栏 -->
         <v-navigation-drawer :rail="true" :mobile-breakpoint="600" :elevation="3" :touchless="true">
 

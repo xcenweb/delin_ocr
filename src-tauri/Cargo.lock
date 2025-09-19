@@ -732,8 +732,8 @@ dependencies = [
  "tauri-plugin-fs",
  "tauri-plugin-opener",
  "tauri-plugin-os",
+ "tauri-plugin-sharekit",
  "tauri-plugin-sql",
- "tauri-plugin-vnidrop-share",
  "tauri-plugin-window-state",
 ]
 
@@ -4358,6 +4358,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "tauri-plugin-sharekit"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "809340a9841e9abeed1768b8f1ad1f320632d5d49b43f889878e9f407d3497a0"
+dependencies = [
+ "block2 0.5.1",
+ "log",
+ "objc2 0.6.2",
+ "objc2-app-kit",
+ "objc2-core-foundation",
+ "objc2-foundation 0.3.1",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.16",
+ "windows",
+ "windows-collections",
+]
+
+[[package]]
 name = "tauri-plugin-sql"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4374,30 +4396,6 @@ dependencies = [
  "thiserror 2.0.16",
  "time",
  "tokio",
-]
-
-[[package]]
-name = "tauri-plugin-vnidrop-share"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14abe575fc8ae38db9e04ac83b5506f43b42d4bfa196e2ea2c6b2c58c5489e35"
-dependencies = [
- "base64 0.22.1",
- "log",
- "objc2 0.6.2",
- "objc2-app-kit",
- "objc2-core-foundation",
- "objc2-foundation 0.3.1",
- "raw-window-handle",
- "serde",
- "tauri",
- "tauri-plugin",
- "tempfile",
- "thiserror 2.0.16",
- "uuid",
- "windows",
- "windows-collections",
- "windows-core 0.61.2",
 ]
 
 [[package]]

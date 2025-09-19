@@ -41,16 +41,13 @@
 </template>
 
 <script setup lang="ts">
-import { useSnackbar } from '@/components/global/snackbarService';
-import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useSnackbar } from '@/components/global/snackbarService'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 
-
-import { convertFileSrc } from '@tauri-apps/api/core';
-import { readFile } from '@tauri-apps/plugin-fs';
-import { openPath } from '@tauri-apps/plugin-opener';
-
-import { share, canShare } from "@vnidrop/tauri-plugin-share";
+import { convertFileSrc } from '@tauri-apps/api/core'
+import { openPath } from '@tauri-apps/plugin-opener'
+import { shareFile } from "@choochmeque/tauri-plugin-sharekit-api"
 
 // 路由实例
 const route = useRoute();
@@ -123,16 +120,7 @@ const resetZoom = () => {
 
 // 分享图片
 const shareImage = async () => {
-    const fileData = await readFile(imagePath.value);
-    const fileName = imagePath.value.split('/').pop();
-    const file = new File([fileData], fileName || '');
-    if (await canShare()) {
-        await share({
-            title: '分享图片',
-            text: '分享图片',
-            files: [file]
-        });
-    }
+    await shareFile(imagePath.value, { title: 'Share Image' });
 };
 
 // 调用外部默认程序打开图片

@@ -18,6 +18,13 @@ body {
     padding-bottom: var(--inset-bottom) !important;
 }
 
+.v-main {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: 100vh !important;
+    position: relative !important;
+}
+
 .v-app-bar:not(.v-app-bar--bottom) {
     padding-top: var(--inset-top) !important;
 }

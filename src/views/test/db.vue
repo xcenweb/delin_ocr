@@ -46,7 +46,7 @@
                                 </v-list-item-subtitle>
                                 <template v-slot:append>
                                     <v-btn icon="mdi-delete" size="small" color="error" variant="text"
-                                           @click="deleteFile(file.relative_path)" />
+                                        @click="deleteFile(file.relative_path)" />
                                 </template>
                             </v-list-item>
                         </v-list>
@@ -85,7 +85,7 @@
                                 </v-list-item-subtitle>
                                 <template v-slot:append>
                                     <v-btn icon="mdi-delete" size="small" color="error" variant="text"
-                                           @click="deleteOCR(ocr.relative_path)" />
+                                        @click="deleteOCR(ocr.relative_path)" />
                                 </template>
                             </v-list-item>
                         </v-list>

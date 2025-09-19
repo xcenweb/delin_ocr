@@ -7,26 +7,72 @@
   ],
   "permissions": [
     "core:default",
-    "vnidrop-share:default",
     "sql:default",
     "sql:allow-execute",
     "os:default",
+    "sharekit:default",
 
+    "fs:default",
     "fs:allow-stat",
     "fs:allow-read",
     "fs:allow-read-dir",
     "fs:allow-read-file",
     "fs:allow-write",
     "fs:allow-write-file",
-    "fs:allow-mkdir",
     "fs:allow-exists",
-    "fs:allow-appdata-meta-recursive",
+    "fs:allow-mkdir",
     "fs:allow-remove",
+    "fs:allow-rename",
     {
       "identifier": "fs:scope",
       "allow": [
         {
           "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCONFIG/**"
+        },
+        {
+          "path": "$APPCACHE/**"
+        },
+        {
+          "path": "$APPLOG/**"
+        },
+        {
+          "path": "$AUDIO/**"
+        },
+        {
+          "path": "$CACHE/**"
+        },
+        {
+          "path": "$CONFIG/**"
+        },
+        {
+          "path": "$DATA/**"
+        },
+        {
+          "path": "$DESKTOP/**"
+        },
+        {
+          "path": "$DOCUMENT/**"
+        },
+        {
+          "path": "$DOWNLOAD/**"
+        },
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "$LOCALDATA/**"
+        },
+        {
+          "path": "$PICTURE/**"
+        },
+        {
+          "path": "$TEMPLATE/**"
+        },
+        {
+          "path": "$VIDEO/**"
         }
       ]
     },

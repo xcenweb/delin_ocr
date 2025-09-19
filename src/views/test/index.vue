@@ -1,5 +1,5 @@
 <template>
-    <v-app>
+    <v-app key="index">
         <!-- 顶部导航 -->
         <v-app-bar flat color="primary">
             <v-btn icon @click="$router.back()">
@@ -11,18 +11,22 @@
         <v-main>
             <v-container class="pa-4">
                 <v-card class="mb-4">
-                    <v-card-title>系统信息</v-card-title>
+                    <v-card-title>info</v-card-title>
                     <v-card-text>
+                        <div class="text-body-2 mb-2">平台: {{ platform() }}({{ arch() }})</div>
+                        <div class="text-body-2 mb-2">平台版本: {{ version() }}</div>
                         <div class="text-body-2 mb-2">应用版本: {{ appVersion }}</div>
                         <div class="text-body-2 mb-2">Tauri版本: {{ tauriVersion }}</div>
-                        <div class="text-body-2">平台: {{ platform() }}</div>
+                        <div class="text-body-2 mb-2">应用名称: {{ name }}</div>
+                        <div class="text-body-2 mb-2">应用包名: {{ identifier }}</div>
                     </v-card-text>
                 </v-card>
                 <v-card>
                     <v-card-title>测试项目</v-card-title>
                     <v-card-text>
                         <v-list>
-                            <v-list-item v-for="item in testList" :key="item.name" @click="() => $router.push(item.path)">
+                            <v-list-item v-for="item in testList" :key="item.name"
+                                :to="item.path">
                                 <v-list-item-title>· {{ item.name }}</v-list-item-title>
                             </v-list-item>
                         </v-list>
@@ -35,17 +39,24 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getVersion, getTauriVersion } from '@tauri-apps/api/app';
-import { platform } from '@tauri-apps/plugin-os';
+import { getVersion, getTauriVersion, getName, getIdentifier } from '@tauri-apps/api/app';
+import { platform, version, arch } from '@tauri-apps/plugin-os';
+
 const appVersion = ref('');
 const tauriVersion = ref('');
+const name = ref('');
+const identifier = ref('');
 
 const testList = [
-    { name: '数据库测试', path: '/test/db' },
+    { name: '数据库测试 (user/cache.db)', path: '/test/db' },
+    { name: '路径测试 - 系统路径访问', path: '/test/path' },
+    { name: 'OCR Worker测试', path: '/test/ocr-worker' },
 ];
 
 onMounted(async () => {
     appVersion.value = await getVersion();
     tauriVersion.value = await getTauriVersion();
+    name.value = await getName();
+    identifier.value = await getIdentifier();
 });
 </script>

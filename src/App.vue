@@ -1,5 +1,4 @@
 <template>
-  <Suspense>
     <router-view v-slot="{ Component }">
       <transition :name="slideTransition">
         <vue-page-stack @back="onBack" @forward="onForward">
@@ -7,7 +6,6 @@
         </vue-page-stack>
       </transition>
     </router-view>
-  </Suspense>
 
   <GlobalSnackbar />
 </template>
