@@ -29,10 +29,8 @@ const cleanText = (text: string): string => {
     return text
         .split('\n')
         .map(line => {
-            // 彻底清除中文字之间的所有空格（前后都是中文才删）
-            let cleaned = line.replace(/(?<=[\u4e00-\u9fa5])\s+(?=[\u4e00-\u9fa5])/g, '');
-            // 压缩其余空白为单空格
-            cleaned = cleaned.replace(/\s+/g, ' ').trim();
+            let cleaned = line.replace(/(?<=[\u4e00-\u9fa5])\s+(?=[\u4e00-\u9fa5])/g, ''); // 彻底清除中文字之间的所有空格
+            cleaned = cleaned.replace(/\s+/g, ' ').trim(); // 压缩其余空白为单空格
             return cleaned;
         })
         .filter(line => line.length > 0)
@@ -49,16 +47,20 @@ self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
 
         // 识别一次
         if (event.data.type === 'recognize' && isInitialized && worker) {
-            const { imageData, width, height } = event.data.datas
 
-            // 将 ImageData 转换为 Canvas
-            const canvas = new OffscreenCanvas(width, height)
+            // 直接从 File 创建 ImageBitmap
+            const imageBitmap = await createImageBitmap(event.data.datas.file)
+
+            // 创建 OffscreenCanvas 进行图像预处理
+            const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height)
             const ctx = canvas.getContext('2d')!
-            ctx.putImageData(imageData, 0, 0)
 
-            // 锐化、提高对比度、黑白
+            // 应用图像处理滤镜并绘制
             ctx.filter = 'brightness(1.5) contrast(1.5) grayscale(1)'
-            ctx.drawImage(canvas, 0, 0)
+            ctx.drawImage(imageBitmap, 0, 0)
+
+            // 释放 ImageBitmap 资源
+            imageBitmap.close()
 
             const { data: { text, blocks } } = await worker.recognize(canvas, {}, { blocks: true })
             self.postMessage({ type: 'recognized', datas: { text: cleanText(text), blocks } })

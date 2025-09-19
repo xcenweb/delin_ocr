@@ -13,8 +13,7 @@
                     <v-card-text>
                         <v-chip
                             :color="workerStatus === 'initialized' ? 'success' : workerStatus === 'initializing' ? 'warning' : 'error'"
-                            class="mr-2"
-                        >
+                            class="mr-2">
                             {{ workerStatusText }}
                         </v-chip>
                         <v-chip v-if="lastError" color="error">
@@ -27,54 +26,30 @@
                 <v-card class="mb-4">
                     <v-card-title>图片识别</v-card-title>
                     <v-card-text>
-                        <input
-                            ref="fileInput"
-                            type="file"
-                            accept="image/*"
-                            @change="handleFileSelect"
-                            style="display: none;"
-                        />
+                        <input ref="fileInput" type="file" accept="image/*" @change="handleFileSelect"
+                            style="display: none;" />
 
                         <div class="d-flex gap-2 mb-3">
-                            <v-btn
-                                @click="fileInput?.click()"
-                                color="primary"
-                                prepend-icon="mdi-image"
-                                :disabled="workerStatus !== 'initialized'"
-                            >
+                            <v-btn @click="fileInput?.click()" color="primary" prepend-icon="mdi-image"
+                                :disabled="workerStatus !== 'initialized'">
                                 选择图片
                             </v-btn>
 
-                            <v-btn
-                                @click="performOCR"
-                                color="success"
-                                prepend-icon="mdi-text-recognition"
-                                :loading="isProcessing"
-                                :disabled="workerStatus !== 'initialized' || !selectedImage"
-                            >
+                            <v-btn @click="performOCR" color="success" prepend-icon="mdi-text-recognition"
+                                :loading="isProcessing" :disabled="workerStatus !== 'initialized' || !selectedImage">
                                 开始识别
                             </v-btn>
 
-                            <v-btn
-                                @click="clearResults"
-                                color="grey"
-                                prepend-icon="mdi-delete"
-                                variant="outlined"
-                                :disabled="!ocrResult"
-                            >
+                            <v-btn @click="clearResults" color="grey" prepend-icon="mdi-delete" variant="outlined"
+                                :disabled="!ocrResult">
                                 清除结果
                             </v-btn>
                         </div>
 
                         <!-- 图片预览 -->
                         <div v-if="selectedImage">
-                            <v-img
-                                :src="selectedImage.url"
-                                :alt="selectedImage.name"
-                                max-height="200"
-                                contain
-                                class="mb-2 rounded"
-                            />
+                            <v-img :src="selectedImage.url" :alt="selectedImage.name" max-height="200" contain
+                                class="mb-2 rounded" />
                             <div class="text-caption text-grey">
                                 {{ selectedImage.name }} ({{ formatFileSize(selectedImage.size) }})
                             </div>
@@ -94,13 +69,8 @@
                         <v-card variant="outlined" class="mb-3">
                             <v-card-title class="text-h6">识别文本</v-card-title>
                             <v-card-text>
-                                <v-textarea
-                                    v-model="ocrResult.text"
-                                    readonly
-                                    variant="outlined"
-                                    :rows="6"
-                                    class="mb-2"
-                                />
+                                <v-textarea v-model="ocrResult.text" readonly variant="outlined" :rows="6"
+                                    class="mb-2" />
                                 <div class="text-caption">
                                     字符数: {{ ocrResult.text.length }}
                                 </div>
@@ -112,11 +82,8 @@
                             <v-card-title class="text-h6">文本块详情</v-card-title>
                             <v-card-text>
                                 <v-expansion-panels>
-                                    <v-expansion-panel
-                                        v-for="(block, index) in ocrResult.blocks"
-                                        :key="index"
-                                        :title="`文本块 ${index + 1}`"
-                                    >
+                                    <v-expansion-panel v-for="(block, index) in ocrResult.blocks" :key="index"
+                                        :title="`文本块 ${index + 1}`">
                                         <v-expansion-panel-text>
                                             <div class="mb-2">
                                                 <strong>文本:</strong> {{ block.text || '无文本' }}
@@ -272,35 +239,11 @@ const performOCR = async () => {
     processingTime.value = startTime
 
     try {
-        // 创建 Image 对象
-        const img = new Image()
-        img.crossOrigin = 'anonymous'
-        img.src = selectedImage.value.url
-
-        await new Promise((resolve, reject) => {
-            img.onload = resolve
-            img.onerror = reject
-        })
-
-        // 创建 Canvas 将图片转换为 ImageData
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')!
-        canvas.width = img.width
-        canvas.height = img.height
-
-        // 绘制图片到 Canvas
-        ctx.drawImage(img, 0, 0)
-
-        // 获取 ImageData（可以传输到 Worker）
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-
-        // 发送识别请求
+        // 直接将 File 对象传输到 Worker
         ocrWorker.post({
             type: 'recognize',
             datas: {
-                imageData: imageData,
-                width: canvas.width,
-                height: canvas.height
+                file: selectedImage.value.file
             }
         })
     } catch (error) {

@@ -19,7 +19,7 @@
                     </v-col>
                 </v-row>
             </v-card> -->
-            <v-card class="position-relative mt-n16 ma-4 pa-4">
+            <v-card class="position-relative mt-n16 mx-3 mx-sm-4 mx-md-auto my-4 pa-4" max-width="680">
                 <v-row>
                     <v-col cols="4" v-for="feature in features" :key="feature.title">
                         <div class="text-center pa-0" :hover="true" @click="goToFeature(feature.route)">
@@ -37,7 +37,7 @@
                 </v-chip>
             </div>
             <v-row class="d-flex flex-nowrap overflow-x-auto mb-5 pl-4 pr-8 swiper-no-swiping">
-                <v-col cols="4" sm="3" lg="2" v-for="(file, index) in recentFiles" :key="index"
+                <v-col cols="4" sm="3" md="2" lg="2" v-for="(file, index) in recentFiles" :key="index"
                     class="pl-3 pr-0 pt-4 pb-4">
                     <v-card>
                         <v-img :src="file.cover" aspect-ratio="0.7" cover>

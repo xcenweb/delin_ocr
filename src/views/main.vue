@@ -117,6 +117,7 @@ const onSlideChange = (swiper: any) => {
 import { useWebWorker } from '@vueuse/core'
 import { getAllFiles } from '@/utils/fileService'
 import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
+import { convertFileSrc } from '@tauri-apps/api/core'
 const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
 onMounted(() => {
     ocrWorker.post({
@@ -127,15 +128,28 @@ onMounted(() => {
     })
     watch(ocrWorker.data, (result: { type: string, datas: any }) => {
         if (result.type === 'error') {
-            useSnackbar().error('OCRWorker: ' + result.datas)
+            useSnackbar().error('ocr-worker: ' + result.datas)
         }
         if (result.type === 'inited') {
-            useSnackbar().success('OCRWorker: ' + result.datas)
+            useSnackbar().success('ocr-worker: running!')
+        }
+        if (result.type === 'recognized') {
+            useSnackbar().success('ocr-worker: ' + result.datas.text)
         }
     })
 })
+
 onActivated(async () => {
-    console.log(await getAllFiles('user/file'))
+    const files = await getAllFiles('user/file')
+    // 获取file对象
+    const file = await fetch(convertFileSrc(files[0].fullPath))
+    ocrWorker.post({ type: 'recognize', datas: { file: await file.blob() } })
+    // files.forEach(file => {
+    //     ocrWorker.post({
+    //         type: 'recognize',
+    //         datas: { file: file }
+    //     })
+    // })
 })
 </script>
 

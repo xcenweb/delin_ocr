@@ -79,7 +79,7 @@ onMounted(() => {
 // 图片加载成功
 const onImageLoad = () => {
     imageLoaded.value = true;
-    console.log('图片加载成功:', imagePath.value);
+    console.log('图片加载成功:', imageUrl.value);
 };
 
 // 图片加载失败

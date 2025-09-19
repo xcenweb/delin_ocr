@@ -3,19 +3,10 @@ import Database from '@tauri-apps/plugin-sql';
 import { useDateFormat } from '@vueuse/core';
 
 // 数据类型定义
-export interface FileRecord {
-    id?: number;
-    type: string;
-    relative_path: string;
-    tags?: string;
-    atime?: string;
-    mtime?: string;
-    birthtime?: string;
-}
-
 export interface OCRRecord {
     id?: number;
     relative_path: string;
+    tags?: string;
     text?: string;
     block?: string;
     create_time?: string;
@@ -54,21 +45,11 @@ class BaseDB {
      * 初始化数据表
      */
     private async initTables() {
-
         await this.db.execute(`
-            CREATE TABLE IF NOT EXISTS "files_list" (
-                "id"	INTEGER UNIQUE,
-                "type"	TEXT NOT NULL,
-                "relative_path"	TEXT NOT NULL UNIQUE,
-                "tags"	TEXT DEFAULT '',
-                "atime"	TEXT DEFAULT '',
-                "mtime"	TEXT DEFAULT '',
-                "birthtime"	TEXT DEFAULT '',
-                PRIMARY KEY("id" AUTOINCREMENT)
-            );
             CREATE TABLE IF NOT EXISTS "ocr_records" (
                 "id"	INTEGER UNIQUE,
                 "relative_path"	TEXT NOT NULL UNIQUE,
+                "tags"	TEXT DEFAULT '',
                 "text"	TEXT DEFAULT '',
                 "block"	TEXT DEFAULT '',
                 "create_time"	TEXT,
@@ -117,24 +98,27 @@ class OCRRecords extends BaseDB {
         await this.ensureInitialized();
         const currentTime = this.getCurrentTime();
 
-        // 尝试更新
-        const updateResult = await this.db.execute(
-            `UPDATE ${this.tableName} SET text = ?, block = ?, update_time = ? WHERE relative_path = ?`,
-            [record.text || '', record.block || '', currentTime, record.relative_path]
+        const result = await this.db.execute(
+            `INSERT OR REPLACE INTO ${this.tableName}
+                (id, relative_path, tags, text, block, create_time, update_time)
+                VALUES (
+                    (SELECT id FROM ${this.tableName} WHERE relative_path = ?),
+                    ?, ?, ?, ?,
+                    COALESCE((SELECT create_time FROM ${this.tableName} WHERE relative_path = ?), ?), ?
+                )`,
+            [
+                record.relative_path,
+                record.relative_path,
+                record.tags || '',
+                record.text || '',
+                record.block || '',
+                record.relative_path,
+                currentTime,
+                currentTime
+            ]
         );
 
-        // 如果更新成功，获取记录ID
-        if (updateResult.rowsAffected > 0) {
-            const existing = await this.getByPath(record.relative_path);
-            return existing?.id || 0;
-        }
-
-        // 如果更新失败，插入新记录
-        const insertResult = await this.db.execute(
-            `INSERT INTO ${this.tableName} (relative_path, text, block, create_time, update_time) VALUES (?, ?, ?, ?, ?)`,
-            [record.relative_path, record.text || '', record.block || '', currentTime, currentTime]
-        );
-        return insertResult.lastInsertId as number;
+        return result.lastInsertId as number;
     }
 
     /**
@@ -186,8 +170,25 @@ class OCRRecords extends BaseDB {
      */
     async search(keyword: string, limit?: number): Promise<OCRRecord[]> {
         await this.ensureInitialized();
-        let query = `SELECT * FROM ${this.tableName} WHERE text LIKE ? ORDER BY update_time DESC`;
-        const params = [`%${keyword}%`];
+        let query = `SELECT * FROM ${this.tableName} WHERE text LIKE ? OR tags LIKE ? ORDER BY update_time DESC`;
+        const params = [`%${keyword}%`, `%${keyword}%`];
+
+        if (limit) {
+            query += ` LIMIT ?`;
+            params.push(limit.toString());
+        }
+
+        return await this.db.select<OCRRecord[]>(query, params);
+    }
+
+    /**
+     * 根据标签搜索OCR记录
+     */
+    async getByTags(tags: string[], limit?: number): Promise<OCRRecord[]> {
+        await this.ensureInitialized();
+        const tagConditions = tags.map(() => 'tags LIKE ?').join(' OR ');
+        let query = `SELECT * FROM ${this.tableName} WHERE ${tagConditions} ORDER BY update_time DESC`;
+        const params = tags.map(tag => `%${tag}%`);
 
         if (limit) {
             query += ` LIMIT ?`;
@@ -202,144 +203,7 @@ class OCRRecords extends BaseDB {
      */
     async getCount(): Promise<number> {
         await this.ensureInitialized();
-        const result = await this.db.select<{count: number}[]>(
-            `SELECT COUNT(*) as count FROM ${this.tableName}`
-        );
-        return result[0]?.count || 0;
-    }
-}
-
-/**
- * 文件列表缓存
- */
-class FilesList extends BaseDB {
-    tableName = 'files_list';
-
-    /**
-     * 插入或更新文件记录
-     */
-    async upsert(record: FileRecord): Promise<number> {
-        await this.ensureInitialized();
-
-        // 尝试更新
-        const updateResult = await this.db.execute(
-            `UPDATE ${this.tableName} SET type = ?, tags = ?, atime = ?, mtime = ?, birthtime = ? WHERE relative_path = ?`,
-            [record.type, record.tags || '', record.atime || '', record.mtime || '', record.birthtime || '', record.relative_path]
-        );
-
-        // 如果更新成功，获取记录ID
-        if (updateResult.rowsAffected > 0) {
-            const existing = await this.getByPath(record.relative_path);
-            return existing?.id || 0;
-        }
-
-        // 如果更新失败，插入新记录
-        const insertResult = await this.db.execute(
-            `INSERT INTO ${this.tableName} (type, relative_path, tags, atime, mtime, birthtime) VALUES (?, ?, ?, ?, ?, ?)`,
-            [record.type, record.relative_path, record.tags || '', record.atime || '', record.mtime || '', record.birthtime || '']
-        );
-        return insertResult.lastInsertId as number;
-    }
-
-    /**
-     * 根据路径获取文件记录
-     */
-    async getByPath(relativePath: string): Promise<FileRecord | null> {
-        await this.ensureInitialized();
-        const result = await this.db.select<FileRecord[]>(
-            `SELECT * FROM ${this.tableName} WHERE relative_path = ?`,
-            [relativePath]
-        );
-        return result.length > 0 ? result[0] : null;
-    }
-
-    /**
-     * 根据路径删除文件记录
-     */
-    async deleteByPath(relativePath: string): Promise<boolean> {
-        await this.ensureInitialized();
-        const result = await this.db.execute(
-            `DELETE FROM ${this.tableName} WHERE relative_path = ?`,
-            [relativePath]
-        );
-        return result.rowsAffected > 0;
-    }
-
-    /**
-     * 获取所有文件记录
-     */
-    async getAll(limit?: number, offset?: number): Promise<FileRecord[]> {
-        await this.ensureInitialized();
-        let query = `SELECT * FROM ${this.tableName} ORDER BY mtime DESC`;
-        const params: any[] = [];
-
-        if (limit) {
-            query += ` LIMIT ?`;
-            params.push(limit.toString());
-            if (offset) {
-                query += ` OFFSET ?`;
-                params.push(offset.toString());
-            }
-        }
-
-        return await this.db.select<FileRecord[]>(query, params);
-    }
-
-    /**
-     * 根据文件类型获取记录
-     */
-    async getByType(type: string, limit?: number): Promise<FileRecord[]> {
-        await this.ensureInitialized();
-        let query = `SELECT * FROM ${this.tableName} WHERE type = ? ORDER BY mtime DESC`;
-        const params = [type];
-
-        if (limit) {
-            query += ` LIMIT ?`;
-            params.push(limit.toString());
-        }
-
-        return await this.db.select<FileRecord[]>(query, params);
-    }
-
-    /**
-     * 根据标签搜索文件
-     */
-    async getByTags(tags: string[], limit?: number): Promise<FileRecord[]> {
-        await this.ensureInitialized();
-        const tagConditions = tags.map(() => 'tags LIKE ?').join(' OR ');
-        let query = `SELECT * FROM ${this.tableName} WHERE ${tagConditions} ORDER BY mtime DESC`;
-        const params = tags.map(tag => `%${tag}%`);
-
-        if (limit) {
-            query += ` LIMIT ?`;
-            params.push(limit.toString());
-        }
-
-        return await this.db.select<FileRecord[]>(query, params);
-    }
-
-    /**
-     * 搜索文件
-     */
-    async search(keyword: string, limit?: number): Promise<FileRecord[]> {
-        await this.ensureInitialized();
-        let query = `SELECT * FROM ${this.tableName} WHERE relative_path LIKE ? OR tags LIKE ? ORDER BY mtime DESC`;
-        const params = [`%${keyword}%`, `%${keyword}%`];
-
-        if (limit) {
-            query += ` LIMIT ?`;
-            params.push(limit.toString());
-        }
-
-        return await this.db.select<FileRecord[]>(query, params);
-    }
-
-    /**
-     * 获取文件总数
-     */
-    async getCount(): Promise<number> {
-        await this.ensureInitialized();
-        const result = await this.db.select<{count: number}[]>(
+        const result = await this.db.select<{ count: number }[]>(
             `SELECT COUNT(*) as count FROM ${this.tableName}`
         );
         return result[0]?.count || 0;
@@ -347,4 +211,3 @@ class FilesList extends BaseDB {
 }
 
 export const ocrRecordsDB = new OCRRecords();
-export const filesListDB = new FilesList();
