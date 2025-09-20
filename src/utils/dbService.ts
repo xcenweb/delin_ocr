@@ -80,7 +80,6 @@ class BaseDB {
      * 注销连接
      */
     async destroy(): Promise<void> {
-        await this.ensureInitialized();
         await this.db.close();
     }
 }
@@ -126,10 +125,7 @@ class OCRRecords extends BaseDB {
      */
     async getByPath(relativePath: string): Promise<OCRRecord | null> {
         await this.ensureInitialized();
-        const result = await this.db.select<OCRRecord[]>(
-            `SELECT * FROM ${this.tableName} WHERE relative_path = ?`,
-            [relativePath]
-        );
+        const result = await this.db.select<OCRRecord[]>(`SELECT * FROM ${this.tableName} WHERE relative_path = ?`, [this.normalizedPath(relativePath)]);
         return result.length > 0 ? result[0] : null;
     }
 
@@ -138,10 +134,7 @@ class OCRRecords extends BaseDB {
      */
     async deleteByPath(relativePath: string): Promise<boolean> {
         await this.ensureInitialized();
-        const result = await this.db.execute(
-            `DELETE FROM ${this.tableName} WHERE relative_path = ?`,
-            [relativePath]
-        );
+        const result = await this.db.execute(`DELETE FROM ${this.tableName} WHERE relative_path = ?`, [this.normalizedPath(relativePath)]);
         return result.rowsAffected > 0;
     }
 

@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { onActivated, onMounted, ref, watch } from 'vue'
+import { onActivated, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useSnackbar } from '@/components/global/snackbarService'
 
 // https://swiper.zebraui.com/
@@ -118,6 +118,8 @@ import { useWebWorker } from '@vueuse/core'
 import { getAllFiles } from '@/utils/fileService'
 import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
 import { convertFileSrc } from '@tauri-apps/api/core'
+import { ocrRecordsDB } from '@/utils/dbService'
+
 const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
 onMounted(() => {
     ocrWorker.post({
@@ -135,21 +137,30 @@ onMounted(() => {
         }
         if (result.type === 'recognized') {
             useSnackbar().success('ocr-worker: ' + result.datas.text)
+            // await ocrRecordsDB.upsert()
         }
     })
 })
-
 onActivated(async () => {
     const files = await getAllFiles('user/file')
-    // 获取file对象
-    const file = await fetch(convertFileSrc(files[0].fullPath))
-    ocrWorker.post({ type: 'recognize', datas: { file: await file.blob() } })
-    // files.forEach(file => {
-    //     ocrWorker.post({
-    //         type: 'recognize',
-    //         datas: { file: file }
-    //     })
-    // })
+    // ocrWorker.post({ type: 'recognize', datas: { file: await file.blob() } })
+    files.forEach(file => {
+        ocrRecordsDB.getByPath(file.path).then(async (res) => {
+            if (!res) {
+                ocrWorker.post({
+                    type: 'recognize',
+                    datas: {
+                        src: convertFileSrc(file.fullPath),
+                        path: file.path
+                    }
+                })
+            }
+        })
+    })
+})
+
+onUnmounted(() => {
+    ocrWorker.terminate()
 })
 </script>
 

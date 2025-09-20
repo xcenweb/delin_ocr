@@ -1,4 +1,5 @@
 import Tesseract from 'tesseract.js'
+import { ocrRecordsDB } from '@/utils/dbService'
 
 let worker: Tesseract.Worker | null = null
 let isInitialized = false
@@ -37,6 +38,24 @@ const cleanText = (text: string): string => {
         .join('\n');
 }
 
+/**
+ * 处理图像并进行OCR识别
+ * @param {ImageBitmap | HTMLImageElement | HTMLCanvasElement} src - 图像源
+ * @returns {Promise<{text: string, blocks: any}>} - 识别结果
+ */
+const OCRecognize = async (src: string): Promise<{ text: string, blocks: any }> => {
+    const io = await fetch(src)
+    const imageBitmap = await createImageBitmap(await io.blob())
+    const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height)
+    const ctx = canvas.getContext('2d')!
+    ctx.filter = 'brightness(1.5) contrast(1.5) grayscale(1)'
+    ctx.drawImage(imageBitmap, 0, 0)
+    imageBitmap.close()
+
+    const { data: { text, blocks } } = await worker!.recognize(canvas, {}, { blocks: true })
+    return { text: cleanText(text), blocks }
+}
+
 self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
     try {
         // 初始化
@@ -45,25 +64,10 @@ self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
             self.postMessage({ type: 'inited', datas: result })
         }
 
-        // 识别一次
+        // 识别
         if (event.data.type === 'recognize' && isInitialized && worker) {
-
-            // 直接从 File 创建 ImageBitmap
-            const imageBitmap = await createImageBitmap(event.data.datas.file)
-
-            // 创建 OffscreenCanvas 进行图像预处理
-            const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height)
-            const ctx = canvas.getContext('2d')!
-
-            // 应用图像处理滤镜并绘制
-            ctx.filter = 'brightness(1.5) contrast(1.5) grayscale(1)'
-            ctx.drawImage(imageBitmap, 0, 0)
-
-            // 释放 ImageBitmap 资源
-            imageBitmap.close()
-
-            const { data: { text, blocks } } = await worker.recognize(canvas, {}, { blocks: true })
-            self.postMessage({ type: 'recognized', datas: { text: cleanText(text), blocks } })
+            const result = await OCRecognize(event.data.datas.src)
+            self.postMessage({ type: 'recognized', datas: result })
         }
 
         // 销毁worker
