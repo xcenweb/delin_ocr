@@ -106,12 +106,12 @@ class OCRRecords extends BaseDB {
                     COALESCE((SELECT create_time FROM ${this.tableName} WHERE relative_path = ?), ?), ?
                 )`,
             [
-                record.relative_path,
-                record.relative_path,
+                this.normalizedPath(record.relative_path),
+                this.normalizedPath(record.relative_path),
                 record.tags || '',
                 record.text || '',
                 record.block || '',
-                record.relative_path,
+                this.normalizedPath(record.relative_path),
                 currentTime,
                 currentTime
             ]

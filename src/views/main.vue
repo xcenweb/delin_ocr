@@ -143,7 +143,6 @@ onMounted(() => {
 })
 onActivated(async () => {
     const files = await getAllFiles('user/file')
-    // ocrWorker.post({ type: 'recognize', datas: { file: await file.blob() } })
     files.forEach(file => {
         ocrRecordsDB.getByPath(file.path).then(async (res) => {
             if (!res) {

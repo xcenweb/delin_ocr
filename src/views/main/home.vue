@@ -62,10 +62,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFileDialog } from '@vueuse/core'
 import { useSnackbar } from '@/components/global/snackbarService'
+import { getRecentFiles } from '@/utils/fileService'
 
 const router = useRouter()
 
@@ -192,6 +193,9 @@ const goToFeature = (routeName) => {
 }
 
 // TODO: 获取最近浏览文件
+onMounted(async () => {
+    console.log(await getRecentFiles('user/file'))
+})
 </script>
 
 

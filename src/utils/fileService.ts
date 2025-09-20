@@ -181,7 +181,7 @@ export const loadDirectory = async (path: string): Promise<void> => {
 }
 
 /**
- * 获取指定路径下的所有文件列表（包含子目录）
+ * 获取指定路径下的所有文件列表
  * @param path - 要获取的文件列表的目录路径
  */
 export const getAllFiles = async (path: string): Promise<FileObject[]> => {
@@ -220,6 +220,39 @@ export const getAllFiles = async (path: string): Promise<FileObject[]> => {
 
     await traverseDirectory(path)
     return result
+}
+
+/**
+ * 获取最近有改动的文件列表
+ * @param path - 要搜索的目录路径
+ * @param limit - 返回文件数量限制，默认为20
+ * @param dayRange - 时间范围（天数），默认为30天
+ * @returns Promise<FileObject[]> 按时间排序的文件列表（综合创建、修改、访问时间）
+ */
+export const getRecentFiles = async (path: string, limit: number = 20, dayRange: number = 30): Promise<FileObject[]> => {
+    try {
+        const allFiles = await getAllFiles(path)
+        const timeThreshold = Date.now() - dayRange * 24 * 60 * 60 * 1000
+
+        // 计算每个文件的最新时间并过滤
+        const filesWithTime = allFiles
+            .map(file => {
+                const latestTime = Math.max(
+                    new Date(file.info.atime).getTime(),
+                    new Date(file.info.mtime).getTime(),
+                    new Date(file.info.birthtime).getTime()
+                )
+                return { file, latestTime }
+            })
+            .filter(item => item.latestTime >= timeThreshold)
+            .sort((a, b) => b.latestTime - a.latestTime)
+            .slice(0, limit)
+
+        return filesWithTime.map(item => item.file)
+    } catch (error) {
+        console.error('获取最近文件失败:', error)
+        return []
+    }
 }
 
 /**
