@@ -91,7 +91,7 @@ const openFile = (path: string) => {
         // 如果是图片文件，使用图片查看器
         router.push({ name: 'image-viewer', query: { path: path } })
     } else {
-        // TODO: 对于非图片文件，可以添加其他处理逻辑
+        // TODO: 对于非图片文件，添加其他处理逻辑
         useSnackbar().info('暂不支持的文件类型')
     }
 }

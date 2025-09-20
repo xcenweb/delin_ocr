@@ -204,6 +204,7 @@ export const getAllFiles = async (path: string): Promise<FileObject[]> => {
                         path: relativePath,
                         fullPath: await join(await appDataDir(), relativePath),
                         type: 'file',
+                        thumbnail: await getThumbnailUrl(await join(await appDataDir(), relativePath)),
                         info: {
                             atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
                             mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,

@@ -37,23 +37,19 @@
                 </v-chip>
             </div>
             <v-row class="d-flex flex-nowrap overflow-x-auto mb-5 pl-4 pr-8 swiper-no-swiping">
-                <v-col cols="4" sm="3" md="2" lg="2" xl="2" xxl="2" v-for="(file, index) in recentFiles" :key="index"
+                <v-col cols="4" sm="3" md="2" lg="2" xl="2" xxl="2" v-for="(fso, index) in recentFiles" :key="index"
                     class="pl-3 pr-0 pt-4 pb-4">
                     <v-card>
-                        <v-img :src="file.cover" aspect-ratio="0.7" cover>
-                            <template v-slot:placeholder>
-                                <div class="d-flex align-center justify-center fill-height">
-                                    <v-progress-circular color="grey-lighten-4" indeterminate></v-progress-circular>
-                                </div>
-                            </template>
+                        <v-img :src="fso.thumbnail" aspect-ratio="0.7" cover>
                             <div class="fill-height bottom-gradient"></div>
                             <v-card-subtitle
                                 class="text-white pl-2 pb-1 pr-1 position-absolute bottom-0 d-inline-block text-caption w-100">
-                                {{ file.name }}
+                                {{ fso.name }}
                             </v-card-subtitle>
                         </v-img>
                     </v-card>
                 </v-col>
+                <v-progress-circular indeterminate class="ma-auto mt-10"></v-progress-circular>
             </v-row>
 
         </v-main>
@@ -61,12 +57,12 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFileDialog } from '@vueuse/core'
 import { useSnackbar } from '@/components/global/snackbarService'
-import { getRecentFiles } from '@/utils/fileService'
+import { getRecentFiles, type FileObject } from '@/utils/fileService'
 
 const router = useRouter()
 
@@ -147,36 +143,10 @@ const certificateTypes = ref([
     }
 ])
 
-const recentFiles = ref([
-    {
-        id: 1,
-        name: '营业执照证书',
-        cover: 'https://picsum.photos/200/300'
-    },
-    {
-        id: 2,
-        name: '资质证书',
-        cover: 'https://picsum.photos/200/300?random=2'
-    },
-    {
-        id: 3,
-        name: '证书文件',
-        cover: 'https://picsum.photos/200/300?random=3'
-    },
-    {
-        id: 4,
-        name: '合同文件',
-        cover: 'https://picsum.photos/200/300?random=4'
-    },
-    {
-        id: 5,
-        name: '发票文件',
-        cover: 'https://picsum.photos/200/300?random=5'
-    }
-])
+const recentFiles = ref<FileObject[]>([])
 
 // 跳转到功能页面
-const goToFeature = (routeName) => {
+const goToFeature = (routeName: any) => {
     if (routeName === 'select-file') {
         const { files, open, reset, onCancel, onChange } = useFileDialog({
             accept: 'image/*,.pdf',
@@ -194,7 +164,7 @@ const goToFeature = (routeName) => {
 
 // TODO: 获取最近浏览文件
 onMounted(async () => {
-    console.log(await getRecentFiles('user/file'))
+    recentFiles.value = await getRecentFiles('user/file')
 })
 </script>
 
