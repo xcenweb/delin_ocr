@@ -120,6 +120,10 @@ import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { ocrRecordsDB } from '@/utils/dbService'
 
+// 添加处理状态管理
+const processingPaths = new Set<string>() // 正在处理中的路径
+const processedPaths = new Set<string>()  // 已经处理完成的路径
+
 const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
 onMounted(() => {
     ocrWorker.post({
@@ -128,24 +132,52 @@ onMounted(() => {
             languages: ['chi_sim', 'eng'],
         }
     })
-    watch(ocrWorker.data, (result: { type: string, datas: any }) => {
+    watch(ocrWorker.data, async (result: { type: string, datas: any }) => {
         if (result.type === 'error') {
             useSnackbar().error('ocr-worker: ' + result.datas)
+            // 错误时移除处理状态
+            if (result.datas.path) {
+                processingPaths.delete(result.datas.path)
+            }
         }
         if (result.type === 'inited') {
             useSnackbar().success('ocr-worker: running!')
         }
         if (result.type === 'recognized') {
-            useSnackbar().success('ocr-worker: ' + result.datas.text)
-            // await ocrRecordsDB.upsert()
+            // 保存识别结果到数据库
+            if (result.datas.path) {
+                try {
+                    await ocrRecordsDB.upsert({
+                        relative_path: result.datas.path,
+                        text: result.datas.text,
+                        block: JSON.stringify(result.datas.blocks)
+                    })
+
+                    // 更新处理状态
+                    processingPaths.delete(result.datas.path)
+                    processedPaths.add(result.datas.path)
+                } catch (error) {
+                    console.error('保存OCR结果失败:', error)
+                    processingPaths.delete(result.datas.path)
+                }
+            }
         }
     })
 })
 onActivated(async () => {
     const files = await getAllFiles('user/file')
-    files.forEach(file => {
-        ocrRecordsDB.getByPath(file.path).then(async (res) => {
-            if (!res) {
+    for (const file of files) {
+        // 避免重复处理
+        if (processingPaths.has(file.path) || processedPaths.has(file.path)) {
+            continue
+        }
+
+        try {
+            const existingRecord = await ocrRecordsDB.getByPath(file.path)
+            if (!existingRecord) {
+                // 标记为处理中
+                processingPaths.add(file.path)
+
                 ocrWorker.post({
                     type: 'recognize',
                     datas: {
@@ -153,13 +185,21 @@ onActivated(async () => {
                         path: file.path
                     }
                 })
+            } else {
+                // 已存在记录，标记为已处理
+                processedPaths.add(file.path)
             }
-        })
-    })
+        } catch (error) {
+            console.error('检查OCR记录失败:', error)
+        }
+    }
 })
 
 onUnmounted(() => {
     ocrWorker.terminate()
+    // 清理状态
+    processingPaths.clear()
+    processedPaths.clear()
 })
 </script>
 

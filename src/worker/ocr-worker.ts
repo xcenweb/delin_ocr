@@ -67,7 +67,13 @@ self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
         // 识别
         if (event.data.type === 'recognize' && isInitialized && worker) {
             const result = await OCRecognize(event.data.datas.src)
-            self.postMessage({ type: 'recognized', datas: result })
+            self.postMessage({
+                type: 'recognized',
+                datas: {
+                    ...result,
+                    path: event.data.datas.path
+                }
+            })
         }
 
         // 销毁worker

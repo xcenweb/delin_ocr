@@ -77,7 +77,7 @@ onActivated(() => {
  * 打开文件夹
  */
 const openFolder = (path: string) => {
-    router.push({ name: 'file-next', query: { path: path } })
+    router.push({ name: 'manage_files', query: { path: path } })
 }
 
 /**

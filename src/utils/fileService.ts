@@ -227,13 +227,13 @@ export const getAllFiles = async (path: string): Promise<FileObject[]> => {
  * 获取最近有改动的文件列表
  * @param path - 要搜索的目录路径
  * @param limit - 返回文件数量限制，默认为20
- * @param dayRange - 时间范围（天数），默认为30天
+ * @param day - 时间范围（天数），默认为30天
  * @returns Promise<FileObject[]> 按时间排序的文件列表（综合创建、修改、访问时间）
  */
-export const getRecentFiles = async (path: string, limit: number = 20, dayRange: number = 30): Promise<FileObject[]> => {
+export const getRecentFiles = async (path: string, limit: number = 20, day: number = 30): Promise<FileObject[]> => {
     try {
         const allFiles = await getAllFiles(path)
-        const timeThreshold = Date.now() - dayRange * 24 * 60 * 60 * 1000
+        const timeThreshold = Date.now() - day * 24 * 60 * 60 * 1000
 
         // 计算每个文件的最新时间并过滤
         const filesWithTime = allFiles

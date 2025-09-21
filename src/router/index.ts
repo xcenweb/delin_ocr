@@ -3,16 +3,20 @@ import { createRouter, createWebHistory } from 'vue-router'
 const router = createRouter({
     history: createWebHistory(),
     routes: [
-        // 首页
         {
             path: '/',
             name: 'main',
             component: () => import('@/views/main.vue'),
         },
         {
-            path: '/file_next',
-            name: 'file-next',
-            component: () => import('@/views/main/file_next.vue')
+            path: '/manage_files',
+            name: 'manage_files',
+            component: () => import('@/views/manage_files.vue')
+        },
+        {
+            path: '/recent_files',
+            name: 'recent_files',
+            component: () => import('@/views/recent_files.vue')
         },
 
         // 预览器

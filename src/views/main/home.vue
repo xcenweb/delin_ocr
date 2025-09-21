@@ -22,7 +22,7 @@
             <v-card class="position-relative mt-n16 mx-3 mx-sm-4 mx-md-auto my-3 pa-4" max-width="680">
                 <v-row>
                     <v-col cols="4" v-for="feature in features" :key="feature.title">
-                        <div class="text-center" :hover="true" @click="goToFeature(feature.route)">
+                        <div class="text-center" :hover="true" @click="router.push({ name: 'recent-files' })">
                             <v-icon :icon="feature.icon" color="#4285F4" size="45" class="mb-2" />
                             <p>{{ feature.title }}</p>
                         </div>
@@ -32,7 +32,7 @@
 
             <div class="d-flex justify-space-between align-center mb-4 ml-5 mt-8">
                 <h3 class="font-weight-bold">最近文件</h3>
-                <v-chip class="mr-4" append-icon="mdi-chevron-right" size="small" variant="outlined">
+                <v-chip class="mr-4" append-icon="mdi-chevron-right" size="small" variant="outlined" @click="router.push({ name: 'recent_files' })">
                     查看全部
                 </v-chip>
             </div>
@@ -49,7 +49,7 @@
                         </v-img>
                     </v-card>
                 </v-col>
-                <v-progress-circular indeterminate class="ma-auto mt-10"></v-progress-circular>
+                <v-progress-circular indeterminate class="ma-auto mt-16" />
             </v-row>
 
         </v-main>
@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onActivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFileDialog } from '@vueuse/core'
 import { useSnackbar } from '@/components/global/snackbarService'
@@ -162,9 +162,12 @@ const goToFeature = (routeName: any) => {
     }
 }
 
-// TODO: 获取最近浏览文件
+// 加载最近浏览文件
 onMounted(async () => {
-    recentFiles.value = await getRecentFiles('user/file')
+    recentFiles.value = await getRecentFiles('user/file', 10, 30)
+})
+onActivated(async () => {
+    recentFiles.value = await getRecentFiles('user/file', 10, 30)
 })
 </script>
 
