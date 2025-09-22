@@ -150,6 +150,7 @@ onMounted(() => {
                     await ocrRecordsDB.upsert({
                         relative_path: result.datas.path,
                         text: result.datas.text,
+                        tags: result.datas.tags?.join(',') || '', // 保存标签信息
                         block: JSON.stringify(result.datas.blocks)
                     })
 

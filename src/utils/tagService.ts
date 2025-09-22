@@ -4,11 +4,6 @@ interface TagConfig {
     keywords: readonly string[];
 }
 
-/** 标签识别结果 */
-export interface TagResult {
-    tags: string[];
-}
-
 // 统一的标签配置（设为只读，防止意外修改）
 const TAG_CONFIGS: readonly TagConfig[] = [
     { id: 'identity_card', keywords: ['居民身份证', '身份证', '公民身份', 'ID Card', 'Identity Card'] },
@@ -187,11 +182,11 @@ class TagService {
      * 根据OCR识别的文本内容生成标签
      * @param text OCR识别的文本内容
      * @param defaultTags 无匹配时的默认标签，默认值为['other']
-     * @returns 标签识别结果
+     * @returns 标签数组
      */
-    generateTags(text: string, defaultTags: string[] = ['other']): TagResult {
+    generateTags(text: string, defaultTags: string[] = ['other']): string[] {
         if (!text?.trim()) {
-            return { tags: defaultTags };
+            return defaultTags;
         }
 
         // 计算每个标签的匹配分数
@@ -210,7 +205,7 @@ class TagService {
             .sort((a, b) => b[1] - a[1])
             .map(([tag]) => tag);
 
-        return { tags: sortedTags.length ? sortedTags : defaultTags };
+        return sortedTags.length ? sortedTags : defaultTags;
     }
 
     /**

@@ -1,4 +1,5 @@
 import Tesseract from 'tesseract.js'
+import { tagService } from '../utils/tagService'
 
 let worker: Tesseract.Worker | null = null
 let isInitialized = false
@@ -40,9 +41,9 @@ const cleanText = (text: string): string => {
 /**
  * 处理图像并进行OCR识别
  * @param {ImageBitmap | HTMLImageElement | HTMLCanvasElement} src - 图像源
- * @returns {Promise<{text: string, blocks: any}>} - 识别结果
+ * @returns {Promise<{text: string, blocks: any, tags: string[]}>} - 识别结果和标签
  */
-const OCRecognize = async (src: string): Promise<{ text: string, blocks: any }> => {
+const OCRecognize = async (src: string): Promise<{ text: string, blocks: any, tags: string[] }> => {
     const io = await fetch(src)
     const imageBitmap = await createImageBitmap(await io.blob())
     const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height)
@@ -52,7 +53,10 @@ const OCRecognize = async (src: string): Promise<{ text: string, blocks: any }> 
     imageBitmap.close()
 
     const { data: { text, blocks } } = await worker!.recognize(canvas, {}, { blocks: true })
-    return { text: cleanText(text), blocks }
+    const cleanedText = cleanText(text)
+    const tags = tagService.generateTags(cleanedText)
+
+    return { text: cleanedText, blocks, tags }
 }
 
 self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
