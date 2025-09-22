@@ -1,5 +1,4 @@
 import Tesseract from 'tesseract.js'
-import { ocrRecordsDB } from '@/utils/dbService'
 
 let worker: Tesseract.Worker | null = null
 let isInitialized = false

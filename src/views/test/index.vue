@@ -51,6 +51,7 @@ const testList = [
     { name: '数据库测试 (user/cache.db)', path: '/test/db' },
     { name: '路径测试 - 系统路径访问', path: '/test/path' },
     { name: 'OCR Worker测试', path: '/test/ocr-worker' },
+    { name: 'TagService 测试', path: '/test/tag-service' },
 ];
 
 onMounted(async () => {
