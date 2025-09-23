@@ -25,8 +25,7 @@
                     <v-card-title>测试项目</v-card-title>
                     <v-card-text>
                         <v-list>
-                            <v-list-item v-for="item in testList" :key="item.name"
-                                :to="item.path">
+                            <v-list-item v-for="item in testList" :key="item.name" :to="item.path">
                                 <v-list-item-title>· {{ item.name }}</v-list-item-title>
                             </v-list-item>
                         </v-list>
@@ -52,7 +51,6 @@ const testList = [
     { name: '路径测试 - 系统路径访问', path: '/test/path' },
     { name: 'OCR Worker测试', path: '/test/ocr-worker' },
     { name: 'TagService 测试', path: '/test/tag-service' },
-    { name: 'AiTag测试', path: '/test/ai-tag' }
 ];
 
 onMounted(async () => {
