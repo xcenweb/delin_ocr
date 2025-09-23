@@ -18,9 +18,7 @@
 <script setup lang="ts">
 import { useUpdateService } from '@/components/global/updateService'
 
-const updateService = useUpdateService()
-
 const checkForUpdates = async () => {
-    await updateService.check()
+    await useUpdateService().check()
 }
 </script>

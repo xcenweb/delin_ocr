@@ -3,6 +3,7 @@ import { fetch } from '@tauri-apps/plugin-http'
 import { getVersion } from '@tauri-apps/api/app'
 import { type Platform, platform } from '@tauri-apps/plugin-os'
 import { useSnackbar } from './snackbarService'
+import { openUrl } from '@tauri-apps/plugin-opener'
 
 /**
  * 更新服务状态管理
@@ -51,6 +52,7 @@ class UpdateService {
             this.currentVersion = await getVersion()
             this.newVersion = data.version
             this.notes = data.notes
+            this.link = data.package[this.platform]
 
             if (this.newVersion > this.currentVersion) {
                 this.show()
@@ -60,6 +62,26 @@ class UpdateService {
 
         } catch (error) {
             useSnackbar().error('检测更新失败' + error)
+        }
+    }
+
+    /**
+     * 更新
+     */
+    // TODO: android下载apk后调起系统安装器安装
+    // TODO: windows下实现下载后关闭软件，进行静默安装
+    async update(): Promise<void> {
+        try {
+            if (!this.link) {
+                useSnackbar().error('无效的更新')
+            }
+            if (this.platform === 'android') {
+                await openUrl(this.link)
+            } else {
+                await openUrl(this.link)
+            }
+        } catch (error) {
+            useSnackbar().error('更新失败' + error)
         }
     }
 }

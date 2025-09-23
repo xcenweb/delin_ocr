@@ -18,6 +18,9 @@
                 <v-card-text class="d-flex align-center">
                     <div class="text-h6 font-weight-bold">版本信息</div>
                     <div class="ml-4 flex-grow-1">v{{ appVersion }}</div>
+                    <v-btn icon size="small" variant="text" @click="useUpdateService().check()">
+                        <v-icon>mdi-refresh</v-icon>
+                    </v-btn>
                 </v-card-text>
             </v-card>
 
@@ -38,6 +41,7 @@
 import { getVersion } from '@tauri-apps/api/app';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUpdateService } from '@/components/global/updateService';
 
 const appVersion = ref('');
 const router = useRouter();

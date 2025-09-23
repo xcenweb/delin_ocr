@@ -209,7 +209,7 @@ onUnmounted(() => {
     bottom: 18px;
     inset-inline: 50%;
     transform: translateX(-50%);
-    z-index: 9999;
+    z-index: 1010;
 }
 
 .swiper-page-container {

@@ -9,8 +9,8 @@
             </template>
             <template v-slot:actions>
                 <v-spacer></v-spacer>
-                <v-btn text="立即更新" @click="" />
-                <v-btn text="暂不更新" @click="updateService.hide()" />
+                <v-btn text="立即更新" @click="updateService.update()" variant="tonal" />
+                <v-btn text="暂不更新" @click="updateService.hide()" variant="plain" />
             </template>
         </v-card>
     </v-dialog>
