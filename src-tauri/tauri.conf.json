@@ -17,7 +17,7 @@
         "title": "德邻盒子 - DelinBox",
         "height": 600,
         "width": 800,
-        "minHeight": 600,
+        "minHeight": 700,
         "minWidth": 360,
         "center": true,
         "backgroundThrottling": "disabled",

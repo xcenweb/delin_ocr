@@ -21,6 +21,10 @@ const TAG_CONFIGS: readonly TagConfig[] = [
     { id: 'notice', keywords: ['公告', '通知', 'Notice', '声明', '公示'] },
     { id: 'resume', keywords: ['简历', '履历', 'Resume', 'CV', '个人简历'] },
     { id: 'transcript', keywords: ['成绩单', 'Transcript', '学习成绩', '考试成绩'] },
+    { id: 'certificate', keywords: ['证书', '资格证', '认证证书', 'Certificate', '培训证书', '专业证书', '技能证书', '职业资格', '等级证书'] },
+    { id: 'invoice', keywords: ['发票', '增值税发票', '普通发票', '电子发票', 'Invoice', '税务发票', '收据', '付款凭证'] },
+    { id: 'form', keywords: ['申请表', '登记表', '登记单', '申请书', '表格', 'Form', 'Application Form', '登记册', '填表'] },
+    { id: 'document', keywords: ['文档', '文件', 'Document', 'File'] },
     { id: 'other', keywords: [] }
 ];
 
@@ -28,146 +32,105 @@ const TAG_CONFIGS: readonly TagConfig[] = [
  * 分类引擎 - 提供文本处理和关键词匹配功能
  */
 class ClassEngine {
-    /**
-     * 文本标准化 - 移除空格和干扰字符
-     * @param text 原始文本
-     * @returns 标准化后的文本
-     */
+    /** 文本标准化：小写、去空格、去标点和零宽字符 */
     static normalizeText(text: string): string {
         if (!text) return '';
-
         return text
             .toLowerCase()
-            .replace(/\s+/g, '') // 移除所有空白字符
-            .replace(/[\.,;:!?"'()\[\]{}|\\\/_+=\-*&^%$#@~`]/g, '') // 移除标点符号
-            .replace(/[\u200B-\u200F\uFEFF]/g, ''); // 移除零宽字符
+            .replace(/\s+/g, '')
+            .replace(/[\p{P}\p{S}]/gu, '') // Unicode标点和符号
+            .replace(/[\u200B-\u200F\uFEFF]/g, '');
     }
 
-    /**
-     * 检查文本是否按顺序包含关键词的所有字符（允许中间插入任意字符）
-     * @param text 标准化后的文本
-     * @param keyword 标准化后的关键词
-     * @returns 是否匹配
-     */
+    /** 顺序字符匹配（允许插入干扰字符） */
     static containsCharSequence(text: string, keyword: string): boolean {
         if (!keyword) return true;
-        if (!text || keyword.length > text.length) return false;
-
-        let keywordIndex = 0;
-        for (let char of text) {
-            if (char === keyword[keywordIndex]) {
-                keywordIndex++;
-                if (keywordIndex === keyword.length) {
-                    return true;
-                }
-            }
+        let i = 0, j = 0;
+        while (i < text.length && j < keyword.length) {
+            if (text[i] === keyword[j]) j++;
+            i++;
         }
-        return false;
+        return j === keyword.length;
     }
 
-    /**
-     * 计算两个字符串的编辑距离（Levenshtein距离）
-     * @param str1 字符串1
-     * @param str2 字符串2
-     * @returns 编辑距离
-     */
-    static editDistance(str1: string, str2: string): number {
-        // 确保str1是较短的字符串，优化空间复杂度
-        if (str1.length > str2.length) {
-            [str1, str2] = [str2, str1];
-        }
-
-        let previousRow = Array.from({ length: str1.length + 1 }, (_, i) => i);
-
-        for (let i = 1; i <= str2.length; i++) {
-            const currentRow = [i];
-
-            for (let j = 1; j <= str1.length; j++) {
-                const cost = str1[j - 1] === str2[i - 1] ? 0 : 1;
-                currentRow.push(
-                    Math.min(
-                        previousRow[j] + 1,        // 删除
-                        currentRow[j - 1] + 1,     // 插入
-                        previousRow[j - 1] + cost  // 替换
-                    )
+    /** Levenshtein距离（编辑距离） */
+    static editDistance(a: string, b: string): number {
+        const m = a.length, n = b.length;
+        if (m === 0) return n;
+        if (n === 0) return m;
+        const dp = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
+        for (let i = 0; i <= m; i++) dp[i][0] = i;
+        for (let j = 0; j <= n; j++) dp[0][j] = j;
+        for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+                dp[i][j] = Math.min(
+                    dp[i - 1][j] + 1,
+                    dp[i][j - 1] + 1,
+                    dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
                 );
             }
-
-            previousRow = currentRow;
         }
-
-        return previousRow[str1.length];
+        return dp[m][n];
     }
 
-    /**
-     * 计算字符串相似度
-     * @param str1 字符串1
-     * @param str2 字符串2
-     * @returns 相似度（0-1之间）
-     */
-    static similarity(str1: string, str2: string): number {
-        if (str1 === str2) return 1;
-        if (!str1.length || !str2.length) return 0;
-
-        const distance = ClassEngine.editDistance(str1, str2);
-        return 1 - distance / Math.max(str1.length, str2.length);
+    /** 字符串相似度（0-1） */
+    static similarity(a: string, b: string): number {
+        if (a === b) return 1;
+        if (!a.length || !b.length) return 0;
+        const dist = ClassEngine.editDistance(a, b);
+        return 1 - dist / Math.max(a.length, b.length);
     }
 
-    /**
-     * 检查文本中是否包含关键词（支持容错匹配）
-     * @param text 待检查的文本
-     * @param keywords 关键词列表
-     * @param threshold 相似度阈值，默认使用全局阈值
-     * @returns 匹配的关键词列表
-     */
-    static checkKeywords(text: string, keywords: readonly string[], threshold = 0.7): string[] {
+    /** 关键词匹配（精确、顺序、模糊、滑窗），返回匹配详情 */
+    static checkKeywords(text: string, keywords: readonly string[], threshold = 0.7): Array<{ keyword: string; score: number; type: 'exact' | 'sequence' | 'fuzzy' | 'window' }> {
         if (!keywords.length) return [];
-
         const normalizedText = ClassEngine.normalizeText(text);
-        const matches: string[] = [];
+        const results: Array<{ keyword: string; score: number; type: 'exact' | 'sequence' | 'fuzzy' | 'window' }> = [];
 
         for (const keyword of keywords) {
-            const normalizedKeyword = ClassEngine.normalizeText(keyword);
-            if (!normalizedKeyword) continue;
+            const normKey = ClassEngine.normalizeText(keyword);
+            if (!normKey) continue;
 
-            // 1. 精确匹配
-            if (normalizedText.includes(normalizedKeyword)) {
-                matches.push(keyword);
+            // 精确匹配（最高分）
+            if (normalizedText.includes(normKey)) {
+                results.push({ keyword, score: 1.0, type: 'exact' });
                 continue;
             }
 
-            // 2. 字符序列匹配（新策略：应对插入干扰字符）
-            if (ClassEngine.containsCharSequence(normalizedText, normalizedKeyword)) {
-                matches.push(keyword);
+            // 顺序匹配（次高分）
+            if (ClassEngine.containsCharSequence(normalizedText, normKey)) {
+                results.push({ keyword, score: 0.8, type: 'sequence' });
                 continue;
             }
 
-            // 3. 短关键词不进行模糊匹配
-            if (normalizedKeyword.length < 2) continue;
+            if (normKey.length < 2) continue;
 
-            // 4. 整体相似度匹配（适用于较长关键词）
-            if (normalizedKeyword.length >= 4 &&
-                ClassEngine.similarity(normalizedText, normalizedKeyword) >= threshold) {
-                matches.push(keyword);
-                continue;
+            // 全局模糊匹配
+            if (normKey.length >= 4) {
+                const sim = ClassEngine.similarity(normalizedText, normKey);
+                if (sim >= threshold) {
+                    results.push({ keyword, score: 0.6 * sim, type: 'fuzzy' });
+                    continue;
+                }
             }
 
-            // 5. 滑动窗口匹配（保持兼容性）
-            const windowSize = normalizedKeyword.length;
-            if (windowSize <= normalizedText.length) {
-                for (let i = 0; i <= normalizedText.length - windowSize; i++) {
-                    if (ClassEngine.similarity(
-                        normalizedText.substring(i, i + windowSize),
-                        normalizedKeyword
-                    ) >= threshold) {
-                        matches.push(keyword);
-                        break;
+            // 滑窗模糊匹配（最低分）
+            const win = normKey.length;
+            if (win <= normalizedText.length) {
+                let maxSim = 0;
+                for (let i = 0; i <= normalizedText.length - win; i++) {
+                    const sim = ClassEngine.similarity(normalizedText.slice(i, i + win), normKey);
+                    if (sim >= threshold && sim > maxSim) {
+                        maxSim = sim;
                     }
+                }
+                if (maxSim > 0) {
+                    results.push({ keyword, score: 0.4 * maxSim, type: 'window' });
                 }
             }
         }
 
-        return matches;
+        return results;
     }
 }
 
@@ -175,48 +138,54 @@ class ClassEngine {
  * 标签服务类 - 处理标签生成和管理
  */
 class TagService {
-    // 缓存所有标签ID，避免重复计算
-    private allTags?: string[];
+    private allTags: string[] = TAG_CONFIGS.map(c => c.id);
 
     /**
-     * 根据OCR识别的文本内容生成标签
+     * 根据OCR文本生成标签，使用加权评分系统
      * @param text OCR识别的文本内容
-     * @param defaultTags 无匹配时的默认标签，默认值为['other']
-     * @returns 标签数组
-     */
-    generateTags(text: string, defaultTags: string[] = ['other']): string[] {
-        if (!text?.trim()) {
-            return defaultTags;
-        }
-
-        // 计算每个标签的匹配分数
-        const tagScores = Array.from(TAG_CONFIGS)
-            .filter(config => config.keywords.length > 0)
-            .reduce((scores, config) => {
-                const matchCount = ClassEngine.checkKeywords(text, config.keywords).length;
-                if (matchCount > 0) {
-                    scores.set(config.id, (scores.get(config.id) || 0) + matchCount);
-                }
-                return scores;
-            }, new Map<string, number>());
-
-        // 按分数排序并返回结果
-        const sortedTags = Array.from(tagScores.entries())
-            .sort((a, b) => b[1] - a[1])
-            .map(([tag]) => tag);
-
-        return sortedTags.length ? sortedTags : defaultTags;
-    }
-
-    /**
-     * 获取所有可用的标签ID
+     * @param defaultTags 默认标签，当没有匹配时返回
+     * @param maxLength 最大返回标签数量，默认为3
      * @returns 标签ID数组
      */
+    generateTags(text: string, defaultTags: string[] = ['other'], maxLength: number = 3): string[] {
+        if (!text?.trim()) return defaultTags;
+
+        // 计算每个标签配置的匹配分数
+        const scores: [string, number][] = TAG_CONFIGS
+            .filter(cfg => cfg.keywords.length)
+            .map(cfg => {
+                const matches = ClassEngine.checkKeywords(text, cfg.keywords);
+                if (matches.length === 0) return [cfg.id, 0] as [string, number];
+
+                // 计算加权分数
+                const weightedScore = matches.reduce((sum, match) => {
+                    // 基础分数（由匹配类型决定）已包含在match.score中
+                    // 附加权重因素：
+                    const keywordLengthBonus = Math.min(match.keyword.length / 10, 1) * 0.2; // 关键词长度奖励
+                    const matchTypeBonus = match.type === 'exact' ? 0.3 : 0; // 精确匹配额外奖励
+                    return sum + match.score + keywordLengthBonus + matchTypeBonus;
+                }, 0);
+
+                // 计算平均分数（考虑匹配数量）
+                const averageScore = weightedScore / matches.length;
+                // 最终分数结合总分和平均分
+                const finalScore = (weightedScore * 0.7) + (averageScore * 0.3);
+
+                return [cfg.id, finalScore] as [string, number];
+            })
+            .filter(([, score]) => score > 0);
+
+        // 按最终得分降序排序
+        scores.sort((a, b) => b[1] - a[1]);
+
+        // 限制返回标签数量
+        const limitedScores = scores.slice(0, maxLength);
+        return limitedScores.length ? limitedScores.map(([id]) => id) : defaultTags;
+    }
+
+    /** 获取所有标签ID */
     getAllTags(): string[] {
-        if (!this.allTags) {
-            this.allTags = TAG_CONFIGS.map(config => config.id);
-        }
-        return [...this.allTags]; // 返回副本防止外部修改
+        return [...this.allTags];
     }
 }
 

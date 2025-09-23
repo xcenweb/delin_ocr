@@ -1,9 +1,8 @@
 // 文件缩略图服务
-
 import { convertFileSrc } from '@tauri-apps/api/core'
 
 /**
- * 缩略图存储根路径
+ * 缩略图存储路径
  */
 const thumbCachePath = 'user/thumbnailCache'
 
