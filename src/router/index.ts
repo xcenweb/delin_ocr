@@ -71,6 +71,11 @@ const router = createRouter({
             path: '/test/tag-service',
             component: () => import('@/views/test/tag-service.vue')
         },
+        {
+            path: '/test/update',
+            name: 'update-test',
+            component: () => import('@/views/test/updateTest.vue')
+        },
 
         // 设置页面
         {

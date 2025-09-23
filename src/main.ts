@@ -6,7 +6,6 @@ import './assets/css/global.css'
 // @ts-ignore
 import { VuePageStackPlugin } from 'vue-page-stack'
 
-
 const app = createApp(App)
 app.use(router)
 app.use(VuePageStackPlugin, { router })

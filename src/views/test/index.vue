@@ -51,6 +51,7 @@ const testList = [
     { name: '路径测试 - 系统路径访问', path: '/test/path' },
     { name: 'OCR Worker测试', path: '/test/ocr-worker' },
     { name: 'TagService 测试', path: '/test/tag-service' },
+    { name: '更新检测测试', path: '/test/update' },
 ];
 
 onMounted(async () => {

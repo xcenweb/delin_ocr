@@ -7,12 +7,14 @@
       </transition>
     </router-view>
 
-  <GlobalSnackbar />
+  <globalSnackbar />
+  <globalUpdatePopup />
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import GlobalSnackbar from '@/components/global/Snackbar.vue'
+import globalSnackbar from '@/components/global/Snackbar.vue'
+import globalUpdatePopup from '@/components/global/UpdatePopup.vue'
 
 // TODO: 完善动画
 const slideTransition = ref('slide-left')

@@ -96,6 +96,11 @@
           "path": "$APPDATA/**"
         }
       ]
+    },
+
+    {
+      "identifier": "http:default",
+      "allow": [{"url": "http://ocr.yuncen.top/*"}]
     }
   ]
 }
