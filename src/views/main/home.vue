@@ -40,7 +40,7 @@
             <v-row class="d-flex flex-nowrap overflow-x-auto mb-5 pl-4 pr-8 swiper-no-swiping">
                 <v-col cols="4" sm="3" md="2" lg="2" xl="2" xxl="2" v-for="(fso, index) in recentFiles" :key="index"
                     class="pl-3 pr-0 pt-4 pb-4">
-                    <v-card>
+                    <v-card @click="openFile(fso.fullPath)">
                         <v-img :src="fso.thumbnail" aspect-ratio="0.7" cover>
                             <div class="fill-height bottom-gradient"></div>
                             <v-card-subtitle
@@ -67,7 +67,7 @@ import { onActivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFileDialog } from '@vueuse/core'
 import { useSnackbar } from '@/components/global/snackbarService'
-import { getRecentFiles, type FileObject } from '@/utils/fileService'
+import { getRecentFiles, openFile, type FileObject } from '@/utils/fileService'
 
 const router = useRouter()
 

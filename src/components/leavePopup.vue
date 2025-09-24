@@ -2,22 +2,12 @@
 
 <template>
     <v-dialog v-model="confirmShow" max-width="400">
-        <v-card>
-            <v-card-title>
-                确认退出
-            </v-card-title>
-            <v-card-text>
-                {{ props.message }}
-            </v-card-text>
-            <v-card-actions>
+        <v-card title="确认退出" :text="props.message">
+            <template v-slot:text>
                 <v-spacer></v-spacer>
-                <v-btn text @click="cancel">
-                    取消
-                </v-btn>
-                <v-btn color="primary" @click="confirm">
-                    确认
-                </v-btn>
-            </v-card-actions>
+                <v-btn color="primary" text="确认" @click="confirm" />
+                <v-btn text="取消" @click="cancel" />
+            </template>
         </v-card>
     </v-dialog>
 </template>

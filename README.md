@@ -31,8 +31,6 @@ DelinBox(德邻盒子)是一款现代化的桌面应用程序，致力于提供�
 - **视觉处理**: OpenCV.js + Canvas API
 - **其他**: @vueuse/core, vue-router, @zebra-ui/swiper
 
-## Installation
-
 ## 🚀 开发指南
 
 ### 环境要求

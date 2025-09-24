@@ -3,37 +3,69 @@
     <v-app>
         <v-main class="d-flex flex-column overflow-hidden main-no-scroll">
             <!-- 顶部导航栏 -->
-            <v-app-bar color="transparent">
-                <v-btn icon="mdi-arrow-left" @click="$router.back()" />
-                <v-app-bar-title>图片预览</v-app-bar-title>
+            <v-app-bar :elevation="0" color="transparent">
+                <v-btn icon="mdi-arrow-left" @click="$router.back()" variant="text" />
+                <v-app-bar-title>{{ title }}</v-app-bar-title>
                 <v-spacer />
-                <v-btn icon="mdi-share-variant" @click="shareImage" />
-                <v-btn icon="mdi-open-in-app" @click="openImagePath"></v-btn>
+                <v-btn icon="mdi-share-variant" @click="shareImage" variant="text" />
+                <v-btn icon="mdi-open-in-app" @click="openImagePath" variant="text" />
             </v-app-bar>
 
             <!-- 图片显示区域 -->
-            <div class="position-relative flex-grow-1 d-flex align-center justify-center pa-4">
-                <v-img v-if="imagePath" :src="imageUrl" class="w-100 h-100"
-                    :style="{ ...imageTransform, objectFit: 'contain' }" @load="onImageLoad" @error="onImageError" />
-                <div v-else class="text-center">
+            <div class="image-container"
+                ref="imageContainer"
+                @wheel.prevent="handleWheel"
+                @mousedown="handleMouseDown"
+                @mousemove="handleMouseMove"
+                @mouseup="handleMouseUp"
+                @mouseleave="handleMouseUp">
+                <v-img v-if="imagePath"
+                    :src="imageUrl"
+                    :class="['main-image', { 'image-loading': isLoading }]"
+                    :style="imageStyles"
+                    @load="onImageLoad"
+                    @error="onImageError"
+                    @touchstart.prevent="handleTouchStart"
+                    @touchmove.prevent="handleTouchMove"
+                    @touchend.prevent="handleTouchEnd"
+                />
+                <v-overlay v-model="isLoading" class="align-center justify-center">
+                    <v-progress-circular indeterminate />
+                </v-overlay>
+                <div v-if="!imagePath" class="error-container">
                     <v-icon size="64" color="grey">mdi-image-off</v-icon>
                     <p class="text-grey mt-2">无法加载图片</p>
                 </div>
             </div>
 
-            <!-- 底部操作栏 -->
-            <v-sheet class="py-2" v-if="imagePath">
-                <div class="d-flex justify-center align-center mx-5 my-2">
-                    <v-btn prepend-icon="mdi-rotate-left" variant="text" size="small" text="左旋转" stacked
-                        @click="rotateLeft" />
-                    <v-btn prepend-icon="mdi-rotate-right" variant="text" size="small" text="右旋转" stacked
-                        @click="rotateRight" />
-                    <v-btn prepend-icon="mdi-magnify-plus" variant="text" size="small" text="放大" stacked
-                        @click="zoomIn" />
-                    <v-btn prepend-icon="mdi-magnify-minus" variant="text" size="small" text="缩小" stacked
-                        @click="zoomOut" />
-                    <v-btn prepend-icon="mdi-fit-to-screen" variant="text" size="small" text="适应" stacked
-                        @click="resetZoom" />
+            <!-- 底部工具栏 -->
+            <v-sheet v-if="imagePath" class="toolbar-container" rounded="lg" elevation="2">
+                <div class="d-flex justify-center align-center px-4 py-2">
+                    <v-tooltip location="top" text="左旋转">
+                        <template v-slot:activator="{ props }">
+                            <v-btn v-bind="props" icon="mdi-rotate-left" variant="text" @click="rotateLeft" />
+                        </template>
+                    </v-tooltip>
+                    <v-tooltip location="top" text="右旋转">
+                        <template v-slot:activator="{ props }">
+                            <v-btn v-bind="props" icon="mdi-rotate-right" variant="text" @click="rotateRight" />
+                        </template>
+                    </v-tooltip>
+                    <v-tooltip location="top" text="放大">
+                        <template v-slot:activator="{ props }">
+                            <v-btn v-bind="props" icon="mdi-magnify-plus" variant="text" @click="zoomIn" />
+                        </template>
+                    </v-tooltip>
+                    <v-tooltip location="top" text="缩小">
+                        <template v-slot:activator="{ props }">
+                            <v-btn v-bind="props" icon="mdi-magnify-minus" variant="text" @click="zoomOut" />
+                        </template>
+                    </v-tooltip>
+                    <v-tooltip location="top" text="重置">
+                        <template v-slot:activator="{ props }">
+                            <v-btn v-bind="props" icon="mdi-fit-to-screen" variant="text" @click="resetZoom" />
+                        </template>
+                    </v-tooltip>
                 </div>
             </v-sheet>
         </v-main>
@@ -57,13 +89,24 @@ const imagePath = ref<string>('');
 const imageUrl = ref<string>('');
 const rotation = ref<number>(0);
 const scale = ref<number>(1);
-const imageLoaded = ref<boolean>(false);
+const isLoading = ref<boolean>(true);
+const imageContainer = ref<HTMLElement | null>(null);
+const title = ref<string>('图片预览');
 
-// 计算图片变换样式
-const imageTransform = computed(() => {
+// 触摸相关状态
+const lastTouchDistance = ref<number>(0);
+const lastTouchX = ref<number>(0);
+const lastTouchY = ref<number>(0);
+const isDragging = ref<boolean>(false);
+const translateX = ref<number>(0);
+const translateY = ref<number>(0);
+
+// 计算样式
+const imageStyles = computed(() => {
     return {
-        transform: `rotate(${rotation.value}deg) scale(${scale.value})`,
-        transition: 'transform 0.3s ease'
+        transform: `translate(${translateX.value}px, ${translateY.value}px) rotate(${rotation.value}deg) scale(${scale.value})`,
+        transition: isDragging.value ? 'none' : 'transform 0.3s ease',
+        cursor: isDragging.value ? 'grabbing' : (scale.value > 1 ? 'grab' : 'default')
     };
 });
 
@@ -76,46 +119,135 @@ onMounted(() => {
     }
 });
 
-// 图片加载成功
+// 事件处理函数
+const handleWheel = (event: WheelEvent) => {
+    const delta = event.deltaY;
+    if (delta < 0) {
+        zoomIn();
+    } else {
+        zoomOut();
+    }
+};
+
+// 触摸事件处理
+const handleTouchStart = (event: TouchEvent) => {
+    if (event.touches.length === 2) {
+        const touch1 = event.touches[0];
+        const touch2 = event.touches[1];
+        lastTouchDistance.value = Math.hypot(
+            touch2.clientX - touch1.clientX,
+            touch2.clientY - touch1.clientY
+        );
+    } else if (event.touches.length === 1) {
+        isDragging.value = true;
+        lastTouchX.value = event.touches[0].clientX;
+        lastTouchY.value = event.touches[0].clientY;
+    }
+};
+
+const handleTouchMove = (event: TouchEvent) => {
+    if (event.touches.length === 2) {
+        const touch1 = event.touches[0];
+        const touch2 = event.touches[1];
+        const distance = Math.hypot(
+            touch2.clientX - touch1.clientX,
+            touch2.clientY - touch1.clientY
+        );
+        const delta = distance - lastTouchDistance.value;
+        if (Math.abs(delta) > 10) {
+            if (delta > 0) {
+                zoomIn();
+            } else {
+                zoomOut();
+            }
+            lastTouchDistance.value = distance;
+        }
+    } else if (event.touches.length === 1 && isDragging.value) {
+        const touch = event.touches[0];
+        const deltaX = touch.clientX - lastTouchX.value;
+        const deltaY = touch.clientY - lastTouchY.value;
+        translateX.value += deltaX;
+        translateY.value += deltaY;
+        lastTouchX.value = touch.clientX;
+        lastTouchY.value = touch.clientY;
+    }
+};
+
+const handleTouchEnd = () => {
+    isDragging.value = false;
+    lastTouchDistance.value = 0;
+};
+
+// 鼠标事件处理
+const handleMouseDown = (event: MouseEvent) => {
+    if (event.button === 0) { // 只响应左键
+        isDragging.value = true;
+        lastTouchX.value = event.clientX;
+        lastTouchY.value = event.clientY;
+        event.preventDefault(); // 阻止默认行为
+    }
+};
+
+const handleMouseMove = (event: MouseEvent) => {
+    if (isDragging.value) {
+        event.preventDefault(); // 阻止默认行为
+        const deltaX = event.clientX - lastTouchX.value;
+        const deltaY = event.clientY - lastTouchY.value;
+
+        // 添加移动限制，防止过度拖动
+        const maxTranslate = (scale.value - 1) * 1000; // 根据缩放比例计算最大移动距离
+        translateX.value = Math.max(-maxTranslate, Math.min(maxTranslate, translateX.value + deltaX));
+        translateY.value = Math.max(-maxTranslate, Math.min(maxTranslate, translateY.value + deltaY));
+
+        lastTouchX.value = event.clientX;
+        lastTouchY.value = event.clientY;
+    }
+};
+
+const handleMouseUp = (event?: MouseEvent) => {
+    if (isDragging.value) {
+        isDragging.value = false;
+        event?.preventDefault();
+    }
+};
+
+// 图片加载事件处理
 const onImageLoad = () => {
-    imageLoaded.value = true;
+    isLoading.value = false;
     console.log('图片加载成功:', imageUrl.value);
 };
 
-// 图片加载失败
 const onImageError = () => {
-    imageLoaded.value = false;
+    isLoading.value = false;
     console.error('图片加载失败:', imagePath.value);
 };
 
-// 左旋转
+// 图片操作函数
 const rotateLeft = () => {
-    rotation.value -= 90;
+    rotation.value = (rotation.value - 90) % 360;
 };
 
-// 右旋转
 const rotateRight = () => {
-    rotation.value += 90;
+    rotation.value = (rotation.value + 90) % 360;
 };
 
-// 放大
 const zoomIn = () => {
-    if (scale.value < 10) {
-        scale.value += 0.5;
+    if (scale.value < 5) {
+        scale.value = Math.min(5, scale.value + 0.2);
     }
 };
 
-// 缩小
 const zoomOut = () => {
-    if (scale.value > 0.1) {
-        scale.value -= 0.1;
+    if (scale.value > 0.2) {
+        scale.value = Math.max(0.2, scale.value - 0.2);
     }
 };
 
-// 重置缩放
 const resetZoom = () => {
     scale.value = 1;
     rotation.value = 0;
+    translateX.value = 0;
+    translateY.value = 0;
 };
 
 // 分享图片
@@ -135,7 +267,50 @@ const openImagePath = async () => {
 </script>
 
 <style scoped>
-.v-img {
-    transition: transform 0.3s ease;
+.image-container {
+    position: relative;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.main-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.image-loading {
+    opacity: 0.5;
+}
+
+.error-container {
+    text-align: center;
+}
+
+.toolbar-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+    .toolbar-container {
+        background: rgba(30, 30, 30, 0.9);
+    }
 }
 </style>

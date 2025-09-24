@@ -55,7 +55,7 @@ import router from "@/router";
 import { sortType, sortedFiles, formatFileSize, loadDirectory, getFileType } from "@/utils/fileService"
 import { onActivated, onMounted } from 'vue';
 import { vOnLongPress } from '@vueuse/components'
-import { useSnackbar } from "./global/snackbarService";
+import { openFile } from "@/utils/fileService";
 
 const props = withDefaults(defineProps<{
     /** 目标路径 */
@@ -78,22 +78,6 @@ onActivated(() => {
  */
 const openFolder = (path: string) => {
     router.push({ name: 'manage_files', query: { path: path } })
-}
-
-/**
- * 打开文件
- * @param path 文件路径
- */
-const openFile = (path: string) => {
-    // 根据文件扩展名判断是否为图片
-    const fileType = getFileType(path);
-    if (fileType === 'img') {
-        // 如果是图片文件，使用图片查看器
-        router.push({ name: 'image-viewer', query: { path: path } })
-    } else {
-        // TODO: 对于非图片文件，添加其他处理逻辑
-        useSnackbar().info('暂不支持的文件类型')
-    }
 }
 
 // TODO: 文件/文件夹 列表长按响应
