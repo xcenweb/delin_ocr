@@ -11,7 +11,6 @@
     "sql:allow-execute",
     "os:default",
     "sharekit:default",
-
     "fs:default",
     "fs:allow-stat",
     "fs:allow-read",
@@ -76,7 +75,6 @@
         }
       ]
     },
-
     "opener:default",
     {
       "identifier": "opener:allow-open-url",
@@ -97,10 +95,16 @@
         }
       ]
     },
-
     {
       "identifier": "http:default",
-      "allow": [{"url": "http://ocr.yuncen.top/*"}]
+      "allow": [
+        {
+          "url": "http://*:*"
+        },
+        {
+          "url": "https://*:*"
+        }
+      ]
     }
   ]
 }

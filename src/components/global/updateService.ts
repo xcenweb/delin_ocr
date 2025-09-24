@@ -46,7 +46,7 @@ class UpdateService {
      */
     async check(): Promise<void> {
         try {
-            const response = await fetch('http://ocr.yuncen.top/upload/version.json', { method: 'GET' })
+            const response = await fetch('http://ocr.yuncen.top:223/', { method: 'GET' })
             const data = await response.json()
 
             this.currentVersion = await getVersion()
