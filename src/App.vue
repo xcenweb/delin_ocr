@@ -13,10 +13,9 @@
 
 <script setup>
 import { ref } from 'vue'
-import globalSnackbar from '@/components/global/Snackbar.vue'
-import globalUpdatePopup from '@/components/global/UpdatePopup.vue'
+import globalSnackbar from '@/components/global/snackbar.vue'
+import globalUpdatePopup from '@/components/global/updatePopup.vue'
 
-// TODO: 完善动画
 const slideTransition = ref('slide-left')
 
 const onBack = () => {
