@@ -103,59 +103,51 @@ const searchQuery = ref('')
 // 选中的分类
 const selectedCategory = ref('all')
 
-// 证件类型定义（与home.vue保持一致）
+// 证件类型定义
 const certificateTypes = ref([
     {
-        id: 1,
         name: '身份证',
         icon: 'mdi-card-account-details',
         color: '#4285F4',
         count: 0
     },
     {
-        id: 2,
         name: '驾驶证',
         icon: 'mdi-car',
         color: '#34A853',
         count: 0
     },
     {
-        id: 3,
         name: '护照',
         icon: 'mdi-passport',
         color: '#EA4335',
         count: 0
     },
     {
-        id: 4,
         name: '户口本',
         icon: 'mdi-home-account',
         color: '#FBBC04',
         count: 0
     },
     {
-        id: 5,
         name: '学历证书',
         icon: 'mdi-school',
         color: '#9C27B0',
         count: 0
     },
     {
-        id: 6,
         name: '荣誉证书',
         icon: 'mdi-trophy',
         color: '#FF9800',
         count: 0
     },
     {
-        id: 7,
         name: '房产证',
         icon: 'mdi-home-city',
         color: '#795548',
         count: 0
     },
     {
-        id: 8,
         name: '其他证件',
         icon: 'mdi-file-document',
         color: '#607D8B',
@@ -166,25 +158,25 @@ const certificateTypes = ref([
 // 证件数据（示例数据）
 const certificates = ref([
     {
-        id: 1,
         name: '身份证',
         typeId: 1,
         thumbnail: 'https://picsum.photos/200/300?random=1',
-        createdAt: new Date('2024-01-15')
+        createdAt: new Date('2024-01-15'),
+        tags: ['工作', '重要']
     },
     {
-        id: 2,
         name: '驾驶证',
         typeId: 2,
         thumbnail: 'https://picsum.photos/200/300?random=2',
-        createdAt: new Date('2024-01-10')
+        createdAt: new Date('2024-01-10'),
+        tags: ['工作', '重要']
     },
     {
-        id: 3,
         name: '护照',
         typeId: 3,
         thumbnail: 'https://picsum.photos/200/300?random=3',
-        createdAt: new Date('2024-01-05')
+        createdAt: new Date('2024-01-05'),
+        tags: ['工作', '重要']
     }
 ])
 
