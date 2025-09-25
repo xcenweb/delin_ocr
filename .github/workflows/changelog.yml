@@ -13,16 +13,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
       - name: Read changelog
         id: changelog
         run: |
           # 提取最新版本号和内容
-          latest=$(awk '/^# v[0-9]+\.[0-9]+\.[0-9]+/ {print $2; exit}' changelog.md)
+          latest=$(awk '/^# v[0-9]+\.[0-9]+\.[0-9]+/ {print $2; exit}' CHANGELOG.md)
           if [ -z "$latest" ]; then
             echo "No version found"
             exit 1
