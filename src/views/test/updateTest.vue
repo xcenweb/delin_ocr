@@ -16,9 +16,9 @@
 </template>
 
 <script setup lang="ts">
-import { useUpdateService } from '@/components/global/updateService'
+import { useUpdatePopup } from '@/components/global/updateService'
 
 const checkForUpdates = async () => {
-    await useUpdateService().check()
+    await useUpdatePopup().check()
 }
 </script>

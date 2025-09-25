@@ -1,8 +1,10 @@
+cargo-features = ["profile-rustflags", 'trim-paths']
+
 [package]
 name = "delin"
 version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "delin ocr tool"
+authors = ["ycloud"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -13,6 +15,19 @@ edition = "2021"
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "delin_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+[profile.dev]
+incremental = true
+rustflags = ["-Zthreads=16"]
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
+trim-paths = "all"
+rustflags = ["-Cdebuginfo=0", "-Zthreads=16"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

@@ -93,7 +93,7 @@ const updateService = new UpdateService()
  * 获取全局更新服务实例
  * @returns 更新服务实例
  */
-export function useUpdateService(): UpdateService {
+export function useUpdatePopup(): UpdateService {
     return updateService
 }
 

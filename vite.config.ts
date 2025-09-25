@@ -17,7 +17,6 @@ export default defineConfig(async (): Promise<UserConfig> => {
 
     worker: {
       format: 'es',
-      plugins: () => [vue()]
     },
 
     resolve: {
