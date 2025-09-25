@@ -16,7 +16,7 @@
                 </v-text-field>
             </div>
 
-            <!-- 证件分类标签 -->
+            <!-- 分类标签 -->
             <v-slide-group v-model="selectedCategory" mandatory show-arrows="desktop" mobile-breakpoint="sm"
                 class="mb-5 swiper-no-swiping">
                 <v-spacer style="width: 12px;" class="d-sm-none"></v-spacer>
@@ -155,7 +155,7 @@ const certificateTypes = ref([
     }
 ])
 
-// 证件数据（示例数据）
+// 证件数据
 const certificates = ref([
     {
         name: '身份证',

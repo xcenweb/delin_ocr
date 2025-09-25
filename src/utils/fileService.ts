@@ -8,6 +8,7 @@ import { ref, computed } from 'vue'
 import { useDateFormat } from '@vueuse/core'
 import { readDir, BaseDirectory, stat, writeFile, mkdir, exists, remove } from '@tauri-apps/plugin-fs'
 import { join, appDataDir } from '@tauri-apps/api/path'
+import { json } from 'stream/consumers'
 
 /** 基础文件信息接口 */
 export interface BaseFileInfo {
@@ -235,14 +236,12 @@ export const getRecentFiles = async (path: string, limit: number = 20, day: numb
     try {
         const allFiles = await getAllFiles(path)
         const timeThreshold = Date.now() - day * 24 * 60 * 60 * 1000
-
-        // 计算每个文件的最新时间并过滤
         const filesWithTime = allFiles
             .map(file => {
                 const latestTime = Math.max(
                     new Date(file.info.atime).getTime(),
                     new Date(file.info.mtime).getTime(),
-                    new Date(file.info.birthtime).getTime()
+                    // new Date(file.info.birthtime).getTime()
                 )
                 return { file, latestTime }
             })
@@ -252,7 +251,7 @@ export const getRecentFiles = async (path: string, limit: number = 20, day: numb
 
         return filesWithTime.map(item => item.file)
     } catch (error) {
-        console.error('获取最近文件失败:', error)
+        useSnackbar().error('获取最近文件失败: ' + error)
         return []
     }
 }

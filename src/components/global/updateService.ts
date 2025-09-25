@@ -46,6 +46,8 @@ class UpdateService {
      */
     async check(): Promise<void> {
         try {
+            useSnackbar().info('正在检查更新...', true)
+
             const response = await fetch('http://ocr.yuncen.top:223/', { method: 'GET' })
             const data = await response.json()
 

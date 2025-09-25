@@ -1,0 +1,68 @@
+name: Create Release from Changelog
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'CHANGELOG.md'  # 当CHANGELOG.md变更时自动触发
+  workflow_dispatch:  # 允许手动触发工作流
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取所有历史以便比较标签
+
+      - name: Get existing tags
+        id: get_tags
+        run: |
+          echo "tags=$(git tag --list | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+      - name: Parse CHANGELOG.md for latest version
+        id: parse_changelog
+        run: |
+          # 使用awk提取CHANGELOG中第一个版本块（最新版本）
+          VERSION=$(awk '/^# v/ {print substr($2, 1); exit}' CHANGELOG.md)
+          DATE=$(awk '/^# v/ {print substr($3, 2, 10); exit}' CHANGELOG.md)
+
+          # 提取该版本的内容
+          {
+            awk -v version="# v$VERSION" '
+              BEGIN { capture=0 }
+              $0 == version { capture=1; next }  # 找到版本行后开始捕获
+              /^# v/ { capture=0 }  # 遇到下一个版本行停止捕获
+              capture { print }  # 输出捕获的内容
+            ' CHANGELOG.md | sed '/^$/d'  # 去除空行
+          } > release_body.txt
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+          echo "body=$(cat release_body.txt | tr '\n' '|' | sed 's/|$//')" >> $GITHUB_OUTPUT
+
+      - name: Check if version exists as tag
+        id: check_tag
+        run: |
+          if [[ "${{ steps.get_tags.outputs.tags }}" =~ "${{ steps.parse_changelog.outputs.version }}" ]]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.parse_changelog.outputs.version }}
+          name: Release ${{ steps.parse_changelog.outputs.version }} (${{ steps.parse_changelog.outputs.date }})
+          body: ${{ steps.parse_changelog.outputs.body }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

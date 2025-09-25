@@ -133,9 +133,3 @@ jobs:
         prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Build Summary
-      run: |
-        echo "## 构建完成 ✅" >> $GITHUB_STEP_SUMMARY
-        echo "**版本:** ${{ github.event.inputs.version }}" >> $GITHUB_STEP_SUMMARY
-        echo "**APK:** ${{ steps.rename-apk.outputs.renamed_apk_name }}" >> $GITHUB_STEP_SUMMARY
