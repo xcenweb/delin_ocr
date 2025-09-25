@@ -1,16 +1,15 @@
 <template>
     <v-dialog v-model="useUpdatePopup().visible.value" persistent scrollable max-width="500px">
-        <v-card title="新版本！" prepend-icon="mdi-update">
+        <v-card title="发现新版本" :subtitle="'v'+useUpdatePopup().newVersion+'更新内容如下：'" class="pa-2">
             <template v-slot:text>
-                <p>v{{ useUpdatePopup().newVersion }} 更新内容：</p><br>
-                <div style="white-space: pre-line;" class="font-weight-regular">
+                <p style="white-space: pre-line;">
                     {{ useUpdatePopup().notes }}
-                </div>
+                </p>
             </template>
             <template v-slot:actions>
                 <v-spacer></v-spacer>
-                <v-btn text="立即更新" @click="useUpdatePopup().update()" variant="tonal" />
-                <v-btn text="暂不更新" @click="useUpdatePopup().hide()" variant="plain" />
+                <v-btn text="取消" @click="useUpdatePopup().hide()" />
+                <v-btn text="前往下载" @click="useUpdatePopup().update()" />
             </template>
         </v-card>
     </v-dialog>

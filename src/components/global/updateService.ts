@@ -48,16 +48,17 @@ class UpdateService {
         try {
             useSnackbar().info('正在检查更新...', true)
 
-            const response = await fetch('http://ocr.yuncen.top:223/', { method: 'GET' })
+            const response = await fetch('https://api.github.com/repos/xcenweb/delin_ocr/releases/latest', { method: 'GET' })
             const data = await response.json()
 
             this.currentVersion = await getVersion()
-            this.newVersion = data.version
-            this.notes = data.notes
-            this.link = data.package[this.platform]
+            this.newVersion = data.tag_name.replace('v', '')
+            this.notes = data.body
+            this.link = 'https://github.com/xcenweb/delin_ocr/releases/latest'
 
             if (this.newVersion > this.currentVersion) {
                 this.show()
+                useSnackbar().hide()
             } else {
                 useSnackbar().success('当前为最新版本')
             }
@@ -70,8 +71,6 @@ class UpdateService {
     /**
      * 更新
      */
-    // TODO: android下载apk后调起系统安装器安装
-    // TODO: windows下实现下载后关闭软件，进行静默安装
     async update(): Promise<void> {
         try {
             if (!this.link) {
