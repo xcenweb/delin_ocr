@@ -12,23 +12,12 @@
             </v-app-bar>
 
             <!-- 图片显示区域 -->
-            <div class="image-container"
-                ref="imageContainer"
-                @wheel.prevent="handleWheel"
-                @mousedown="handleMouseDown"
-                @mousemove="handleMouseMove"
-                @mouseup="handleMouseUp"
-                @mouseleave="handleMouseUp">
-                <v-img v-if="imagePath"
-                    :src="imageUrl"
-                    :class="['main-image', { 'image-loading': isLoading }]"
-                    :style="imageStyles"
-                    @load="onImageLoad"
-                    @error="onImageError"
-                    @touchstart.prevent="handleTouchStart"
-                    @touchmove.prevent="handleTouchMove"
-                    @touchend.prevent="handleTouchEnd"
-                />
+            <div class="image-container" ref="imageContainer" @wheel.prevent="handleWheel" @mousedown="handleMouseDown"
+                @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp">
+                <v-img v-if="imagePath" :src="imageUrl" :class="['main-image', { 'image-loading': isLoading }]"
+                    :style="imageStyles" @load="onImageLoad" @error="onImageError"
+                    @touchstart.prevent="handleTouchStart" @touchmove.prevent="handleTouchMove"
+                    @touchend.prevent="handleTouchEnd" />
                 <v-overlay v-model="isLoading" class="align-center justify-center">
                     <v-progress-circular indeterminate />
                 </v-overlay>
@@ -252,7 +241,11 @@ const resetZoom = () => {
 
 // 分享图片
 const shareImage = async () => {
-    await shareFile(imagePath.value, { title: 'Share Image' });
+    try {
+        await shareFile(imagePath.value, { title: 'share file' });
+    } catch (error) {
+        useSnackbar().error(error as string);
+    }
 };
 
 // 调用外部默认程序打开图片
