@@ -1,9 +1,0 @@
-{
-    "version": "0.1.0",
-    "notes": "正式版本",
-    "package": {
-        "android": "http://ocr.yuncen.top/upload/update.apk",
-        "windows": null,
-        "linux": null
-    }
-}

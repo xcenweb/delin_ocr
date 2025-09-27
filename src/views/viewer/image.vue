@@ -69,6 +69,7 @@ import { useRoute } from 'vue-router'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { openPath } from '@tauri-apps/plugin-opener'
 import { shareFile } from "@choochmeque/tauri-plugin-sharekit-api"
+import mime from 'mime';
 
 // 路由实例
 const route = useRoute();
@@ -242,7 +243,10 @@ const resetZoom = () => {
 // 分享图片
 const shareImage = async () => {
     try {
-        await shareFile(imagePath.value, { title: 'share file' });
+        await shareFile(imagePath.value, {
+            mimeType: mime.getType(imagePath.value)!,
+            title: 'share file'
+        });
     } catch (error) {
         useSnackbar().error(error as string);
     }

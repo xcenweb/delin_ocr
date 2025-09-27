@@ -1,6 +1,6 @@
 <template>
     <v-dialog v-model="useUpdatePopup().visible.value" persistent scrollable max-width="500px">
-        <v-card title="发现新版本" :subtitle="'v'+useUpdatePopup().newVersion+'更新内容如下：'" class="pa-2">
+        <v-card title="发现新版本" :subtitle="'v' + useUpdatePopup().newVersion + '更新内容如下：'" class="pa-1">
             <template v-slot:text>
                 <p style="white-space: pre-line;">
                     {{ useUpdatePopup().notes }}
