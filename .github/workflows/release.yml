@@ -1,10 +1,15 @@
 name: Create Release from CHANGELOG
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
       - 'CHANGELOG.md'  # 只有当CHANGELOG.md被修改时才触发
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   release:
@@ -13,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 拉取所有历史，以便检查标签
+          fetch-depth: 0  # 拉取所有历史以便检查标签
 
       - name: Extract latest version from CHANGELOG
         id: extract_version
@@ -38,7 +43,7 @@ jobs:
           echo "$body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Check if tag exists
+      - name: Check if tag already exists
         id: check_tag
         run: |
           if git rev-parse "${{ steps.extract_version.outputs.version }}" >/dev/null 2>&1; then
@@ -56,3 +61,8 @@ jobs:
           body: ${{ steps.extract_version.outputs.body }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify if release exists
+        if: steps.check_tag.outputs.exists == 'true'
+        run: |
+          echo "Release ${{ steps.extract_version.outputs.version }} already exists. Skipping creation."
