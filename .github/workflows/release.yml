@@ -23,7 +23,6 @@ jobs:
       uses: ffurrer2/extract-release-notes@v2
       with:
         changelog_file: CHANGELOG.md
-        version: ${{ github.event.inputs.version }}
 
     - name: Create Release
       id: create_release
