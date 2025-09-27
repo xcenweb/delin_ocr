@@ -1,15 +1,10 @@
 name: Create Release from CHANGELOG
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
       - 'CHANGELOG.md'  # 只有当CHANGELOG.md被修改时才触发
-
-permissions:
-  contents: write
-  packages: write
 
 jobs:
   release:
@@ -17,6 +12,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取所有历史，以便检查标签
 
       - name: Extract latest version from CHANGELOG
         id: extract_version
@@ -41,7 +38,17 @@ jobs:
           echo "$body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "${{ steps.extract_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.extract_version.outputs.version }}
