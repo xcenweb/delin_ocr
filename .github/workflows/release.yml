@@ -1,37 +1,47 @@
-name: Release
+name: Create Release from CHANGELOG
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g., v0.1.1)'
-        required: true
-        default: 'v0.1.1'
-        type: string
-
-permissions:
-  contents: write
+  push:
+    branches: [ main ]
+    paths:
+      - 'CHANGELOG.md'  # 只有当CHANGELOG.md被修改时才触发
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Extract release notes
-      id: extract_release_notes
-      uses: ffurrer2/extract-release-notes@v2
-      with:
-        changelog_file: CHANGELOG.md
+      - name: Extract latest version from CHANGELOG
+        id: extract_version
+        run: |
+          # 读取CHANGELOG内容
+          content=$(cat CHANGELOG.md)
 
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ github.event.inputs.version }}
-        name: ${{ github.event.inputs.version }}
-        body: ${{ steps.extract_release_notes.outputs.release_notes }}
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 提取最新版本号（第一个##后面的内容）
+          version=$(echo "$content" | grep -m 1 '^## ' | sed 's/## //')
+
+          # 提取该版本的内容（直到下一个##或文件结束）
+          body=$(echo "$content" | awk -v version="$version" '
+            BEGIN { capture = 0 }
+            $0 ~ "^## " version { capture = 1; next }  # 找到版本行，开始捕获
+            capture == 1 && $0 ~ "^## " { exit }       # 遇到下一个版本，停止
+            capture == 1 { print }                     # 捕获内容
+          ')
+
+          # 输出变量供后续步骤使用
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.extract_version.outputs.version }}
+          name: ${{ steps.extract_version.outputs.version }}
+          body: ${{ steps.extract_version.outputs.body }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

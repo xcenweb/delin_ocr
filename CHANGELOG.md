@@ -1,5 +1,3 @@
-# Changelog
-
 ## v0.1.1
 
 - 支持 windows 平台，现可访问官网进行下载
