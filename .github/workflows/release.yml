@@ -7,6 +7,10 @@ on:
     paths:
       - 'CHANGELOG.md'  # 只有当CHANGELOG.md被修改时才触发
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
