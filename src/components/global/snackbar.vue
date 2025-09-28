@@ -7,7 +7,7 @@
         <v-progress-circular indeterminate size="20" width="3" class="mr-3 ml-1" />
       </v-col>
       <v-col>
-        {{ useSnackbar().message.value }}
+        <p>{{ useSnackbar().message.value }}</p>
       </v-col>
     </v-row>
     <template v-slot:actions>

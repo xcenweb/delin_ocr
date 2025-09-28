@@ -2,10 +2,12 @@
 
 <template>
     <v-dialog v-model="confirmShow" max-width="400">
-        <v-card title="确认退出" :text="props.message">
+        <v-card title="确认退出？" :text="props.message">
             <template v-slot:text>
-                <v-spacer></v-spacer>
-                <v-btn color="primary" text="确认" @click="confirm" />
+                <p>{{ props.message }}</p>
+            </template>
+            <template v-slot:actions>
+                <v-btn text="确认" @click="confirm" />
                 <v-btn text="取消" @click="cancel" />
             </template>
         </v-card>

@@ -238,7 +238,7 @@ const saveAllImages = async () => {
         shouldShowLeavePopup.value = false;
         setTimeout(() => {
             router.go(-2)
-        }, 500);
+        }, 800);
 
     } catch (error) {
         console.error('保存图片时发生错误:', error);

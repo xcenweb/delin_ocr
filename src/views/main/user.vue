@@ -41,7 +41,7 @@
 import { getVersion } from '@tauri-apps/api/app';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUpdatePopup } from '@/components/global/updateService';
+import { useUpdatePopup } from '@/components/global/updatePopupService';
 
 const appVersion = ref('');
 const router = useRouter();

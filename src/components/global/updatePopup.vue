@@ -16,5 +16,5 @@
 </template>
 
 <script setup lang="ts">
-import { useUpdatePopup } from '@/components/global/updateService'
+import { useUpdatePopup } from '@/components/global/updatePopupService'
 </script>

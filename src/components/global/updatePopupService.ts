@@ -53,7 +53,7 @@ class UpdateService {
 
             this.currentVersion = await getVersion()
             this.newVersion = data.tag_name.replace('v', '')
-            this.notes = data.body
+            this.notes = data.body.trim()
             this.link = 'https://github.com/xcenweb/delin_ocr/releases/latest'
 
             if (this.newVersion > this.currentVersion) {
