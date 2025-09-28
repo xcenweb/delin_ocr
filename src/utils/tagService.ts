@@ -5,14 +5,13 @@ interface TagConfig {
 }
 
 // 统一的标签配置（设为只读，防止意外修改）
-const TAG_CONFIGS: readonly TagConfig[] = [
+export const BASE_TAGS: readonly TagConfig[] = [
     { id: 'identity_card', keywords: ['居民身份证', '身份证', '公民身份', 'ID Card', 'Identity Card'] },
     { id: 'driver_license', keywords: ['驾驶证', '机动车驾驶证', 'Driver License', 'Driving License'] },
     { id: 'passport', keywords: ['护照', 'Passport', 'PASSPORT', '中华人民共和国护照'] },
     { id: 'business_license', keywords: ['营业执照', '工商营业执照', 'Business License', '统一社会信用代码'] },
     { id: 'residence_permit', keywords: ['居住证', '暂住证', 'Residence Permit'] },
     { id: 'student_id', keywords: ['学生证', 'Student ID', '学生卡'] },
-    { id: 'employee_id', keywords: ['工作证', '员工证', 'Employee ID', '职工证'] },
     { id: 'bank_card', keywords: ['银行卡', '储蓄卡', '信用卡', 'Bank Card', 'Credit Card', 'Debit Card'] },
     { id: 'social_security_card', keywords: ['社保卡', '社会保障卡', 'Social Security Card'] },
     { id: 'medical_insurance_card', keywords: ['医保卡', '医疗保险卡', 'Medical Insurance Card'] },
@@ -24,7 +23,7 @@ const TAG_CONFIGS: readonly TagConfig[] = [
     { id: 'certificate', keywords: ['证书', '资格证', '认证证书', 'Certificate', '培训证书', '专业证书', '技能证书', '职业资格', '等级证书'] },
     { id: 'invoice', keywords: ['发票', '增值税发票', '普通发票', '电子发票', 'Invoice', '税务发票', '收据', '付款凭证'] },
     { id: 'form', keywords: ['申请表', '登记表', '登记单', '申请书', '表格', 'Form', 'Application Form', '登记册', '填表'] },
-    { id: 'document', keywords: ['文档', '文件', 'Document', 'File'] },
+    { id: 'document', keywords: ['文档', '文件', 'Document', 'File', 'Word'] },
     { id: 'other', keywords: [] }
 ];
 
@@ -138,7 +137,7 @@ class ClassEngine {
  * 标签服务类 - 处理标签生成和管理
  */
 class TagService {
-    private allTags: string[] = TAG_CONFIGS.map(c => c.id);
+    private allTags: string[] = BASE_TAGS.map(c => c.id);
 
     /**
      * 根据OCR文本生成标签，使用加权评分系统
@@ -151,7 +150,7 @@ class TagService {
         if (!text?.trim()) return defaultTags;
 
         // 计算每个标签配置的匹配分数
-        const scores: [string, number][] = TAG_CONFIGS
+        const scores: [string, number][] = BASE_TAGS
             .filter(cfg => cfg.keywords.length)
             .map(cfg => {
                 const matches = ClassEngine.checkKeywords(text, cfg.keywords);
