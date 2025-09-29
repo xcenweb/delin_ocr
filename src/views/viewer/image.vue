@@ -1,16 +1,17 @@
 <!-- 图片预览器 -->
 <template>
     <v-app>
-        <v-main class="d-flex flex-column overflow-hidden">
-            <!-- 顶部导航栏 -->
-            <v-app-bar :elevation="0" color="transparent" flat>
-                <v-btn icon="mdi-arrow-left" @click="$router.back()" />
-                <v-app-bar-title>{{ title }}</v-app-bar-title>
-                <v-spacer />
-                <v-btn icon="mdi-share-variant" @click="shareImage" />
-                <v-btn icon="mdi-open-in-app" @click="openImagePath" />
-            </v-app-bar>
 
+        <!-- 顶部导航栏 -->
+        <v-app-bar :elevation="0" color="transparent" flat>
+            <v-btn icon="mdi-arrow-left" @click="$router.back()" />
+            <v-app-bar-title>{{ title }}</v-app-bar-title>
+            <v-spacer />
+            <v-btn icon="mdi-share-variant" @click="shareImage" />
+            <v-btn icon="mdi-open-in-app" @click="openImagePath" />
+        </v-app-bar>
+
+        <v-main class="d-flex flex-column overflow-hidden">
             <!-- 图片显示区域 -->
             <v-sheet class="flex-grow-1 d-flex justify-center align-center overflow-hidden position-relative"
                 color="background" @wheel.prevent="handleWheel" @mousedown="handleMouseDown"
@@ -30,40 +31,16 @@
                     <p class="text-grey mt-2">无法加载图片</p>
                 </v-sheet>
             </v-sheet>
-
-            <!-- 底部工具栏 -->
-            <v-bottom-navigation v-if="imagePath" class="toolbar-container" color="primary" grow elevation="2">
-                <v-tooltip location="top" text="左旋转">
-                    <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" icon="mdi-rotate-left" @click="rotateLeft" />
-                    </template>
-                </v-tooltip>
-
-                <v-tooltip location="top" text="右旋转">
-                    <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" icon="mdi-rotate-right" @click="rotateRight" />
-                    </template>
-                </v-tooltip>
-
-                <v-tooltip location="top" text="放大">
-                    <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" icon="mdi-magnify-plus" @click="zoomIn" />
-                    </template>
-                </v-tooltip>
-
-                <v-tooltip location="top" text="缩小">
-                    <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" icon="mdi-magnify-minus" @click="zoomOut" />
-                    </template>
-                </v-tooltip>
-
-                <v-tooltip location="top" text="重置">
-                    <template v-slot:activator="{ props }">
-                        <v-btn v-bind="props" icon="mdi-fit-to-screen" @click="resetZoom" />
-                    </template>
-                </v-tooltip>
-            </v-bottom-navigation>
         </v-main>
+
+        <!-- 底部工具栏 -->
+        <v-bottom-navigation v-if="imagePath" grow>
+            <v-btn icon="mdi-rotate-left" @click="rotateLeft" />
+            <v-btn icon="mdi-rotate-right" @click="rotateRight" />
+            <v-btn icon="mdi-magnify-plus" @click="zoomIn" />
+            <v-btn icon="mdi-magnify-minus" @click="zoomOut" />
+            <v-btn icon="mdi-fit-to-screen" @click="resetZoom" />
+        </v-bottom-navigation>
     </v-app>
 </template>
 
@@ -71,7 +48,6 @@
 import { useSnackbar } from '@/components/global/snackbarService'
 import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { openPath } from '@tauri-apps/plugin-opener'
 import { shareFile } from "@choochmeque/tauri-plugin-sharekit-api"
@@ -276,12 +252,6 @@ const openImagePath = async () => {
 
 .image-loading {
     opacity: 0.5;
-}
-
-.toolbar-container {
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
