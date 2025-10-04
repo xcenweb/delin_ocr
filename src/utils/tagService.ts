@@ -28,7 +28,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
 ];
 
 /**
- * 分类引擎 - 提供文本处理和关键词匹配功能
+ * 分类引擎
  */
 class ClassEngine {
     /** 文本标准化：小写、去空格、去标点和零宽字符 */
@@ -181,12 +181,6 @@ class TagService {
         const limitedScores = scores.slice(0, maxLength);
         return limitedScores.length ? limitedScores.map(([id]) => id) : defaultTags;
     }
-
-    /** 获取所有标签ID */
-    getAllTags(): string[] {
-        return [...this.allTags];
-    }
 }
 
-// 导出单例实例
 export const tagService = new TagService();

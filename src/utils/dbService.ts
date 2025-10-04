@@ -1,206 +1,156 @@
 // 数据库缓存服务
-import Database from '@tauri-apps/plugin-sql';
-import { useDateFormat } from '@vueuse/core';
+import Database from '@tauri-apps/plugin-sql'
+import { useDateFormat } from '@vueuse/core'
+import { Block } from 'tesseract.js'
 
-// 数据类型定义
-export interface OCRRecord {
-    id?: number;
-    relative_path: string;
-    tags?: string;
-    text?: string;
-    block?: string;
-    create_time?: string;
-    update_time?: string;
+/**
+ * 缓存的文件及相关信息
+ */
+export interface filesCache {
+    id?: number
+    /** 相对路径 */
+    relative_path: string
+    /** 标签 */
+    tags: string
+    /** OCR 识别出的文本 */
+    recognized_text: string
+    /** OCR 识别的原始块数据 */
+    recognized_block: Block
+    /** OCR 识别结果更新时间 */
+    recognized_update?: string
+    /** 上次被访问时间 */
+    atime?: string
+    /** 上次修改时间 */
+    mtime?: string
+    /** 创建时间 */
+    birthtime?: string
 }
 
 /**
  * 数据库基础类
  */
 class BaseDB {
-    /** 数据库连接对象*/
-    protected db!: Database;
-    /** 初始化数据库连接的Promise */
-    private initPromise: Promise<void>;
+    protected db!: Database
+    private initialized = false
 
-    constructor() {
-        this.initPromise = this.init();
+    /**
+     * 初始化缓存数据库
+     */
+    protected async init() {
+        if (this.initialized) return
+        this.db = await Database.load('sqlite:user/cache.db')
+        await this.createTable()
+        this.initialized = true
     }
 
     /**
-     * 初始化数据库连接
+     * 初始化创建数据表
      */
-    private async init() {
-        this.db = await Database.load('sqlite:' + 'user/cache.db');
-        await this.initTables();
-    }
-
-    /**
-     * 确保数据库已初始化
-     */
-    protected async ensureInitialized(): Promise<void> {
-        await this.initPromise;
-    }
-
-    /**
-     * 初始化数据表
-     */
-    private async initTables() {
+    private async createTable() {
         await this.db.execute(`
-            CREATE TABLE IF NOT EXISTS "ocr_records" (
-                "id"	INTEGER UNIQUE,
-                "relative_path"	TEXT NOT NULL UNIQUE,
-                "tags"	TEXT DEFAULT '',
-                "text"	TEXT DEFAULT '',
-                "block"	TEXT DEFAULT '',
-                "create_time"	TEXT,
-                "update_time"	TEXT,
-                PRIMARY KEY("id" AUTOINCREMENT)
-            );
-        `);
+            CREATE TABLE IF NOT EXISTS files_cache (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                relative_path TEXT NOT NULL UNIQUE,
+                tags TEXT DEFAULT '',
+                recognized_text TEXT DEFAULT '',
+                recognized_block TEXT DEFAULT '',
+                recognized_update TEXT DEFAULT '',
+                atime TEXT,
+                mtime TEXT,
+                birthtime TEXT
+            )
+        `)
     }
 
     /**
-     * 通用: 路径标准化
+     * 路径标准化
      * @param path 路径
      * @param separator '/' 分隔符
      * @returns 标准化后的路径
      */
     public normalizedPath(path: string, separator = '/') {
-        return path.replace(/\\/g, separator);
+        return path.replace(/\\/g, separator)
     }
 
     /**
-     * 通用：获取当前时间
+     * 获取当前时间
      */
     public getCurrentTime() {
         return useDateFormat(new Date(), 'YYYY-MM-DD HH:mm:ss').value
     }
-
-    /**
-     * 注销连接
-     */
-    async destroy(): Promise<void> {
-        await this.db.close();
-    }
 }
 
 /**
- * OCR识别缓存
+ * 文件缓存
  */
-class OCRRecords extends BaseDB {
-    tableName = 'ocr_records';
+class FileCacheDB extends BaseDB {
+    tableName = 'files_cache'
 
     /**
-     * 插入或更新OCR记录
+     * 插入记录
      */
-    async upsert(record: OCRRecord): Promise<number> {
-        await this.ensureInitialized();
-        const currentTime = this.getCurrentTime();
+    async add(record: filesCache) {
+        await this.init()
+        const currentTime = this.getCurrentTime()
+        const normalizedPath = this.normalizedPath(record.relative_path)
 
         const result = await this.db.execute(
-            `INSERT OR REPLACE INTO ${this.tableName}
-                (id, relative_path, tags, text, block, create_time, update_time)
-                VALUES (
-                    (SELECT id FROM ${this.tableName} WHERE relative_path = ?),
-                    ?, ?, ?, ?,
-                    COALESCE((SELECT create_time FROM ${this.tableName} WHERE relative_path = ?), ?), ?
-                )`,
+            `INSERT INTO ${this.tableName} (relative_path, tags, recognized_text, recognized_block, recognized_update, atime, mtime, birthtime)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                this.normalizedPath(record.relative_path),
-                this.normalizedPath(record.relative_path),
-                record.tags || '',
-                record.text || '',
-                record.block || '',
-                this.normalizedPath(record.relative_path),
+                normalizedPath,
+                record.tags,
+                record.recognized_text,
+                record.recognized_block,
                 currentTime,
-                currentTime
+                currentTime,
+                record.mtime || currentTime,
+                record.birthtime || currentTime
             ]
-        );
-
-        return result.lastInsertId as number;
+        )
+        return result.lastInsertId
     }
 
     /**
-     * 根据路径获取OCR记录
+     * 更新记录
      */
-    async getByPath(relativePath: string): Promise<OCRRecord | null> {
-        await this.ensureInitialized();
-        const result = await this.db.select<OCRRecord[]>(`SELECT * FROM ${this.tableName} WHERE relative_path = ?`, [this.normalizedPath(relativePath)]);
-        return result.length > 0 ? result[0] : null;
+    async update(record: filesCache) {
+        await this.init()
+        const currentTime = this.getCurrentTime()
+        const normalizedPath = this.normalizedPath(record.relative_path)
+        const result = await this.db.execute(
+            `UPDATE ${this.tableName} SET tags = ?, recognized_text = ?, recognized_block = ?, recognized_update = ?, atime = ?, mtime = ?, birthtime = ? WHERE relative_path = ?`,
+            [
+                record.tags,
+                record.recognized_text,
+                record.recognized_block,
+                currentTime,
+                currentTime,
+                record.mtime || currentTime,
+                record.birthtime || currentTime,
+                normalizedPath
+            ]
+        )
+        return result
     }
 
     /**
-     * 根据路径删除OCR记录
+     * 根据路径获取一条记录
      */
-    async deleteByPath(relativePath: string): Promise<boolean> {
-        await this.ensureInitialized();
-        const result = await this.db.execute(`DELETE FROM ${this.tableName} WHERE relative_path = ?`, [this.normalizedPath(relativePath)]);
-        return result.rowsAffected > 0;
+    async getByPath(relativePath: string) {
+        await this.init()
+        const result = await this.db.select<filesCache[]>(`SELECT * FROM ${this.tableName} WHERE relative_path = ?`, [this.normalizedPath(relativePath)])
+        return result.length > 0 ? result[0] : null
     }
 
     /**
-     * 获取所有OCR记录
+     * 根据路径删除记录
      */
-    async getAll(limit?: number, offset?: number): Promise<OCRRecord[]> {
-        await this.ensureInitialized();
-        let query = `SELECT * FROM ${this.tableName} ORDER BY update_time DESC`;
-        const params: any[] = [];
-
-        if (limit) {
-            query += ` LIMIT ?`;
-            params.push(limit.toString());
-            if (offset) {
-                query += ` OFFSET ?`;
-                params.push(offset.toString());
-            }
-        }
-
-        return await this.db.select<OCRRecord[]>(query, params);
-    }
-
-    /**
-     * 搜索OCR文本
-     */
-    async search(keyword: string, limit?: number): Promise<OCRRecord[]> {
-        await this.ensureInitialized();
-        let query = `SELECT * FROM ${this.tableName} WHERE text LIKE ? OR tags LIKE ? ORDER BY update_time DESC`;
-        const params = [`%${keyword}%`, `%${keyword}%`];
-
-        if (limit) {
-            query += ` LIMIT ?`;
-            params.push(limit.toString());
-        }
-
-        return await this.db.select<OCRRecord[]>(query, params);
-    }
-
-    /**
-     * 根据标签搜索OCR记录
-     */
-    async getByTags(tags: string[], limit?: number): Promise<OCRRecord[]> {
-        await this.ensureInitialized();
-        const tagConditions = tags.map(() => 'tags LIKE ?').join(' OR ');
-        let query = `SELECT * FROM ${this.tableName} WHERE ${tagConditions} ORDER BY update_time DESC`;
-        const params = tags.map(tag => `%${tag}%`);
-
-        if (limit) {
-            query += ` LIMIT ?`;
-            params.push(limit.toString());
-        }
-
-        return await this.db.select<OCRRecord[]>(query, params);
-    }
-
-    /**
-     * 获取记录总数
-     */
-    async getCount(): Promise<number> {
-        await this.ensureInitialized();
-        const result = await this.db.select<{ count: number }[]>(
-            `SELECT COUNT(*) as count FROM ${this.tableName}`
-        );
-        return result[0]?.count || 0;
+    async deleteByPath(relativePath: string) {
+        await this.init()
+        const result = await this.db.execute(`DELETE FROM ${this.tableName} WHERE relative_path = ?`, [this.normalizedPath(relativePath)])
+        return result
     }
 }
 
-export const ocrRecordsDB = new OCRRecords();
+export const fileCacheDB = new FileCacheDB()

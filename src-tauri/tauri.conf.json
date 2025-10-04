@@ -20,7 +20,7 @@
         "minHeight": 700,
         "minWidth": 360,
         "center": true,
-        "backgroundThrottling": "disabled",
+        "backgroundThrottling": "throttle",
         "backgroundColor": "#00000000"
       }
     ],

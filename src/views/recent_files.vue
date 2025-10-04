@@ -5,24 +5,6 @@
             <v-app-bar-title>最近文件</v-app-bar-title>
             <v-spacer />
             <v-btn icon="mdi-refresh" @click="refreshFiles" :loading="loading" />
-            <v-menu>
-                <template v-slot:activator="{ props }">
-                    <v-btn icon="mdi-sort" v-bind="props" />
-                </template>
-                <v-list>
-                    <v-list-item
-                        v-for="sort in sortOptions"
-                        :key="sort.value"
-                        @click="changeSortType(sort.value)"
-                        :class="{ 'v-list-item--active': currentSortType === sort.value }"
-                    >
-                        <v-list-item-title>{{ sort.label }}</v-list-item-title>
-                        <template v-slot:append>
-                            <v-icon v-if="currentSortType === sort.value" icon="mdi-check" />
-                        </template>
-                    </v-list-item>
-                </v-list>
-            </v-menu>
         </v-app-bar>
 
         <v-main>
@@ -58,10 +40,10 @@
                 </div>
             </div>
 
-            <v-row class="px-3" v-else-if="sortedRecentFiles.length > 0">
-                <v-col cols="12" sm="12" md="6" lg="4" v-for="(file, i) in sortedRecentFiles" :key="i" class="pb-0 pt-3">
-                    <v-card @click="openFile(file.fullPath)" :ripple="false"
-                        v-on-long-press.prevent="[() => onLongPress(file.fullPath), { delay: 500 }]">
+            <v-row class="px-3" v-else-if="recentFiles.length > 0">
+                <v-col cols="12" sm="12" md="6" lg="4" v-for="(file, i) in recentFiles" :key="i" class="pb-0 pt-3">
+                    <v-card @click="openFile(file.full_path)" :ripple="false"
+                        v-on-long-press.prevent="[() => onLongPress(file.full_path), { delay: 500 }]">
                         <template v-slot:prepend>
                             <v-img :src="file.thumbnail" width="55" aspect-ratio="1" cover rounded class="mr-1">
                                 <template v-slot:error>
@@ -77,7 +59,7 @@
                                 {{ getLatestTimeText(file) }} · {{ formatFileSize(file.info.size) }}
                             </p>
                             <p class="text-caption text-grey-lighten-1">
-                                {{ getRelativePath(file.path) }}
+                                {{ getRelativePath(file.full_path) }}
                             </p>
                         </template>
                         <template v-slot:append>
@@ -102,11 +84,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { vOnLongPress } from '@vueuse/components'
 import { useSnackbar } from '@/components/global/snackbarService'
-import { getRecentFiles, getFileType, formatFileSize, type FileObject } from '@/utils/fileService'
+import { getRecentFiles, openFile, formatFileSize, type FileObject } from '@/utils/fileService'
 
 const router = useRouter()
 const snackbar = useSnackbar()
@@ -115,7 +97,6 @@ const snackbar = useSnackbar()
 const loading = ref(true)
 const recentFiles = ref<FileObject[]>([])
 const selectedDays = ref(30)
-const currentSortType = ref<string>('time-desc')
 
 // 时间范围选项
 const dayOptions = [
@@ -123,43 +104,6 @@ const dayOptions = [
     { label: '最近30天', value: 30 },
     { label: '最近90天', value: 90 }
 ]
-
-// 排序选项
-const sortOptions = [
-    { label: '按时间排序 (最新)', value: 'time-desc' },
-    { label: '按时间排序 (最旧)', value: 'time-asc' },
-    { label: '按名称排序 (A-Z)', value: 'name-asc' },
-    { label: '按名称排序 (Z-A)', value: 'name-desc' },
-    { label: '按大小排序 (最大)', value: 'size-desc' },
-    { label: '按大小排序 (最小)', value: 'size-asc' }
-]
-
-// 计算属性 - 排序后的文件列表
-const sortedRecentFiles = computed(() => {
-    const files = [...recentFiles.value]
-    const [sortBy, order] = currentSortType.value.split('-')
-    const isDesc = order === 'desc'
-
-    return files.sort((a, b) => {
-        let comparison = 0
-
-        switch (sortBy) {
-            case 'time':
-                const timeA = getLatestTime(a)
-                const timeB = getLatestTime(b)
-                comparison = timeA - timeB
-                break
-            case 'name':
-                comparison = a.name.localeCompare(b.name)
-                break
-            case 'size':
-                comparison = a.info.size - b.info.size
-                break
-        }
-
-        return isDesc ? -comparison : comparison
-    })
-})
 
 // 获取文件的最新时间
 const getLatestTime = (file: FileObject): number => {
@@ -243,21 +187,6 @@ const refreshFiles = async () => {
     snackbar.success('刷新完成')
 }
 
-// 改变排序类型
-const changeSortType = (sortType: string) => {
-    currentSortType.value = sortType
-}
-
-// 打开文件
-const openFile = (path: string) => {
-    const fileType = getFileType(path)
-    if (fileType === 'img') {
-        router.push({ name: 'image-viewer', query: { path: path } })
-    } else {
-        snackbar.info('暂不支持的文件类型')
-    }
-}
-
 // 长按事件
 const onLongPress = (path: string) => {
     snackbar.info('长按功能待实现: ' + path)
@@ -273,9 +202,3 @@ onMounted(() => {
     loadRecentFiles()
 })
 </script>
-
-<style scoped>
-.v-list-item--active {
-    background-color: rgba(var(--v-theme-primary), 0.1);
-}
-</style>

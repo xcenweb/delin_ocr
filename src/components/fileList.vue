@@ -4,8 +4,8 @@
         <v-col cols="12" sm="12" md="6" lg="4" v-for="(fso, i) in sortedFiles" :key="i" class="pb-0 pt-3">
 
             <!-- 普通文件夹 -->
-            <v-card v-if="fso.type == 'dir'" @click="openFolder(fso.path)" :ripple="false"
-                v-on-long-press.prevent="[() => onLongPress(fso.path), { delay: 500 }]">
+            <v-card v-if="fso.type == 'dir'" @click="openFolder(fso.relative_path)" :ripple="false"
+                v-on-long-press.prevent="[() => onLongPress(fso.relative_path), { delay: 500 }]">
                 <template v-slot:prepend>
                     <v-icon icon="mdi-folder" color="#FFA726" size="55" />
                 </template>
@@ -21,8 +21,8 @@
             </v-card>
 
             <!-- 普通文件 -->
-            <v-card v-if="fso.type == 'file'" @click="openFile(fso.fullPath)" :ripple="false"
-                v-on-long-press.prevent="[() => onLongPress(fso.fullPath), { delay: 500 }]">
+            <v-card v-if="fso.type == 'file'" @click="openFile(fso.full_path)" :ripple="false"
+                v-on-long-press.prevent="[() => onLongPress(fso.full_path), { delay: 500 }]">
                 <template v-slot:prepend>
                     <v-img :src="fso.thumbnail" width="55" aspect-ratio="1" cover rounded class="mr-1">
                         <template v-slot:error>
@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import router from "@/router";
-import { sortType, sortedFiles, formatFileSize, loadDirectory, getFileType } from "@/utils/fileService"
+import { sortType, sortedFiles, formatFileSize, loadDirectory } from "@/utils/fileService"
 import { onActivated, onMounted } from 'vue';
 import { vOnLongPress } from '@vueuse/components'
 import { openFile } from "@/utils/fileService";
@@ -65,13 +65,8 @@ const props = withDefaults(defineProps<{
 });
 
 sortType.value = 'name-dsc'
-
-onMounted(() => {
-    loadDirectory(props.path)
-})
-onActivated(() => {
-    loadDirectory(props.path)
-})
+onMounted(() => loadDirectory(props.path))
+onActivated(() => loadDirectory(props.path))
 
 /**
  * 打开文件夹

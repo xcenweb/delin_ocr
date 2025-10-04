@@ -56,10 +56,6 @@ const router = createRouter({
             component: () => import('@/views/test/index.vue')
         },
         {
-            path: '/test/db',
-            component: () => import('@/views/test/db.vue')
-        },
-        {
             path: '/test/path',
             component: () => import('@/views/test/path.vue')
         },

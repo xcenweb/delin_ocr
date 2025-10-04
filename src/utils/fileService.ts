@@ -1,23 +1,22 @@
 // 文件服务
 // TODO: 重构
 import router from '@/router'
-import { getThumbnailUrl } from './thumbnailService'
+import { getThumbUrl } from './thumbService'
 import { useSnackbar } from '@/components/global/snackbarService'
 
 import { ref, computed } from 'vue'
 import { useDateFormat } from '@vueuse/core'
 import { readDir, BaseDirectory, stat, writeFile, mkdir, exists, remove } from '@tauri-apps/plugin-fs'
 import { join, appDataDir } from '@tauri-apps/api/path'
-import { json } from 'stream/consumers'
 
 /** 基础文件信息接口 */
 export interface BaseFileInfo {
     /** 文件/文件夹名 */
     name: string
     /** 相对路径 */
-    path: string
+    relative_path: string
     /** 完整路径 */
-    fullPath: string
+    full_path: string
     /** 文件/文件夹信息 */
     info: {
         /** 上次访问时间 */
@@ -62,14 +61,16 @@ export const sortType = ref<string>('name-asc')
 /**
  * 根据文件后缀名判断文件类型
  * @param name 文件名
- * @returns 文件类型：'dir' | 'file'
+ * @returns 文件类型
  */
 export const getFileType = (name: string) => {
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg']
-    const pdf = ['.pdf']
-    const ext = name.toLowerCase().substring(name.lastIndexOf('.'))
-    return imageExtensions.includes(ext) ? 'img' : pdf.includes(ext) ? 'pdf' : 'file'
-}
+    const typeMap = {
+        img: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'],
+        pdf: ['.pdf']
+    };
+    const ext = name.toLowerCase().slice(name.lastIndexOf('.'));
+    return Object.entries(typeMap).find(([_, exts]) => exts.includes(ext))?.[0] || 'file';
+};
 
 /**
  * 将字节数转换为可读的文件大小格式
@@ -138,8 +139,8 @@ export const loadDirectory = async (path: string): Promise<void> => {
                 // 基础信息对象
                 const baseInfo: BaseFileInfo = {
                     name: entry.name,
-                    path: relativePath,
-                    fullPath: fullPath,
+                    relative_path: relativePath,
+                    full_path: fullPath,
                     info: {
                         atime: useDateFormat(new Date(fileStat.atime || ''), DATE_FORMAT).value,
                         mtime: useDateFormat(new Date(fileStat.mtime || ''), DATE_FORMAT).value,
@@ -166,7 +167,7 @@ export const loadDirectory = async (path: string): Promise<void> => {
                         ...baseInfo,
                         type: 'file',
                         ext: entry.name.substring(entry.name.lastIndexOf('.') + 1),
-                        thumbnail: await getThumbnailUrl(fullPath)
+                        thumbnail: await getThumbUrl(fullPath)
                     } as FileObject
                 }
 
@@ -203,10 +204,10 @@ export const getAllFiles = async (path: string): Promise<FileObject[]> => {
 
                     result.push({
                         name: entry.name,
-                        path: relativePath,
-                        fullPath: await join(await appDataDir(), relativePath),
+                        relative_path: relativePath,
+                        full_path: await join(await appDataDir(), relativePath),
                         type: 'file',
-                        thumbnail: await getThumbnailUrl(await join(await appDataDir(), relativePath)),
+                        thumbnail: await getThumbUrl(await join(await appDataDir(), relativePath)),
                         info: {
                             atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
                             mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
@@ -305,11 +306,7 @@ export const saveBlobUrlToFile = async (
  * @param baseDir - 基础目录
  * @returns 唯一的文件路径
  */
-export const generateUniqueFilePath = async (
-    fileName: string,
-    targetPath: string,
-    baseDir: BaseDirectory
-): Promise<string> => {
+export const generateUniqueFilePath = async (fileName: string, targetPath: string, baseDir: BaseDirectory): Promise<string> => {
     const basePath = targetPath ? `${targetPath}/${fileName}` : fileName
     let fullPath = basePath
     let counter = 1
@@ -358,10 +355,8 @@ export const openFile = (path: string) => {
     // 根据文件扩展名判断是否为图片
     const fileType = getFileType(path);
     if (fileType === 'img') {
-        // 如果是图片文件，使用图片查看器
         router.push({ name: 'image-viewer', query: { path: path } })
     } else {
-        // TODO: 对于非图片文件，添加其他处理逻辑
         useSnackbar().info('暂不支持的文件类型')
     }
 }

@@ -1,3 +1,4 @@
+import * as comlink from 'comlink'
 import Tesseract from 'tesseract.js'
 import { tagService } from '../utils/tagService'
 
@@ -5,26 +6,34 @@ let worker: Tesseract.Worker | null = null
 let isInitialized = false
 
 /**
- * worker初始化
+ * ocr worker 初始化
  */
 const init = async (languages: string[]) => {
     try {
-        worker = await Tesseract.createWorker(languages, Tesseract.OEM.DEFAULT, {}, {})
+        worker = await Tesseract.createWorker(languages, Tesseract.OEM.DEFAULT, {
+            // logger: (m) => console.log(m),
+        }, {})
         await worker.setParameters({
             tessedit_pageseg_mode: Tesseract.PSM.AUTO,
         })
         isInitialized = true
         return true
     } catch (error) {
-        self.postMessage({ type: 'error', datas: error })
         return false
     }
 }
 
 /**
+ * 获取ocr worker状态
+ */
+const getStatus = async () => {
+    return isInitialized
+}
+
+/**
  * 清理OCR识别出的文本
- * @param {string} text - OCR识别出的原始文本
- * @returns {string} - 清理后的文本
+ * @param text - OCR识别出的原始文本
+ * @returns - 清理后的文本
  */
 const cleanText = (text: string): string => {
     return text
@@ -40,10 +49,15 @@ const cleanText = (text: string): string => {
 
 /**
  * 处理图像并进行OCR识别
- * @param {ImageBitmap | HTMLImageElement | HTMLCanvasElement} src - 图像源
- * @returns {Promise<{text: string, blocks: any, tags: string[]}>} - 识别结果和标签
+ * @param src - 图像源
+ * @returns - 识别结果和标签
  */
-const OCRecognize = async (src: string): Promise<{ text: string, blocks: any, tags: string[] }> => {
+const recognize = async (src: string): Promise<{ text: string, blocks: any, tags: string[] }> => {
+
+    if (!isInitialized || !worker) {
+        throw new Error('Worker not initialized')
+    }
+
     const io = await fetch(src)
     const imageBitmap = await createImageBitmap(await io.blob())
     const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height)
@@ -53,42 +67,16 @@ const OCRecognize = async (src: string): Promise<{ text: string, blocks: any, ta
     imageBitmap.close()
 
     const { data: { text, blocks } } = await worker!.recognize(canvas, {}, { blocks: true })
-    const cleanedText = cleanText(text)
-    const tags = tagService.generateTags(cleanedText)
 
-    return { text: cleanedText, blocks, tags }
-}
-
-self.onmessage = async (event: MessageEvent<{ type: string, datas: any }>) => {
-    try {
-        // 初始化
-        if (event.data.type === 'init' && !isInitialized) {
-            const result = await init(event.data.datas.languages)
-            self.postMessage({ type: 'inited', datas: result })
-        }
-
-        // 识别
-        if (event.data.type === 'recognize' && isInitialized && worker) {
-            const result = await OCRecognize(event.data.datas.src)
-            self.postMessage({
-                type: 'recognized',
-                datas: {
-                    ...result,
-                    path: event.data.datas.path
-                }
-            })
-        }
-
-        // 销毁worker
-        if (event.data.type === 'destroy' && worker) {
-            await worker.terminate()
-            worker = null
-            isInitialized = false
-        }
-    } catch (error) {
-        console.error(error)
-        self.postMessage({ type: 'error', datas: error })
+    return {
+        text: cleanText(text),
+        blocks,
+        tags: tagService.generateTags(text)
     }
 }
 
-export type { }
+comlink.expose({
+    init,
+    getStatus,
+    recognize,
+})

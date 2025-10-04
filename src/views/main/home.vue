@@ -40,7 +40,7 @@
             <v-row class="d-flex flex-nowrap overflow-x-auto mb-5 pl-4 pr-8 swiper-no-swiping">
                 <v-col cols="4" sm="3" md="2" lg="2" xl="2" xxl="2" v-for="(fso, index) in recentFiles" :key="index"
                     class="pl-3 pr-0 pt-4 pb-4">
-                    <v-card @click="openFile(fso.fullPath)">
+                    <v-card @click="openFile(fso.full_path)">
                         <v-img :src="fso.thumbnail" aspect-ratio="0.7" cover>
                             <div class="fill-height bottom-gradient"></div>
                             <v-card-subtitle
@@ -68,6 +68,7 @@ import { useRouter } from 'vue-router'
 import { useFileDialog } from '@vueuse/core'
 import { useSnackbar } from '@/components/global/snackbarService'
 import { getRecentFiles, openFile, type FileObject } from '@/utils/fileService'
+import { c } from 'node_modules/vite/dist/node/moduleRunnerTransport.d-DJ_mE5sf'
 
 const router = useRouter()
 
@@ -78,54 +79,14 @@ const features = ref([
 ])
 
 const certificateTypes = ref([
-    {
-        name: '身份证',
-        icon: 'mdi-card-account-details',
-        color: '#4285F4',
-        count: 0
-    },
-    {
-        name: '驾驶证',
-        icon: 'mdi-car',
-        color: '#34A853',
-        count: 0
-    },
-    {
-        name: '护照',
-        icon: 'mdi-passport',
-        color: '#EA4335',
-        count: 0
-    },
-    {
-        name: '户口本',
-        icon: 'mdi-home-account',
-        color: '#FBBC04',
-        count: 0
-    },
-    {
-        name: '学历证书',
-        icon: 'mdi-school',
-        color: '#9C27B0',
-        count: 0
-    },
-    {
-        name: '荣誉证书',
-        icon: 'mdi-trophy',
-        color: '#FF9800',
-        count: 0
-    },
-    {
-        name: '房产证',
-        icon: 'mdi-home-city',
-        color: '#795548',
-        count: 0
-    },
-    {
-        name: '其他证件',
-        icon: 'mdi-file-document',
-        color: '#607D8B',
-        count: 0
-    }
+    { name: '身份证', icon: 'mdi-card-account-details', color: '#4285F4', count: 0 },
+    { name: '驾驶证', icon: 'mdi-car', color: '#34A853', count: 0 },
+    { name: '护照', icon: 'mdi-passport', color: '#EA4335', count: 0 },
+    { name: '户口本', icon: 'mdi-home-account', color: '#FBBC04', count: 0 },
+    { name: '学历证书', icon: 'mdi-school', color: '#9C27B0', count: 0 },
+    { name: '荣誉证书', icon: 'mdi-trophy', color: '#FF9800', count: 0 },
+    { name: '房产证', icon: 'mdi-home-city', color: '#795548', count: 0 },
+    { name: '其他证件', icon: 'mdi-file-document', color: '#607D8B', count: 0 }
 ])
 
 const isLoading = ref(false)
@@ -143,7 +104,8 @@ const goToFeature = (routeName: any) => {
         })
         open()
         onChange((files) => {
-            useSnackbar().info('TODO:暂不支持...')
+            console.log(files)
+            useSnackbar().info('TODO: 暂不支持...')
         })
     }
     if (routeName) {

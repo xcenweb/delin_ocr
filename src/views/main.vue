@@ -79,12 +79,8 @@
 </template>
 
 <script setup lang="ts">
-import { onActivated, onMounted, onUnmounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useSnackbar } from '@/components/global/snackbarService'
-
-// https://swiper.zebraui.com/
-import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper'
-import '@zebra-ui/swiper/index.scss'
 
 // 导入视图组件
 import homeView from './main/home.vue'
@@ -92,7 +88,7 @@ import certificateView from './main/certificate.vue'
 import fileView from './main/file.vue'
 import userView from './main/user.vue'
 
-// 导航栏列表npm
+// 导航栏列表
 const navigator_list = ref([
     { id: 0, text: '首页', icon: 'mdi-home' },
     { id: 1, text: '证件', icon: 'mdi-cards' },
@@ -101,6 +97,8 @@ const navigator_list = ref([
 ]);
 
 // zswiper
+import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper'
+import '@zebra-ui/swiper/index.scss'
 const swiperslideIn = ref(0)
 const swiperInstance: any = ref({})
 const selectedItem = ref([navigator_list.value[0]])
@@ -113,94 +111,46 @@ const onSlideChange = (swiper: any) => {
     selectedItem.value = [navigator_list.value[swiper.activeIndex]]
 }
 
-// TODO: ocr worker
-import { useWebWorker } from '@vueuse/core'
+// ocr worker
+// 主要目的是生成索引
+import * as comlink from 'comlink'
+import { Block } from 'tesseract.js'
 import { getAllFiles } from '@/utils/fileService'
-import ocrWorkerUrl from '/src/worker/ocr-worker.ts?worker&url'
+import { fileCacheDB } from '@/utils/dbService'
 import { convertFileSrc } from '@tauri-apps/api/core'
-import { ocrRecordsDB } from '@/utils/dbService'
-
-// 添加处理状态管理
-const processingPaths = new Set<string>() // 正在处理中的路径
-const processedPaths = new Set<string>()  // 已经处理完成的路径
-
-const ocrWorker = useWebWorker(ocrWorkerUrl, { type: 'module' })
-onMounted(() => {
-    ocrWorker.post({
-        type: 'init',
-        datas: {
-            languages: ['chi_sim', 'eng'],
-        }
-    })
-    watch(ocrWorker.data, async (result: { type: string, datas: any }) => {
-        if (result.type === 'error') {
-            useSnackbar().error('ocr-worker: ' + result.datas)
-            // 错误时移除处理状态
-            if (result.datas.path) {
-                processingPaths.delete(result.datas.path)
-            }
-        }
-        if (result.type === 'inited') {
-            useSnackbar().success('ocr-worker: running!')
-        }
-        if (result.type === 'recognized') {
-            // 保存识别结果到数据库
-            if (result.datas.path) {
-                try {
-                    await ocrRecordsDB.upsert({
-                        relative_path: result.datas.path,
-                        text: result.datas.text,
-                        tags: result.datas.tags?.join(',') || '', // 保存标签信息
-                        block: JSON.stringify(result.datas.blocks)
-                    })
-
-                    // 更新处理状态
-                    processingPaths.delete(result.datas.path)
-                    processedPaths.add(result.datas.path)
-                } catch (error) {
-                    console.error('保存OCR结果失败:', error)
-                    processingPaths.delete(result.datas.path)
-                }
-            }
-        }
-    })
-})
-onActivated(async () => {
+import OcrWorker from '/src/worker/ocr-worker.ts?worker&inline'
+const ocr = comlink.wrap(new OcrWorker) as {
+    init: (languages: string[]) => Promise<boolean>
+    getStatus: () => Promise<boolean>
+    recognize: (src: string) => Promise<{ text: string, blocks: Block, tags: string[] }>
+}
+onMounted(async () => {
+    // 初始化 ocr worker
+    useSnackbar().success('OCR: ' + await ocr.init(['chi_sim', 'eng']) ? 'running' : 'error', true)
+    // 加载目录下所有文件
+    // TODO 获取所有已创建索引的列表-当前文件列表=待索引文件列表
     const files = await getAllFiles('user/file')
-    for (const file of files) {
-        // 避免重复处理
-        if (processingPaths.has(file.path) || processedPaths.has(file.path)) {
-            continue
-        }
-
-        try {
-            const existingRecord = await ocrRecordsDB.getByPath(file.path)
-            if (!existingRecord) {
-                // 标记为处理中
-                processingPaths.add(file.path)
-
-                ocrWorker.post({
-                    type: 'recognize',
-                    datas: {
-                        src: convertFileSrc(file.fullPath),
-                        path: file.path
-                    }
+    files.forEach(async (file) => {
+        const fileInfo = await fileCacheDB.getByPath(file.relative_path)
+        if (fileInfo) {
+            // 已存在则跳过
+            console.log(JSON.parse(fileInfo.tags))
+            return
+        } else {
+            // 识别后写入数据库
+            ocr.recognize(convertFileSrc(file.full_path)).then(async (result) => {
+                fileCacheDB.add({
+                    relative_path: file.relative_path,
+                    tags: JSON.stringify(result.tags),
+                    recognized_block: result.blocks,
+                    recognized_text: result.text,
                 })
-            } else {
-                // 已存在记录，标记为已处理
-                processedPaths.add(file.path)
-            }
-        } catch (error) {
-            console.error('检查OCR记录失败:', error)
+            }).catch((error) => {
+                console.error('OCR:', error)
+            })
         }
-    }
-})
-
-onUnmounted(() => {
-    ocrWorker.terminate()
-    // 清理状态
-    processingPaths.clear()
-    processedPaths.clear()
+    })
+    useSnackbar().success('OCR: 索引构建完成')
 })
 </script>
 

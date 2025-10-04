@@ -121,7 +121,7 @@ const loadTestCase = (testCase: { name: string; text: string }) => {
 };
 
 // 初始化
-onMounted(() => {
-    allTags.value = tagService.getAllTags();
-});
+// onMounted(() => {
+//     allTags.value = tagService.getAllTags();
+// });
 </script>
