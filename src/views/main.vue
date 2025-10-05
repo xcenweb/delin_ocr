@@ -112,7 +112,6 @@ const onSlideChange = (swiper: any) => {
 }
 
 // ocr worker
-// 主要目的是生成索引
 import * as comlink from 'comlink'
 import { Block } from 'tesseract.js'
 import { getAllFiles } from '@/utils/fileService'
@@ -125,32 +124,36 @@ const ocr = comlink.wrap(new OcrWorker) as {
     recognize: (src: string) => Promise<{ text: string, blocks: Block, tags: string[] }>
 }
 onMounted(async () => {
-    // 初始化 ocr worker
-    useSnackbar().success('OCR: ' + await ocr.init(['chi_sim', 'eng']) ? 'running' : 'error', true)
-    // 加载目录下所有文件
-    // TODO 获取所有已创建索引的列表-当前文件列表=待索引文件列表
-    const files = await getAllFiles('user/file')
-    files.forEach(async (file) => {
-        const fileInfo = await fileCacheDB.getByPath(file.relative_path)
-        if (fileInfo) {
-            // 已存在则跳过
-            console.log(JSON.parse(fileInfo.tags))
-            return
-        } else {
-            // 识别后写入数据库
-            ocr.recognize(convertFileSrc(file.full_path)).then(async (result) => {
-                fileCacheDB.add({
-                    relative_path: file.relative_path,
-                    tags: JSON.stringify(result.tags),
-                    recognized_block: result.blocks,
-                    recognized_text: result.text,
-                })
-            }).catch((error) => {
-                console.error('OCR:', error)
-            })
+    useSnackbar().info(await ocr.init(['chi_sim', 'eng']) ? 'OCR：running!' : 'OCR：error', true)
+
+    const fso = await getAllFiles('user/file') // 所有文件
+    const indexedRelativePaths = await fileCacheDB.getAllPaths() // 已索引路径
+    const unindexedFiles = fso.filter(file => !indexedRelativePaths.includes(fileCacheDB.normalizedPath(file.relative_path))) // 未索引文件对象
+
+    if (unindexedFiles.length > 0) {
+        // 索引未索引文件
+        try {
+            useSnackbar().info('OCR：构建索引...', true)
+            await Promise.all(unindexedFiles.map(async (file) => {
+                try {
+                    const result = await ocr.recognize(convertFileSrc(file.full_path))
+                    await fileCacheDB.add({
+                        relative_path: file.relative_path,
+                        tags: JSON.stringify(result.tags),
+                        recognized_block: result.blocks,
+                        recognized_text: result.text,
+                        atime: file.info.atime,
+                        mtime: file.info.mtime,
+                        birthtime: file.info.birthtime
+                    })
+                } catch (error) {
+                    useSnackbar().error('OCR：' + error as string)
+                }
+            }))
+        } finally {
+            useSnackbar().info('OCR：索引完成')
         }
-    })
-    useSnackbar().success('OCR: 索引构建完成')
+    }
 })
 </script>
 

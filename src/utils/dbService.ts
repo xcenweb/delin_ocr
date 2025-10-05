@@ -151,6 +151,15 @@ class FileCacheDB extends BaseDB {
         const result = await this.db.execute(`DELETE FROM ${this.tableName} WHERE relative_path = ?`, [this.normalizedPath(relativePath)])
         return result
     }
+
+    /**
+     * 获取所有已索引的文件路径
+     */
+    async getAllPaths() {
+        await this.init();
+        const result = await this.db.select<{relative_path: string}[]>(`SELECT relative_path FROM ${this.tableName}`);
+        return result.map(item => item.relative_path);
+    }
 }
 
 export const fileCacheDB = new FileCacheDB()
