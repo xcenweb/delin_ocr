@@ -8,6 +8,8 @@ import { ref, computed } from 'vue'
 import { useDateFormat } from '@vueuse/core'
 import { readDir, BaseDirectory, stat, writeFile, mkdir, exists, remove } from '@tauri-apps/plugin-fs'
 import { join, appDataDir } from '@tauri-apps/api/path'
+import { fileCacheDB } from './dbService'
+import { get } from 'http'
 
 /** 基础文件信息接口 */
 export interface BaseFileInfo {
@@ -55,8 +57,12 @@ const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 /** 原始文件列表数据 */
 export const currentPath_fso = ref<FileSystemObject[]>([])
 
-/** 当前排序类型 */
-export const sortType = ref<string>('name-asc')
+/**
+ * 获取软件内用于存储实际的证件文件的完整路径
+ */
+export const getFullPath = async (relative_path: string) => {
+    return await join(await appDataDir(), relative_path)
+}
 
 /**
  * 根据文件后缀名判断文件类型
@@ -77,7 +83,7 @@ export const getFileType = (name: string) => {
  * @param bytes 字节数
  * @returns 格式化后的文件大小字符串
  */
-export const formatFileSize = (bytes: number): string => {
+export const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 B'
 
     const units = ['B', 'KB', 'MB', 'GB']
@@ -97,26 +103,10 @@ export const sortedFiles = computed(() => {
     const dirs = files.filter(item => item.type === 'dir')
     const nonDirs = files.filter(item => item.type !== 'dir')
 
-    // 通用排序函数
-    const getSortFunction = () => {
-        const [sortBy, order] = sortType.value.split('-')
-        const isAsc = order === 'asc'
+    // 简化排序：只按字母顺序排序（A-Za-z）
+    const sortFn = (a: FileSystemObject, b: FileSystemObject) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
 
-        if (sortBy === 'name') {
-            // 按名称排序
-            return (a: FileSystemObject, b: FileSystemObject) =>
-                isAsc ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
-        } else if (sortBy === 'mtime') {
-            // 按修改时间排序
-            return (a: FileSystemObject, b: FileSystemObject) => {
-                const timeA = new Date(a.info.mtime).getTime()
-                const timeB = new Date(b.info.mtime).getTime()
-                return isAsc ? timeA - timeB : timeB - timeA
-            }
-        }
-    }
-
-    const sortFn = getSortFunction()
     return [...dirs.sort(sortFn), ...nonDirs.sort(sortFn)]
 })
 
@@ -125,7 +115,7 @@ export const sortedFiles = computed(() => {
  * @param path 要加载的目录路径
  * @returns Promise<void>
  */
-export const loadDirectory = async (path: string): Promise<void> => {
+export const loadDirectory = async (path: string) => {
     try {
         const entries = await readDir(path, { baseDir: BaseDirectory.AppData })
         const result: FileSystemObject[] = []
@@ -187,7 +177,7 @@ export const loadDirectory = async (path: string): Promise<void> => {
  * 获取指定路径下的所有文件列表
  * @param path - 要获取的文件列表的目录路径
  */
-export const getAllFiles = async (path: string): Promise<FileObject[]> => {
+export const getAllFiles = async (path: string) => {
     const result: FileObject[] = []
 
     async function traverseDirectory(currentPath: string) {
@@ -200,14 +190,15 @@ export const getAllFiles = async (path: string): Promise<FileObject[]> => {
                 }
                 if (entry.isFile) {
                     const relativePath = await join(currentPath, entry.name)
-                    const fileStat = await stat(await join(await appDataDir(), relativePath))
+                    const fullPath = await getFullPath(relativePath)
+                    const fileStat = await stat(fullPath)
 
                     result.push({
                         name: entry.name,
                         relative_path: relativePath,
-                        full_path: await join(await appDataDir(), relativePath),
+                        full_path: fullPath,
                         type: 'file',
-                        thumbnail: await getThumbUrl(await join(await appDataDir(), relativePath)),
+                        thumbnail: await getThumbUrl(fullPath),
                         info: {
                             atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
                             mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
@@ -224,37 +215,6 @@ export const getAllFiles = async (path: string): Promise<FileObject[]> => {
 
     await traverseDirectory(path)
     return result
-}
-
-/**
- * 获取最近有改动的文件列表
- * @param path - 要搜索的目录路径
- * @param limit - 返回文件数量限制，默认为20
- * @param day - 时间范围（天数），默认为30天
- * @returns Promise<FileObject[]> 按时间排序的文件列表（综合创建、修改、访问时间）
- */
-export const getRecentFiles = async (path: string, limit: number = 20, day: number = 30): Promise<FileObject[]> => {
-    try {
-        const allFiles = await getAllFiles(path)
-        const timeThreshold = Date.now() - day * 24 * 60 * 60 * 1000
-        const filesWithTime = allFiles
-            .map(file => {
-                const latestTime = Math.max(
-                    new Date(file.info.atime).getTime(),
-                    new Date(file.info.mtime).getTime(),
-                    // new Date(file.info.birthtime).getTime()
-                )
-                return { file, latestTime }
-            })
-            .filter(item => item.latestTime >= timeThreshold)
-            .sort((a, b) => b.latestTime - a.latestTime)
-            .slice(0, limit)
-
-        return filesWithTime.map(item => item.file)
-    } catch (error) {
-        useSnackbar().error('获取最近文件失败: ' + error)
-        return []
-    }
 }
 
 /**
@@ -328,7 +288,7 @@ export const generateUniqueFilePath = async (fileName: string, targetPath: strin
         counter++
 
         // 防止无限循环
-        if (counter > 9999) {
+        if (counter > 999) {
             throw new Error('无法生成唯一文件名，请检查目标目录')
         }
     }
@@ -351,12 +311,38 @@ export const deleteFile = async (path: string) => {
  * 打开文件
  * @param path 文件路径
  */
-export const openFile = (path: string) => {
-    // 根据文件扩展名判断是否为图片
-    const fileType = getFileType(path);
+export const openFile = async (relative_path: string) => {
+    const fullPath = await getFullPath(relative_path)
+    const fileType = getFileType(fullPath)
     if (fileType === 'img') {
-        router.push({ name: 'image-viewer', query: { path: path } })
+        fileCacheDB.updateAtime(relative_path)
+        router.push({ name: 'image-viewer', query: { path: fullPath } })
     } else {
         useSnackbar().info('暂不支持的文件类型')
     }
+}
+
+/**
+ * 获取最近访问的文件路径
+ * @param limit 限制数量
+ */
+export const getRecentFiles = async (limit: number = 10) => {
+    const result = await fileCacheDB.getRecentFiles(limit)
+    const files: FileObject[] = []
+    for (const item of result) {
+        const fullPath = await getFullPath(item.relative_path)
+        files.push({
+            name: item.relative_path.split('/').pop() || item.relative_path,
+            relative_path: item.relative_path,
+            full_path: fullPath,
+            type: 'file',
+            thumbnail: await getThumbUrl(fullPath),
+            info: {
+                atime: item.atime,
+                mtime: item.mtime,
+                birthtime: item.birthtime,
+            }
+        } as FileObject)
+    }
+    return files
 }

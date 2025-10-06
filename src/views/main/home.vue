@@ -40,7 +40,7 @@
             <v-row class="d-flex flex-nowrap overflow-x-auto mb-5 pl-4 pr-8 swiper-no-swiping">
                 <v-col cols="4" sm="3" md="2" lg="2" xl="2" xxl="2" v-for="(fso, index) in recentFiles" :key="index"
                     class="pl-3 pr-0 pt-4 pb-4">
-                    <v-card @click="openFile(fso.full_path)">
+                    <v-card @click="openFile(fso.relative_path)">
                         <v-img :src="fso.thumbnail" aspect-ratio="0.7" cover>
                             <div class="fill-height bottom-gradient"></div>
                             <v-card-subtitle
@@ -51,7 +51,7 @@
                     </v-card>
                 </v-col>
                 <v-progress-circular v-if="!isLoading" indeterminate class="ma-auto mt-16" />
-                <div v-if="recentFiles.length === 0 && isLoading" class="text-center ma-auto mt-16">
+                <div v-if="!recentFiles && isLoading" class="text-center ma-auto mt-16">
                     <v-icon size="48" color="grey lighten-1">mdi-folder-open</v-icon>
                     <p class="text-subtitle-1 font-weight-medium mt-2">暂无文件</p>
                 </div>
@@ -67,8 +67,8 @@ import { onActivated, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFileDialog } from '@vueuse/core'
 import { useSnackbar } from '@/components/global/snackbarService'
-import { getRecentFiles, openFile, type FileObject } from '@/utils/fileService'
-import { c } from 'node_modules/vite/dist/node/moduleRunnerTransport.d-DJ_mE5sf'
+import { openFile, type FileObject } from '@/utils/fileService'
+import { getRecentFiles } from '@/utils/fileService'
 
 const router = useRouter()
 
@@ -90,7 +90,7 @@ const certificateTypes = ref([
 ])
 
 const isLoading = ref(false)
-const recentFiles = ref<FileObject[]>([])
+const recentFiles = ref<FileObject[]>()
 
 /**
  * 跳转功能
@@ -115,11 +115,11 @@ const goToFeature = (routeName: any) => {
 
 // 最近浏览文件
 onMounted(async () => {
-    recentFiles.value = await getRecentFiles('user/file', 10, 30)
+    recentFiles.value = await getRecentFiles(10)
     isLoading.value = true
 })
 onActivated(async () => {
-    recentFiles.value = await getRecentFiles('user/file', 10, 30)
+    recentFiles.value = await getRecentFiles(10)
 })
 </script>
 

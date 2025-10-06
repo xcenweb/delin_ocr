@@ -9,9 +9,9 @@
                     <div class="ml-4 flex-grow-1">
                         <div class="text-h6 font-weight-bold">用户名</div>
                     </div>
-                    <v-btn icon size="small" variant="text">
+                    <!-- <v-btn icon size="small" variant="text">
                         <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
+                    </v-btn> -->
                 </v-card-text>
             </v-card>
             <v-card class="ma-3 rounded-lg">

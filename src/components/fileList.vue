@@ -21,7 +21,7 @@
             </v-card>
 
             <!-- 普通文件 -->
-            <v-card v-if="fso.type == 'file'" @click="openFile(fso.full_path)" :ripple="false"
+            <v-card v-if="fso.type == 'file'" @click="openFile(fso.relative_path)" :ripple="false"
                 v-on-long-press.prevent="[() => onLongPress(fso.full_path), { delay: 500 }]">
                 <template v-slot:prepend>
                     <v-img :src="fso.thumbnail" width="55" aspect-ratio="1" cover rounded class="mr-1">
@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import router from "@/router";
-import { sortType, sortedFiles, formatFileSize, loadDirectory } from "@/utils/fileService"
+import { sortedFiles, formatFileSize, loadDirectory } from "@/utils/fileService"
 import { onActivated, onMounted } from 'vue';
 import { vOnLongPress } from '@vueuse/components'
 import { openFile } from "@/utils/fileService";
@@ -64,7 +64,6 @@ const props = withDefaults(defineProps<{
     path: '',
 });
 
-sortType.value = 'name-dsc'
 onMounted(() => loadDirectory(props.path))
 onActivated(() => loadDirectory(props.path))
 

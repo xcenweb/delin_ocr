@@ -2,6 +2,9 @@
 import Database from '@tauri-apps/plugin-sql'
 import { useDateFormat } from '@vueuse/core'
 import { Block } from 'tesseract.js'
+import { type FileObject } from './fileService'
+import { join, appDataDir } from '@tauri-apps/api/path'
+import { convertFileSrc } from '@tauri-apps/api/core'
 
 /**
  * 缓存的文件及相关信息
@@ -103,7 +106,7 @@ class FileCacheDB extends BaseDB {
                 record.recognized_text,
                 record.recognized_block,
                 currentTime,
-                currentTime,
+                record.atime || currentTime,
                 record.mtime || currentTime,
                 record.birthtime || currentTime
             ]
@@ -112,26 +115,15 @@ class FileCacheDB extends BaseDB {
     }
 
     /**
-     * 更新记录
+     * 更新访问时间
      */
-    async update(record: filesCache) {
+    async updateAtime(relativePath: string) {
+        console.log(relativePath)
         await this.init()
-        const currentTime = this.getCurrentTime()
-        const normalizedPath = this.normalizedPath(record.relative_path)
-        const result = await this.db.execute(
-            `UPDATE ${this.tableName} SET tags = ?, recognized_text = ?, recognized_block = ?, recognized_update = ?, atime = ?, mtime = ?, birthtime = ? WHERE relative_path = ?`,
-            [
-                record.tags,
-                record.recognized_text,
-                record.recognized_block,
-                currentTime,
-                currentTime,
-                record.mtime || currentTime,
-                record.birthtime || currentTime,
-                normalizedPath
-            ]
-        )
-        return result
+        console.log(await this.db.execute(
+            `UPDATE ${this.tableName} SET atime = ? WHERE relative_path = ?`,
+            [this.getCurrentTime(), relativePath]
+        ))
     }
 
     /**
@@ -139,8 +131,8 @@ class FileCacheDB extends BaseDB {
      */
     async getByPath(relativePath: string) {
         await this.init()
-        const result = await this.db.select<filesCache[]>(`SELECT * FROM ${this.tableName} WHERE relative_path = ?`, [this.normalizedPath(relativePath)])
-        return result.length > 0 ? result[0] : null
+        const result = await this.db.select<filesCache>(`SELECT * FROM ${this.tableName} WHERE relative_path = ?`, [this.normalizedPath(relativePath)])
+        return result
     }
 
     /**
@@ -156,9 +148,22 @@ class FileCacheDB extends BaseDB {
      * 获取所有已索引的文件路径
      */
     async getAllPaths() {
-        await this.init();
-        const result = await this.db.select<{relative_path: string}[]>(`SELECT relative_path FROM ${this.tableName}`);
-        return result.map(item => item.relative_path);
+        await this.init()
+        const result = await this.db.select<{ relative_path: string }[]>(`SELECT relative_path FROM ${this.tableName}`)
+        return result.map(item => item.relative_path)
+    }
+
+    /**
+     * 获取最近访问的文件
+     * @param limit 返回记录数量限制
+     */
+    async getRecentFiles(limit: number = 10) {
+        await this.init()
+        const result = await this.db.select<filesCache[]>(
+            `SELECT * FROM ${this.tableName} ORDER BY atime DESC LIMIT ?`,
+            [limit]
+        )
+        return result
     }
 }
 

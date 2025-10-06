@@ -9,7 +9,7 @@ import { openUrl } from '@tauri-apps/plugin-opener'
  * 更新服务状态管理
  */
 class UpdateService {
-    /** 平台 */
+    /** 当前平台 */
     public platform: Platform = platform()
 
     /** 更新弹窗显示状态 */
@@ -30,21 +30,21 @@ class UpdateService {
     /**
      * 显示更新弹窗
      */
-    show(): void {
+    show() {
         this.visible.value = true
     }
 
     /**
      * 隐藏更新弹窗
      */
-    hide(): void {
+    hide() {
         this.visible.value = false
     }
 
     /**
      * 检测更新
      */
-    async check(): Promise<void> {
+    async check() {
         try {
             useSnackbar().info('正在检查更新...', true)
 
@@ -71,7 +71,7 @@ class UpdateService {
     /**
      * 更新
      */
-    async update(): Promise<void> {
+    async update() {
         try {
             if (!this.link) {
                 useSnackbar().error('无效的更新')
