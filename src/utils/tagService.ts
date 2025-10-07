@@ -7,23 +7,19 @@ interface TagConfig {
 // 统一的标签配置（设为只读，防止意外修改）
 export const BASE_TAGS: readonly TagConfig[] = [
     { id: 'identity_card', keywords: ['居民身份证', '身份证', '公民身份', 'ID Card', 'Identity Card'] },
-    { id: 'driver_license', keywords: ['驾驶证', '机动车驾驶证', 'Driver License', 'Driving License'] },
     { id: 'passport', keywords: ['护照', 'Passport', 'PASSPORT', '中华人民共和国护照'] },
     { id: 'business_license', keywords: ['营业执照', '工商营业执照', 'Business License', '统一社会信用代码'] },
-    { id: 'residence_permit', keywords: ['居住证', '暂住证', 'Residence Permit'] },
     { id: 'student_id', keywords: ['学生证', 'Student ID', '学生卡'] },
     { id: 'bank_card', keywords: ['银行卡', '储蓄卡', '信用卡', 'Bank Card', 'Credit Card', 'Debit Card'] },
-    { id: 'social_security_card', keywords: ['社保卡', '社会保障卡', 'Social Security Card'] },
-    { id: 'medical_insurance_card', keywords: ['医保卡', '医疗保险卡', 'Medical Insurance Card'] },
     { id: 'contract', keywords: ['合同', '协议', 'Contract', 'Agreement', '合作协议', '服务合同'] },
     { id: 'report', keywords: ['报告', '分析报告', 'Report', '调研报告', '工作报告', '研究报告'] },
     { id: 'notice', keywords: ['公告', '通知', 'Notice', '声明', '公示'] },
     { id: 'resume', keywords: ['简历', '履历', 'Resume', 'CV', '个人简历'] },
     { id: 'transcript', keywords: ['成绩单', 'Transcript', '学习成绩', '考试成绩'] },
-    { id: 'certificate', keywords: ['证书', '资格证', '认证证书', 'Certificate', '培训证书', '专业证书', '技能证书', '职业资格', '等级证书'] },
     { id: 'invoice', keywords: ['发票', '增值税发票', '普通发票', '电子发票', 'Invoice', '税务发票', '收据', '付款凭证'] },
-    { id: 'form', keywords: ['申请表', '登记表', '登记单', '申请书', '表格', 'Form', 'Application Form', '登记册', '填表'] },
     { id: 'document', keywords: ['文档', '文件', 'Document', 'File', 'Word'] },
+    { id: 'vocational', keywords: ['学历证书', '学位证书', '学历', '学位', 'Certificate', 'Degree'] },
+    { id: 'professional', keywords: ['专业证书', '专业资格', 'License', 'Certification'] },
     { id: 'other', keywords: [] }
 ];
 
@@ -131,6 +127,20 @@ class ClassEngine {
 
         return results;
     }
+
+    /**
+     * 查找文本中与关键词列表的最佳匹配项
+     * @param text 待匹配的文本
+     * @param keywords 关键词列表
+     * @param threshold 相似度阈值
+     * @returns 返回得分最高的匹配项，如果没有则返回 null
+     */
+    static findBestMatch(text: string, keywords: readonly string[], threshold = 0.7): { keyword: string; score: number; type: 'exact' | 'sequence' | 'fuzzy' | 'window' } | null {
+        const allMatches = ClassEngine.checkKeywords(text, keywords, threshold);
+        if (allMatches.length === 0) return null;
+        // 找到得分最高的匹配
+        return allMatches.reduce((best, current) => (current.score > best.score ? current : best));
+    }
 }
 
 /**
@@ -140,7 +150,30 @@ class TagService {
     private allTags: string[] = BASE_TAGS.map(c => c.id);
 
     /**
-     * 根据OCR文本生成标签，使用加权评分系统
+     * 将长文本切分为更小的块
+     * @param text 原始文本
+     * @param maxChunkLength 如果无法按句子切分，则按此最大长度切分
+     * @returns 文本块数组
+     */
+    private chunkText(text: string, maxChunkLength: number = 500): string[] {
+        // 策略1: 优先按句子分割，保留上下文
+        // 使用正则匹配句子，保留句子结尾的标点
+        const sentences = text.match(/[^。！？.!?]+[。！？.!?]+/g);
+        if (sentences && sentences.length > 1) {
+            // 过滤掉太短的句子，它们通常是噪音
+            return sentences.filter(s => s.trim().length > 10);
+        }
+
+        // 策略2: 如果没有明显的句子分隔符（如列表、地址），则按固定长度分割
+        const chunks = [];
+        for (let i = 0; i < text.length; i += maxChunkLength) {
+            chunks.push(text.slice(i, i + maxChunkLength));
+        }
+        return chunks.length > 0 ? chunks : [text];
+    }
+
+    /**
+     * 根据OCR文本生成标签，使用分块和最佳匹配聚合策略
      * @param text OCR识别的文本内容
      * @param defaultTags 默认标签，当没有匹配时返回
      * @param maxLength 最大返回标签数量，默认为3
@@ -149,37 +182,40 @@ class TagService {
     generateTags(text: string, defaultTags: string[] = ['other'], maxLength: number = 3): string[] {
         if (!text?.trim()) return defaultTags;
 
-        // 计算每个标签配置的匹配分数
-        const scores: [string, number][] = BASE_TAGS
-            .filter(cfg => cfg.keywords.length)
-            .map(cfg => {
-                const matches = ClassEngine.checkKeywords(text, cfg.keywords);
-                if (matches.length === 0) return [cfg.id, 0] as [string, number];
+        // 1. 文本分块
+        const chunks = this.chunkText(text);
+        const tagScores = new Map<string, number>();
 
-                // 计算加权分数
-                const weightedScore = matches.reduce((sum, match) => {
-                    // 基础分数（由匹配类型决定）已包含在match.score中
-                    // 附加权重因素：
-                    const keywordLengthBonus = Math.min(match.keyword.length / 10, 1) * 0.2; // 关键词长度奖励
-                    const matchTypeBonus = match.type === 'exact' ? 0.3 : 0; // 精确匹配额外奖励
-                    return sum + match.score + keywordLengthBonus + matchTypeBonus;
-                }, 0);
+        // 2. 遍历每个文本块进行匹配
+        for (const chunk of chunks) {
+            if (!chunk.trim()) continue;
 
-                // 计算平均分数（考虑匹配数量）
-                const averageScore = weightedScore / matches.length;
-                // 最终分数结合总分和平均分
-                const finalScore = (weightedScore * 0.7) + (averageScore * 0.3);
+            // 3. 在当前块中为所有标签打分
+            for (const config of BASE_TAGS) {
+                if (!config.keywords.length) continue;
 
-                return [cfg.id, finalScore] as [string, number];
-            })
-            .filter(([, score]) => score > 0);
+                const bestMatch = ClassEngine.findBestMatch(chunk, config.keywords);
+                if (bestMatch) {
+                    const currentScore = tagScores.get(config.id) || 0;
+                    // 4. 聚合：保留所有块中的最高分
+                    if (bestMatch.score > currentScore) {
+                        tagScores.set(config.id, bestMatch.score);
+                    }
+                }
+            }
+        }
 
-        // 按最终得分降序排序
-        scores.sort((a, b) => b[1] - a[1]);
+        // 5. 排序并返回结果
+        if (tagScores.size === 0) {
+            return defaultTags;
+        }
+
+        // 将 Map 转换为数组并按分数降序排序
+        const sortedScores = Array.from(tagScores.entries())
+            .sort(([, scoreA], [, scoreB]) => scoreB - scoreA);
 
         // 限制返回标签数量
-        const limitedScores = scores.slice(0, maxLength);
-        return limitedScores.length ? limitedScores.map(([id]) => id) : defaultTags;
+        return sortedScores.slice(0, maxLength).map(([id]) => id);
     }
 }
 

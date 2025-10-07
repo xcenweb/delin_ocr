@@ -147,10 +147,30 @@ class FileCacheDB extends BaseDB {
     /**
      * 获取所有已索引的文件路径
      */
-    async getAllPaths() {
+    async getAllFiles() {
         await this.init()
-        const result = await this.db.select<{ relative_path: string }[]>(`SELECT relative_path FROM ${this.tableName}`)
-        return result.map(item => item.relative_path)
+        const result = await this.db.select<FileObject[]>(`SELECT * FROM ${this.tableName}`)
+        return result
+    }
+
+    /**
+     * 获取所有已索引的文件路径（分页）
+     * @param page 页码，默认为1
+     * @param pageSize 每页数量，默认为15
+     * @returns 包含文件数据、分页信息的对象
+     *          - data: 当前页的文件数据
+     *          - totalPages: 总页数
+     *          - total: 总记录数
+     *          - currentPage: 当前页码
+     */
+    async getAllFilesPaging(page: number = 1, pageSize: number = 15) {
+        await this.init()
+        const offset = (page - 1) * pageSize
+        const result = await this.db.select<FileObject[]>(`SELECT * FROM ${this.tableName} LIMIT ? OFFSET ?`, [pageSize, offset])
+        const countResult = await this.db.select<{ count: number }[]>(`SELECT COUNT(*) as count FROM ${this.tableName}`)
+        const total = countResult[0]?.count || 0
+        const totalPages = Math.ceil(total / pageSize)
+        return { data: result, totalPages, total, currentPage: page }
     }
 
     /**

@@ -9,7 +9,6 @@ import { useDateFormat } from '@vueuse/core'
 import { readDir, BaseDirectory, stat, writeFile, mkdir, exists, remove } from '@tauri-apps/plugin-fs'
 import { join, appDataDir } from '@tauri-apps/api/path'
 import { fileCacheDB } from './dbService'
-import { get } from 'http'
 
 /** 基础文件信息接口 */
 export interface BaseFileInfo {
@@ -19,17 +18,14 @@ export interface BaseFileInfo {
     relative_path: string
     /** 完整路径 */
     full_path: string
-    /** 文件/文件夹信息 */
-    info: {
-        /** 上次访问时间 */
-        atime: string
-        /** 上次修改时间 */
-        mtime: string
-        /** 创建时间 */
-        birthtime: string
-        /** 大小（字节） */
-        size: number
-    }
+    /** 上次访问时间 */
+    atime: string
+    /** 上次修改时间 */
+    mtime: string
+    /** 创建时间 */
+    birthtime: string
+    /** 大小（字节） */
+    size?: number
 }
 
 /** 目录对象接口 */
@@ -46,6 +42,8 @@ export interface FileObject extends BaseFileInfo {
     type: 'file'
     /** 文件缩略图 */
     thumbnail?: string
+    /** 文件的标签 */
+    tags?: string[]
 }
 
 /** 文件系统对象联合类型 */
@@ -74,8 +72,8 @@ export const getFileType = (name: string) => {
         img: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'],
         pdf: ['.pdf']
     };
-    const ext = name.toLowerCase().slice(name.lastIndexOf('.'));
-    return Object.entries(typeMap).find(([_, exts]) => exts.includes(ext))?.[0] || 'file';
+    const ext = name.toLowerCase().slice(name.lastIndexOf('.'))
+    return Object.entries(typeMap).find(([_, exts]) => exts.includes(ext))?.[0] || 'file'
 };
 
 /**
@@ -131,12 +129,10 @@ export const loadDirectory = async (path: string) => {
                     name: entry.name,
                     relative_path: relativePath,
                     full_path: fullPath,
-                    info: {
-                        atime: useDateFormat(new Date(fileStat.atime || ''), DATE_FORMAT).value,
-                        mtime: useDateFormat(new Date(fileStat.mtime || ''), DATE_FORMAT).value,
-                        birthtime: useDateFormat(new Date(fileStat.birthtime || ''), DATE_FORMAT).value,
-                        size: fileStat.size || 0
-                    }
+                    atime: useDateFormat(new Date(fileStat.atime || ''), DATE_FORMAT).value,
+                    mtime: useDateFormat(new Date(fileStat.mtime || ''), DATE_FORMAT).value,
+                    birthtime: useDateFormat(new Date(fileStat.birthtime || ''), DATE_FORMAT).value,
+                    size: fileStat.size || 0
                 }
 
                 let fileObj: FileSystemObject
@@ -156,7 +152,6 @@ export const loadDirectory = async (path: string) => {
                     fileObj = {
                         ...baseInfo,
                         type: 'file',
-                        ext: entry.name.substring(entry.name.lastIndexOf('.') + 1),
                         thumbnail: await getThumbUrl(fullPath)
                     } as FileObject
                 }
@@ -199,12 +194,10 @@ export const getAllFiles = async (path: string) => {
                         full_path: fullPath,
                         type: 'file',
                         thumbnail: await getThumbUrl(fullPath),
-                        info: {
-                            atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
-                            mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
-                            birthtime: useDateFormat(new Date(fileStat.birthtime || 'null'), DATE_FORMAT).value,
-                            size: fileStat.size || 0
-                        }
+                        atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
+                        mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
+                        birthtime: useDateFormat(new Date(fileStat.birthtime || 'null'), DATE_FORMAT).value,
+                        size: fileStat.size || 0
                     })
                 }
             }
@@ -225,12 +218,7 @@ export const getAllFiles = async (path: string) => {
  * @param baseDir - 基础目录
  * @returns 成功时返回保存的完整路径，失败时返回 false
  */
-export const saveBlobUrlToFile = async (
-    blobUrl: string,
-    fileName: string,
-    targetPath: string = '',
-    baseDir: BaseDirectory
-): Promise<string | false> => {
+export const saveBlobUrlToFile = async (blobUrl: string, fileName: string, targetPath: string = '', baseDir: BaseDirectory) => {
     try {
         // 从 Blob URL 获取数据
         const response = await fetch(blobUrl)
@@ -337,11 +325,9 @@ export const getRecentFiles = async (limit: number = 10) => {
             full_path: fullPath,
             type: 'file',
             thumbnail: await getThumbUrl(fullPath),
-            info: {
-                atime: item.atime,
-                mtime: item.mtime,
-                birthtime: item.birthtime,
-            }
+            atime: item.atime,
+            mtime: item.mtime,
+            birthtime: item.birthtime,
         } as FileObject)
     }
     return files

@@ -34,7 +34,7 @@
                     <p class="text-subtitle-2 text-truncate">{{ fso.name }}</p>
                 </template>
                 <template v-slot:subtitle>
-                    <p class="text-caption text-grey">{{ fso.info.mtime }} · {{ formatFileSize(fso.info.size) }}</p>
+                    <p class="text-caption text-grey">{{ fso.mtime }} · {{ formatFileSize(fso.size) }}</p>
                 </template>
             </v-card>
 

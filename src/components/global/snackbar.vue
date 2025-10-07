@@ -11,7 +11,7 @@
       </v-col>
     </v-row>
     <template v-slot:actions>
-      <v-btn icon="mdi-close" @click="useSnackbar().hide()" size="small" />
+      <v-btn icon="mdi-close" @click="useSnackbar().hide()" size="small" color="grey-darken-2" />
     </template>
   </v-snackbar>
 </template>

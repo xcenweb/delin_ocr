@@ -48,30 +48,40 @@ const cleanText = (text: string): string => {
 }
 
 /**
- * 处理图像并进行OCR识别
+ * 处理图像以提高OCR识别准确率
  * @param src - 图像源
- * @returns - 识别结果和标签
+ * @returns 处理后的图像画布
  */
-const recognize = async (src: string): Promise<{ text: string, blocks: any, tags: string[] }> => {
-
-    if (!isInitialized || !worker) {
-        throw new Error('Worker not initialized')
-    }
-
+const processImage = async (src: string): Promise<OffscreenCanvas> => {
     const io = await fetch(src)
     const imageBitmap = await createImageBitmap(await io.blob())
     const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height)
     const ctx = canvas.getContext('2d')!
-    ctx.filter = 'brightness(1.5) contrast(1.5) grayscale(1)'
+    // TODO: 优化图像处理
+    ctx.filter = 'grayscale(1) contrast(1.2)'
     ctx.drawImage(imageBitmap, 0, 0)
     imageBitmap.close()
+    return canvas
+}
 
+/**
+ * 处理图像并进行OCR识别
+ * @param src - 图像源
+ * @returns - 识别结果和标签
+ */
+const recognize = async (src: string) => {
+    if (!isInitialized || !worker) {
+        throw new Error('Worker not initialized')
+    }
+
+    const canvas = await processImage(src)
     const { data: { text, blocks } } = await worker!.recognize(canvas, {}, { blocks: true })
+    const tags = tagService.generateTags(text)
 
     return {
         text: cleanText(text),
         blocks,
-        tags: tagService.generateTags(text)
+        tags: tags.join(','),
     }
 }
 

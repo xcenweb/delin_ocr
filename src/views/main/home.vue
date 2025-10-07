@@ -69,6 +69,7 @@ import { useFileDialog } from '@vueuse/core'
 import { useSnackbar } from '@/components/global/snackbarService'
 import { openFile, type FileObject } from '@/utils/fileService'
 import { getRecentFiles } from '@/utils/fileService'
+import { on } from 'events'
 
 const router = useRouter()
 
@@ -106,6 +107,9 @@ const goToFeature = (routeName: any) => {
         onChange((files) => {
             console.log(files)
             useSnackbar().info('TODO: 暂不支持...')
+        })
+        onCancel(() => {
+            useSnackbar().info('取消选择')
         })
     }
     if (routeName) {

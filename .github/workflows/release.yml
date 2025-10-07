@@ -2,10 +2,6 @@ name: Create Release from CHANGELOG
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'CHANGELOG.md'  # 只有当CHANGELOG.md被修改时才触发
 
 permissions:
   contents: write

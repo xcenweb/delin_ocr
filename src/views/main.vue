@@ -121,37 +121,41 @@ import OcrWorker from '/src/worker/ocr-worker.ts?worker&inline'
 const ocr = comlink.wrap(new OcrWorker) as {
     init: (languages: string[]) => Promise<boolean>
     getStatus: () => Promise<boolean>
-    recognize: (src: string) => Promise<{ text: string, blocks: Block, tags: string[] }>
+    recognize: (src: string) => Promise<{ text: string, blocks: Block, tags: string }>
 }
 onMounted(async () => {
-    useSnackbar().info(await ocr.init(['chi_sim', 'eng']) ? 'OCR：running!' : 'OCR：error', true)
-
+    const initResult = await ocr.init(['chi_sim', 'eng']);
+    // useSnackbar().info(initResult ? 'OCR：running!' : 'OCR：error', true)
     const fso = await getAllFiles('user/file') // 所有文件
-    const indexedRelativePaths = await fileCacheDB.getAllPaths() // 已索引路径
-    const unindexedFiles = fso.filter(file => !indexedRelativePaths.includes(fileCacheDB.normalizedPath(file.relative_path))) // 未索引文件对象
-
+    const indexedRelativePaths = await fileCacheDB.getAllFiles() // 已索引文件
+    const indexedPathSet = new Set(indexedRelativePaths.map(file => fileCacheDB.normalizedPath(file.relative_path))) // 已索引文件
+    const unindexedFiles = fso.filter(file => !indexedPathSet.has(fileCacheDB.normalizedPath(file.relative_path))) // 未索引文件对象
     if (unindexedFiles.length > 0) {
         // 索引未索引文件
+        // TODO 限制并发数量
         try {
-            useSnackbar().info('OCR：构建索引...', true)
-            await Promise.all(unindexedFiles.map(async (file) => {
+            useSnackbar().info('OCR：正在构建索引...', true)
+
+            for (const file of unindexedFiles) {
                 try {
                     const result = await ocr.recognize(convertFileSrc(file.full_path))
                     await fileCacheDB.add({
                         relative_path: file.relative_path,
-                        tags: JSON.stringify(result.tags),
+                        tags: result.tags,
                         recognized_block: result.blocks,
                         recognized_text: result.text,
-                        atime: file.info.atime,
-                        mtime: file.info.mtime,
-                        birthtime: file.info.birthtime
+                        atime: file.atime,
+                        mtime: file.mtime,
+                        birthtime: file.birthtime
                     })
                 } catch (error) {
-                    useSnackbar().error('OCR：' + error as string)
+                    console.error('OCR处理文件失败：', file.relative_path, error)
                 }
-            }))
-        } finally {
-            useSnackbar().info('OCR：索引完成')
+            }
+
+            useSnackbar().success('OCR：索引完成')
+        } catch (error) {
+            useSnackbar().error('OCR：' + error as string)
         }
     }
 })
