@@ -125,14 +125,14 @@ const ocr = comlink.wrap(new OcrWorker) as {
 }
 onMounted(async () => {
     const initResult = await ocr.init(['chi_sim', 'eng']);
-    // useSnackbar().info(initResult ? 'OCR：running!' : 'OCR：error', true)
-    const fso = await getAllFiles('user/file') // 所有文件
+    useSnackbar().info(initResult ? 'OCR：running!' : 'OCR：error', true)
+
+    const fo = await getAllFiles('user/file') // 所有文件
     const indexedRelativePaths = await fileCacheDB.getAllFiles() // 已索引文件
     const indexedPathSet = new Set(indexedRelativePaths.map(file => fileCacheDB.normalizedPath(file.relative_path))) // 已索引文件
-    const unindexedFiles = fso.filter(file => !indexedPathSet.has(fileCacheDB.normalizedPath(file.relative_path))) // 未索引文件对象
+    const unindexedFiles = fo.filter(file => !indexedPathSet.has(fileCacheDB.normalizedPath(file.relative_path))) // 未索引文件对象
     if (unindexedFiles.length > 0) {
         // 索引未索引文件
-        // TODO 限制并发数量
         try {
             useSnackbar().info('OCR：正在构建索引...', true)
 
@@ -140,6 +140,7 @@ onMounted(async () => {
                 try {
                     const result = await ocr.recognize(convertFileSrc(file.full_path))
                     await fileCacheDB.add({
+                        type: file.type,
                         relative_path: file.relative_path,
                         tags: result.tags,
                         recognized_block: result.blocks,
@@ -155,7 +156,7 @@ onMounted(async () => {
 
             useSnackbar().success('OCR：索引完成')
         } catch (error) {
-            useSnackbar().error('OCR：' + error as string)
+            useSnackbar().error('OCR：' + error)
         }
     }
 })

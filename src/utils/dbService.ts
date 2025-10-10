@@ -3,14 +3,14 @@ import Database from '@tauri-apps/plugin-sql'
 import { useDateFormat } from '@vueuse/core'
 import { Block } from 'tesseract.js'
 import { type FileObject } from './fileService'
-import { join, appDataDir } from '@tauri-apps/api/path'
-import { convertFileSrc } from '@tauri-apps/api/core'
 
 /**
  * 缓存的文件及相关信息
  */
 export interface filesCache {
     id?: number
+    /** 类型 */
+    type: 'file' | 'dir'
     /** 相对路径 */
     relative_path: string
     /** 标签 */
@@ -53,6 +53,7 @@ class BaseDB {
         await this.db.execute(`
             CREATE TABLE IF NOT EXISTS files_cache (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type TEXT NOT NULL,
                 relative_path TEXT NOT NULL UNIQUE,
                 tags TEXT DEFAULT '',
                 recognized_text TEXT DEFAULT '',
@@ -95,13 +96,13 @@ class FileCacheDB extends BaseDB {
     async add(record: filesCache) {
         await this.init()
         const currentTime = this.getCurrentTime()
-        const normalizedPath = this.normalizedPath(record.relative_path)
 
         const result = await this.db.execute(
-            `INSERT INTO ${this.tableName} (relative_path, tags, recognized_text, recognized_block, recognized_update, atime, mtime, birthtime)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO ${this.tableName} (type, relative_path, tags, recognized_text, recognized_block, recognized_update, atime, mtime, birthtime)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                normalizedPath,
+                record.type,
+                this.normalizedPath(record.relative_path),
                 record.tags,
                 record.recognized_text,
                 record.recognized_block,
@@ -159,18 +160,18 @@ class FileCacheDB extends BaseDB {
      * @param pageSize 每页数量，默认为15
      * @returns 包含文件数据、分页信息的对象
      *          - data: 当前页的文件数据
-     *          - totalPages: 总页数
+     *          - pages: 总页数
      *          - total: 总记录数
      *          - currentPage: 当前页码
      */
-    async getAllFilesPaging(page: number = 1, pageSize: number = 15) {
+    async getAllFilesPaging(currentPage: number = 1, pageSize: number = 15) {
         await this.init()
-        const offset = (page - 1) * pageSize
+        const offset = (currentPage - 1) * pageSize
         const result = await this.db.select<FileObject[]>(`SELECT * FROM ${this.tableName} LIMIT ? OFFSET ?`, [pageSize, offset])
         const countResult = await this.db.select<{ count: number }[]>(`SELECT COUNT(*) as count FROM ${this.tableName}`)
         const total = countResult[0]?.count || 0
-        const totalPages = Math.ceil(total / pageSize)
-        return { data: result, totalPages, total, currentPage: page }
+        const pages = Math.ceil(total / pageSize)
+        return { data: result, pages, total, currentPage }
     }
 
     /**
@@ -184,6 +185,19 @@ class FileCacheDB extends BaseDB {
             [limit]
         )
         return result
+    }
+
+    /**
+     * 获取文件的信息
+     * @param path 文件路径
+     */
+    async getFileInfo(path: string) {
+        await this.init()
+        const result = await this.db.select<filesCache[]>(
+            `SELECT * FROM ${this.tableName} WHERE relative_path = ?`,
+            [this.normalizedPath(path)]
+        )
+        return result[0]
     }
 }
 

@@ -3,12 +3,11 @@
 
         <div class="d-flex justify-space-between align-center mb-4 px-4 pt-4">
             <h3 class="font-weight-bold">我的证件</h3>
-            <v-btn color="primary" prepend-icon="mdi-plus" variant="outlined" to="/ocr/camera" size="small">
-                添加证件
-            </v-btn>
+            <v-btn color="primary" prepend-icon="mdi-plus" variant="outlined" to="/ocr/camera" size="small"
+                text="添加证件" />
         </div>
 
-        <v-main>
+        <v-container class="pa-0 mb-16" fluid>
             <!-- 搜索栏 -->
             <v-text-field class="mx-4 mb-2" v-model="searchQuery" prepend-inner-icon="mdi-magnify" placeholder="搜索一下"
                 variant="outlined" density="compact" clearable hide-details>
@@ -21,14 +20,14 @@
                 <v-slide-group-item v-slot="{ isSelected, toggle }" value="all">
                     <v-chip :color="isSelected ? 'primary' : undefined" :variant="isSelected ? 'flat' : 'outlined'"
                         class="ma-1" @click="toggle" density="compact">
-                        <p>全部 ({{ totalCount }})</p>
+                        <p>全部 ({{ certificate_lists.length }})</p>
                     </v-chip>
                 </v-slide-group-item>
                 <v-slide-group-item v-for="tag in tagCategories" :key="tag.id" :value="tag.id"
                     v-slot="{ isSelected, toggle }">
                     <v-chip :color="tag.color" :variant="isSelected ? 'flat' : 'outlined'" :prepend-icon="tag.icon"
                         class="ma-1" @click="toggle" density="compact">
-                        <p>{{ tag.name }} ({{ tag.count }})</p>
+                        <p>{{ tag.name }} ({{ tagCertificateCount(tag.id) }})</p>
                     </v-chip>
                 </v-slide-group-item>
             </v-slide-group>
@@ -38,7 +37,7 @@
                 <v-col cols="6" sm="4" md="3" lg="2" v-for="certificate in filteredCertificates"
                     :key="certificate.relative_path" class="pt-1 px-2">
 
-                    <v-card @click="">
+                    <v-card @click="openFile(certificate.relative_path)">
                         <v-img :src="certificate.thumbnail" aspect-ratio="1.95" cover>
                             <template v-slot:placeholder>
                                 <div class="d-flex align-center justify-center fill-height">
@@ -54,10 +53,10 @@
                         <v-card-actions class="pa-2 pt-0 pb-0" style="min-height: 35px;">
                             <v-chip-group class="text-no-wrap">
                                 <v-chip v-for="tag in certificate.tags" :key="tag" size="x-small" density="comfortable"
-                                    variant="flat" class="my-1" :text="tag" />
+                                    variant="flat" class="my-1" :text="getTagName(tag)" />
                             </v-chip-group>
                             <v-spacer></v-spacer>
-                            <v-menu open-on-hover open-on-click>
+                            <!-- <v-menu open-on-hover open-on-click>
                                 <template v-slot:activator="{ props }">
                                     <v-btn icon="mdi-dots-vertical" size="x-small" v-bind="props"></v-btn>
                                 </template>
@@ -73,7 +72,7 @@
                                         </v-list-item-title>
                                     </v-list-item>
                                 </v-list>
-                            </v-menu>
+                            </v-menu> -->
                         </v-card-actions>
                     </v-card>
                 </v-col>
@@ -83,99 +82,60 @@
                 <v-icon size="80" color="grey-lighten-2">{{ emptyStateConfig.icon }}</v-icon>
                 <p class="text-h6 mt-4 mb-2">{{ emptyStateConfig.title }}</p>
             </div>
-        </v-main>
+        </v-container>
     </v-app>
 </template>
 
 <script setup lang="ts">
-import { fileCacheDB } from '@/utils/dbService'
-import { FileObject } from '@/utils/fileService'
-import { ref, computed } from 'vue'
+import { type FileObject, getAllFiles, openFile } from '@/utils/fileService'
+import { ref, computed, onMounted } from 'vue'
 
 const searchQuery = ref('')
 const selectedTag = ref('all')
 
+
+// 标签栏中指定要显示的标签
 const tagCategories = ref([
-    { id: 'id_card', name: '身份证', icon: 'mdi-card-account-details', color: '#4285F4', count: 0 },
-    { id: 'driver_license', name: '驾驶证', icon: 'mdi-car', color: '#34A853', count: 0 },
-    { id: 'passport', name: '护照', icon: 'mdi-passport', color: '#EA4335', count: 0 },
-    { id: 'household', name: '户口本', icon: 'mdi-home-account', color: '#FBBC04', count: 0 },
-    { id: 'degree', name: '学历证书', icon: 'mdi-school', color: '#9C27B0', count: 0 },
-    { id: 'award', name: '荣誉证书', icon: 'mdi-trophy', color: '#FF9800', count: 0 },
-    { id: 'property', name: '房产证', icon: 'mdi-home-city', color: '#795548', count: 0 },
-    { id: 'other', name: '其他', icon: 'mdi-file-document', color: '#607D8B', count: 0 }
+    { id: 'id_card', name: '身份证', icon: 'mdi-card-account-details', color: '#4285F4' },
+    { id: 'driver_license', name: '驾驶证', icon: 'mdi-car', color: '#34A853' },
+    { id: 'passport', name: '护照', icon: 'mdi-passport', color: '#EA4335' },
+    { id: 'other', name: '其他', icon: 'mdi-file-document', color: '#607D8B' }
 ])
 
-const certificate_lists = ref<FileObject[]>([
-    {
-        type: 'file',
-        name: '身份证',
-        thumbnail: 'https://picsum.photos/200/300?random=1',
-        relative_path: '',
-        full_path: '',
-        atime: '',
-        mtime: '',
-        birthtime: '',
-        tags: ['id_card'],
-    },
-    {
-        type: 'file',
-        name: '驾驶证',
-        thumbnail: 'https://picsum.photos/200/300?random=2',
-        relative_path: '',
-        full_path: '',
-        atime: '',
-        mtime: '',
-        birthtime: '',
-        tags: ['driving_license'],
-    },
-    {
-        type: 'file',
-        name: '护照',
-        thumbnail: 'https://picsum.photos/200/300?random=3',
-        relative_path: '',
-        full_path: '',
-        atime: '',
-        mtime: '',
-        birthtime: '',
-        tags: ['passport'],
-    }
-])
+/** 统计每个标签下证件数量 */
+const tagCertificateCount = (tagId: string) => certificate_lists.value.filter(cert => cert.tags?.includes(tagId)).length
+/** 获取该标签的正式名字 */
+const getTagName = (tagId: string) => tagCategories.value.find(tag => tag.id === tagId)?.name || tagId
 
-const totalCount = computed(() => certificate_lists.value.length)
+const certificate_lists = ref<FileObject[]>([])
 
 const filteredCertificates = computed(() => {
     let filtered = certificate_lists.value
-
     if (selectedTag.value !== 'all') {
-        filtered = filtered.filter(cert =>
-            cert.tags?.includes(selectedTag.value)
-        )
+        filtered = filtered.filter(cert => cert.tags?.includes(selectedTag.value))
     }
-
     if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase()
         filtered = filtered.filter(cert =>
             cert.name.toLowerCase().includes(query) ||
-            (cert.tags?.some(tag => {
-                const tagCategory = tagCategories.value.find(t => t.id === tag)
-                return tagCategory ? tagCategory.name.toLowerCase().includes(query) : false
-            }))
+            cert.tags?.some(tag => getTagName(tag).toLowerCase().includes(query))
         )
     }
-
     return filtered
 })
 
-// 优化空状态配置逻辑，减少冗余代码
 const emptyStateConfig = computed(() => {
     if (searchQuery.value) {
         return { icon: 'mdi-card-search', title: '未找到相关证件' }
-    } else if (selectedTag.value !== 'all') {
-        return { icon: 'mdi-card-plus', title: `该标签下无证件` }
-    } else {
-        return { icon: 'mdi-card-plus', title: '还没有证件' }
     }
+    if (selectedTag.value !== 'all') {
+        return { icon: 'mdi-card-plus', title: '该标签下无证件' }
+    }
+    return { icon: 'mdi-card-plus', title: '还没有证件' }
+})
+
+onMounted(async() => {
+    certificate_lists.value = await getAllFiles('user/file')
 })
 </script>
 

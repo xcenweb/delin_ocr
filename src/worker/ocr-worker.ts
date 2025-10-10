@@ -58,7 +58,7 @@ const processImage = async (src: string): Promise<OffscreenCanvas> => {
     const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height)
     const ctx = canvas.getContext('2d')!
     // TODO: 优化图像处理
-    ctx.filter = 'grayscale(1) contrast(1.2)'
+    ctx.filter = 'grayscale(1) contrast(1.5) brightness(1.2)'
     ctx.drawImage(imageBitmap, 0, 0)
     imageBitmap.close()
     return canvas

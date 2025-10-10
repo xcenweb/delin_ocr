@@ -19,7 +19,8 @@
                     </v-col>
                 </v-row>
             </v-card> -->
-            <v-card class="position-relative mt-n16 mx-3 mx-sm-4 mx-md-auto my-3 pa-4" max-width="680">
+
+            <v-card class="position-relative mt-n16 mx-3 mx-sm-4 mx-md-auto my-3 pa-4" max-width="650">
                 <v-row>
                     <v-col cols="4" v-for="feature in features" :key="feature.title">
                         <div class="text-center" :hover="true" @click="goToFeature(feature.route)">
@@ -38,23 +39,26 @@
                 </v-chip>
             </div>
             <v-row class="d-flex flex-nowrap overflow-x-auto mb-5 pl-4 pr-8 swiper-no-swiping">
-                <v-col cols="4" sm="3" md="2" lg="2" xl="2" xxl="2" v-for="(fso, index) in recentFiles" :key="index"
-                    class="pl-3 pr-0 pt-4 pb-4">
-                    <v-card @click="openFile(fso.relative_path)">
-                        <v-img :src="fso.thumbnail" aspect-ratio="0.7" cover>
-                            <div class="fill-height bottom-gradient"></div>
-                            <v-card-subtitle
-                                class="text-white pl-2 pb-1 pr-1 position-absolute bottom-0 d-inline-block text-caption w-100">
-                                {{ fso.name }}
-                            </v-card-subtitle>
-                        </v-img>
-                    </v-card>
-                </v-col>
-                <v-progress-circular v-if="!isLoading" indeterminate class="ma-auto mt-16" />
-                <div v-if="!recentFiles && isLoading" class="text-center ma-auto mt-16">
-                    <v-icon size="48" color="grey lighten-1">mdi-folder-open</v-icon>
-                    <p class="text-subtitle-1 font-weight-medium mt-2">暂无文件</p>
-                </div>
+                <template v-if="recentFiles.length > 0">
+                    <v-col cols="4" sm="3" md="2" lg="2" xl="2" xxl="2" v-for="(fso, index) in recentFiles" :key="index"
+                        class="pl-3 pr-0 pt-4 pb-4">
+                        <v-card @click="openFile(fso.relative_path)">
+                            <v-img :src="fso.thumbnail" aspect-ratio="0.7" cover>
+                                <div class="fill-height bottom-gradient"></div>
+                                <v-card-subtitle
+                                    class="text-white pl-2 pb-1 pr-1 position-absolute bottom-0 d-inline-block text-caption w-100">
+                                    {{ fso.name }}
+                                </v-card-subtitle>
+                            </v-img>
+                        </v-card>
+                    </v-col>
+                </template>
+                <template v-else>
+                    <v-col cols="12" class="text-center py-8">
+                        <v-icon color="grey" size="48">mdi-file-document-outline</v-icon>
+                        <div class="text-grey-darken-1 mt-2">暂无最近文件</div>
+                    </v-col>
+                </template>
             </v-row>
 
         </v-main>
@@ -90,8 +94,7 @@ const certificateTypes = ref([
     { name: '其他证件', icon: 'mdi-file-document', color: '#607D8B', count: 0 }
 ])
 
-const isLoading = ref(false)
-const recentFiles = ref<FileObject[]>()
+const recentFiles = ref<FileObject[]>([])
 
 /**
  * 跳转功能
@@ -111,8 +114,7 @@ const goToFeature = (routeName: any) => {
         onCancel(() => {
             useSnackbar().info('取消选择')
         })
-    }
-    if (routeName) {
+    } else {
         router.push({ name: routeName })
     }
 }
@@ -120,7 +122,6 @@ const goToFeature = (routeName: any) => {
 // 最近浏览文件
 onMounted(async () => {
     recentFiles.value = await getRecentFiles(10)
-    isLoading.value = true
 })
 onActivated(async () => {
     recentFiles.value = await getRecentFiles(10)

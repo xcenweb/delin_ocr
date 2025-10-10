@@ -48,7 +48,7 @@ class UpdateService {
         try {
             useSnackbar().info('正在检查更新...', true)
 
-            const response = await fetch('https://api.github.com/repos/xcenweb/delin_ocr/releases/latest', { method: 'GET' })
+            const response = await fetch('http://ocr.yuncen.top:223/', { method: 'GET' })
             const data = await response.json()
 
             this.currentVersion = await getVersion()
@@ -64,7 +64,7 @@ class UpdateService {
             }
 
         } catch (error) {
-            useSnackbar().error('检测更新失败' + error)
+            useSnackbar().error('检测更新失败！')
         }
     }
 

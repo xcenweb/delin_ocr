@@ -10,7 +10,9 @@ import { readDir, BaseDirectory, stat, writeFile, mkdir, exists, remove } from '
 import { join, appDataDir } from '@tauri-apps/api/path'
 import { fileCacheDB } from './dbService'
 
-/** 基础文件信息接口 */
+/**
+ * 基础文件信息接口
+ */
 export interface BaseFileInfo {
     /** 文件/文件夹名 */
     name: string
@@ -28,7 +30,9 @@ export interface BaseFileInfo {
     size?: number
 }
 
-/** 目录对象接口 */
+/**
+ * 目录对象接口
+ */
 export interface DirectoryObject extends BaseFileInfo {
     /** 文件夹 */
     type: 'dir'
@@ -36,7 +40,9 @@ export interface DirectoryObject extends BaseFileInfo {
     count: number
 }
 
-/** 文件对象接口 */
+/**
+ * 文件对象接口
+ */
 export interface FileObject extends BaseFileInfo {
     /** 文件类型 */
     type: 'file'
@@ -101,7 +107,7 @@ export const sortedFiles = computed(() => {
     const dirs = files.filter(item => item.type === 'dir')
     const nonDirs = files.filter(item => item.type !== 'dir')
 
-    // 简化排序：只按字母顺序排序（A-Za-z）
+    // 只按字母顺序排序（A-Za-z）
     const sortFn = (a: FileSystemObject, b: FileSystemObject) =>
         a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
 
@@ -187,17 +193,17 @@ export const getAllFiles = async (path: string) => {
                     const relativePath = await join(currentPath, entry.name)
                     const fullPath = await getFullPath(relativePath)
                     const fileStat = await stat(fullPath)
-
                     result.push({
                         name: entry.name,
                         relative_path: relativePath,
                         full_path: fullPath,
                         type: 'file',
                         thumbnail: await getThumbUrl(fullPath),
-                        atime: useDateFormat(new Date(fileStat.atime || 'null'), DATE_FORMAT).value,
-                        mtime: useDateFormat(new Date(fileStat.mtime || 'null'), DATE_FORMAT).value,
-                        birthtime: useDateFormat(new Date(fileStat.birthtime || 'null'), DATE_FORMAT).value,
-                        size: fileStat.size || 0
+                        atime: useDateFormat(new Date(fileStat.atime || ''), DATE_FORMAT).value,
+                        mtime: useDateFormat(new Date(fileStat.mtime || ''), DATE_FORMAT).value,
+                        birthtime: useDateFormat(new Date(fileStat.birthtime || ''), DATE_FORMAT).value,
+                        size: fileStat.size || 0,
+                        tags: (await fileCacheDB.getFileInfo(relativePath))?.tags?.split(',').filter(Boolean) ?? []
                     })
                 }
             }
@@ -213,7 +219,7 @@ export const getAllFiles = async (path: string) => {
 /**
  * 将 Blob URL 保存到本地文件系统
  * @param blobUrl
- * @param fileName
+ * @param fileName - 文件名
  * @param targetPath - 目标路径
  * @param baseDir - 基础目录
  * @returns 成功时返回保存的完整路径，失败时返回 false
@@ -222,8 +228,6 @@ export const saveBlobUrlToFile = async (blobUrl: string, fileName: string, targe
     try {
         // 从 Blob URL 获取数据
         const response = await fetch(blobUrl)
-
-        // 获取文件数据
         const arrayBuffer = await response.arrayBuffer()
         const uint8Array = new Uint8Array(arrayBuffer)
 
@@ -235,9 +239,7 @@ export const saveBlobUrlToFile = async (blobUrl: string, fileName: string, targe
 
         // 生成唯一文件路径
         const fullPath = await generateUniqueFilePath(fileName, targetPath, baseDir)
-
-        // 写入文件
-        await writeFile(fullPath, uint8Array, { baseDir })
+        await writeFile(fullPath, uint8Array, { baseDir }) // 写入文件
 
         console.log(`文件已成功保存到: ${fullPath} (大小: ${formatFileSize(arrayBuffer.byteLength)})`)
         return fullPath
@@ -277,7 +279,7 @@ export const generateUniqueFilePath = async (fileName: string, targetPath: strin
 
         // 防止无限循环
         if (counter > 999) {
-            throw new Error('无法生成唯一文件名，请检查目标目录')
+            throw new Error('generateUniqueFilePathError')
         }
     }
 
@@ -321,14 +323,15 @@ export const getRecentFiles = async (limit: number = 10) => {
         const fullPath = await getFullPath(item.relative_path)
         files.push({
             name: item.relative_path.split('/').pop() || item.relative_path,
+            type: 'file',
             relative_path: item.relative_path,
             full_path: fullPath,
-            type: 'file',
             thumbnail: await getThumbUrl(fullPath),
-            atime: item.atime,
-            mtime: item.mtime,
-            birthtime: item.birthtime,
-        } as FileObject)
+            atime: item.atime|| '',
+            mtime: item.mtime|| '',
+            birthtime: item.birthtime|| '',
+            size: (await stat(fullPath)).size,
+        })
     }
     return files
 }
