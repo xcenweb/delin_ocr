@@ -27,7 +27,7 @@ export interface BaseFileInfo {
     /** 创建时间 */
     birthtime: string
     /** 大小（字节） */
-    size?: number
+    size: number
 }
 
 /**

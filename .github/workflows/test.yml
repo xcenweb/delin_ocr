@@ -157,15 +157,33 @@ jobs:
         echo "renamed_apk_path=$NEW_APK_PATH" >> $GITHUB_OUTPUT
         echo "renamed_apk_name=$NEW_APK_NAME" >> $GITHUB_OUTPUT
 
-    - name: Create Release
-      id: create_release
-      uses: softprops/action-gh-release@v2
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
       with:
-        tag_name: ${{ needs.prepare-release.outputs.version }}
-        name: ${{ needs.prepare-release.outputs.version }}
-        body: ${{ needs.prepare-release.outputs.body }}
-        files: ${{ steps.rename-apk.outputs.renamed_apk_path }}
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        name: android-release
+        path: ${{ steps.rename-apk.outputs.renamed_apk_path }}
+        if-no-files-found: error
+
+  create-release:
+    needs: [prepare-release, build-android]
+    if: needs.prepare-release.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare-release.outputs.version }}
+          name: ${{ needs.prepare-release.outputs.version }}
+          body: ${{ needs.prepare-release.outputs.body }}
+          files: artifacts/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
