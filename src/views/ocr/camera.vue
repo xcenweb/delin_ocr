@@ -64,8 +64,8 @@
                         <v-icon size="large">mdi-check</v-icon>
                     </v-btn>
 
-                    <!-- 闪光灯 -->
-                    <v-btn icon size="large" class="bg-grey-darken-3">
+                    <!-- 闪光灯控制 -->
+                    <v-btn icon size="large" class="bg-grey-darken-3" @click="toggleTorch()">
                         <v-icon>mdi-flashlight-off</v-icon>
                     </v-btn>
                 </div>
@@ -79,7 +79,17 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, onUpdated, onDeactivated, watch, ref } from 'vue'
+import { toggle, check } from "@sosweetham/tauri-plugin-torch-api";
 import { useRouter } from 'vue-router'
+
+async function toggleTorch() {
+    const isTorchOn = await check()
+    if (isTorchOn) {
+        await toggle(false)
+    } else {
+        await toggle(true)
+    }
+}
 
 // 导入摄像头相关功能
 import {

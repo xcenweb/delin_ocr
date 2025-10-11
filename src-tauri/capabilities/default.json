@@ -11,6 +11,7 @@
     "sql:allow-execute",
     "os:default",
     "sharekit:default",
+    "torch:default",
     "fs:default",
     "fs:allow-stat",
     "fs:allow-read",

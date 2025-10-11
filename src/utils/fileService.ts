@@ -1,5 +1,4 @@
 // 文件服务
-// TODO: 重构
 import router from '@/router'
 import { getThumbUrl } from './thumbService'
 import { useSnackbar } from '@/components/global/snackbarService'
@@ -119,9 +118,9 @@ export const sortedFiles = computed(() => {
  * @param path 要加载的目录路径
  * @returns Promise<void>
  */
-export const loadDirectory = async (path: string) => {
+export const loadDirectory = async (path: string, baseDir: BaseDirectory = BaseDirectory.AppData) => {
     try {
-        const entries = await readDir(path, { baseDir: BaseDirectory.AppData })
+        const entries = await readDir(path, { baseDir })
         const result: FileSystemObject[] = []
 
         for (const entry of entries) {

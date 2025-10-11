@@ -52,20 +52,24 @@
 
 <script setup lang="ts">
 import router from "@/router";
-import { sortedFiles, formatFileSize, loadDirectory } from "@/utils/fileService"
-import { onActivated, onMounted } from 'vue';
+import { loadDirectory, sortedFiles, formatFileSize } from "@/utils/fileService"
+import { onActivated, onMounted } from 'vue'
 import { vOnLongPress } from '@vueuse/components'
-import { openFile } from "@/utils/fileService";
+import { openFile } from "@/utils/fileService"
 
 const props = withDefaults(defineProps<{
     /** 目标路径 */
     path: string,
 }>(), {
     path: '',
-});
+})
 
-onMounted(() => loadDirectory(props.path))
-onActivated(() => loadDirectory(props.path))
+onMounted(() => {
+    loadDirectory(props.path)
+})
+onActivated(() => {
+    loadDirectory(props.path)
+})
 
 /**
  * 打开文件夹

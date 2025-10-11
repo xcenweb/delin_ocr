@@ -30,6 +30,7 @@
                         <p>{{ tag.name }} ({{ tagCertificateCount(tag.id) }})</p>
                     </v-chip>
                 </v-slide-group-item>
+                <v-spacer style="width: 12px;" class="d-sm-none"></v-spacer>
             </v-slide-group>
 
             <!-- 证件列表 -->
@@ -88,6 +89,7 @@
 
 <script setup lang="ts">
 import { type FileObject, getAllFiles, openFile } from '@/utils/fileService'
+import { BASE_TAGS } from '@/utils/tagService'
 import { ref, computed, onMounted } from 'vue'
 
 const searchQuery = ref('')
@@ -95,12 +97,7 @@ const selectedTag = ref('all')
 
 
 // 标签栏中指定要显示的标签
-const tagCategories = ref([
-    { id: 'id_card', name: '身份证', icon: 'mdi-card-account-details', color: '#4285F4' },
-    { id: 'driver_license', name: '驾驶证', icon: 'mdi-car', color: '#34A853' },
-    { id: 'passport', name: '护照', icon: 'mdi-passport', color: '#EA4335' },
-    { id: 'other', name: '其他', icon: 'mdi-file-document', color: '#607D8B' }
-])
+const tagCategories = ref(BASE_TAGS)
 
 /** 统计每个标签下证件数量 */
 const tagCertificateCount = (tagId: string) => certificate_lists.value.filter(cert => cert.tags?.includes(tagId)).length

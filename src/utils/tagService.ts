@@ -1,7 +1,11 @@
+import i18n from "@/plugins/i18n"
+
 /** 标签配置接口 */
 interface TagConfig {
     id: string
     name?: string
+    icon?: string
+    color?: string
     keywords: readonly string[]
 }
 
@@ -9,44 +13,48 @@ interface TagConfig {
 export const BASE_TAGS: readonly TagConfig[] = [
     {
         id: 'identity_card',
+        name: i18n.global.t('identity_card'),
+        icon: 'mdi-card-account-details',
+        color: '#4285F4',
         keywords: [
             '中华人民共和国', '居民身份证', '签发机关', '有效期限', '公民身份号码', '身份证', '姓名', '民族', '出生', '住址',
             'ID Card', 'Identity Card', 'ID card', 'identity card',
-        ]
+        ],
     },
     {
         id: 'business_license',
+        name: i18n.global.t('business_license'),
+        icon: 'mdi-domain',
+        color: '#34A853',
         keywords: [
-            '营业执照', '工商营业执照', '企业营业执照', '公司执照',
-            '统一社会信用代码', '社会信用代码', '信用代码',
-            'Business License', '营业执照副本', '营业执照行业'
+            '营业执照', '工商营业执照', '企业营业执照', '公司执照', '统一社会信用代码', '社会信用代码', '信用代码',
+            'Business License'
         ]
     },
     {
         id: 'student_card',
+        name: i18n.global.t('student_card'),
+        icon: 'mdi-school',
+        color: '#EA4335',
         keywords: [
             '学生证', '学生卡', '校园卡', '学籍卡',
             'Student ID', 'Student Card', 'Campus Card'
         ]
     },
     {
-        id: 'bank_card',
-        keywords: [
-            '银行卡', '储蓄卡', '信用卡', '借记卡', '银行账户',
-            'Bank Card', 'Credit Card', 'Debit Card', 'Card Number',
-            '卡号', '银联', 'VISA', 'MasterCard', '信用卡号'
-        ]
-    },
-    {
         id: 'contract',
+        name: i18n.global.t('contract'),
+        icon: 'mdi-file-document-box-multiple',
+        color: '#FF0000',
         keywords: [
-            '合同', '协议', '合约', '签署协议', '法律协议',
-            'Contract', 'Agreement', '合作协议', '服务合同',
-            '劳动合同', '租赁合同', '采购合同', '保密协议'
+            '合同', '协议', '合约', '签署协议', '法律协议', '合作协议', '服务合同', '劳动合同', '租赁合同', '采购合同', '保密协议'
         ]
     },
     {
         id: 'report',
+        name: i18n.global.t('report'),
+        icon: 'mdi-file-chart',
+        color: '#FFA500',
         keywords: [
             '报告', '分析报告', '调研报告', '工作报告', '研究报告', '检测报告', '审计报告', '评估报告', '实验报告',
             'Report', 'Analysis Report', 'Survey Report'
@@ -54,20 +62,19 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'resume',
+        name: i18n.global.t('resume'),
+        icon: 'mdi-file-document-edit',
+        color: '#800080',
         keywords: [
             '简历', '个人简历', '求职简历', '工作经历', '教育背景', '联系方式', '期望职位',
             'Resume',
         ]
     },
     {
-        id: 'transcript',
-        keywords: [
-            '成绩单', '成绩表', '学业成绩单', 'GPA', '学分', '考试成绩', '课程成绩',
-            'Transcript', 'Academic Transcript', 'Grade Report',
-        ]
-    },
-    {
         id: 'invoice',
+        name: i18n.global.t('invoice'),
+        icon: 'mdi-receipt',
+        color: '#00CED1',
         keywords: [
             '发票', '增值税发票', '电子发票', '普通发票', '专用发票', '开票', '发票代码', '发票号码', '金额合计', '价税合计',
             'Invoice', 'VAT Invoice', 'Tax Invoice', '收据', '付款凭证',
@@ -75,6 +82,9 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'document',
+        name: i18n.global.t('document'),
+        icon: 'mdi-file',
+        color: '#FFA500',
         keywords: [
             '文档', '文件', '资料', '材料', 'Word', 'PDF', '扫描件',
             'Document', 'File', 'Attachment', 'Official Document'
@@ -82,6 +92,9 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'education_certificate',
+        name: i18n.global.t('education_certificate'),
+        icon: 'mdi-school-outline',
+        color: '#FFD700',
         keywords: [
             '毕业证书', '学位证书', '学历证书', '学历', '学位', '学士', '硕士', '博士', '结业证书', '肄业证明',
             'Diploma', 'Degree Certificate', 'Bachelor', 'Master', 'PhD',
@@ -89,13 +102,22 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'professional',
+        name: i18n.global.t('professional'),
+        icon: 'mdi-certificate',
+        color: '#FFA500',
         keywords: [
             '资格证书', '专业证书', '执业证书', '认证证书', '软考', '职称证书', '教师资格证', '律师执业证', '医师资格证', '建造师证',
             'Certification', 'License', 'Professional Certificate', 'PMP', 'CPA', 'CFA',
         ]
     },
-    { id: 'other', keywords: [] }
-];
+    {
+        id: 'other',
+        icon: 'mdi-tag-multiple',
+        color: '#A9A9A9',
+        name: i18n.global.t('other'),
+        keywords: [],
+    }
+]
 
 /**
  * 分类引擎

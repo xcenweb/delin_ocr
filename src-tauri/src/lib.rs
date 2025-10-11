@@ -8,7 +8,8 @@ pub fn run() {
         .plugin(tauri_plugin_sql::Builder::new().build())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_sharekit::init());
+        .plugin(tauri_plugin_sharekit::init())
+        .plugin(tauri_plugin_torch::init());
 
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());

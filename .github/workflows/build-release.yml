@@ -100,7 +100,7 @@ jobs:
         shell: pwsh
         run: |
           $INSTALLER_PATH = Get-ChildItem -Path "src-tauri\target\release\bundle\nsis\*.exe" | Select-Object -First 1
-          $NEW_NAME = "Delin-${{ needs.prepare-release.outputs.version }}-x64-setup.exe"
+          $NEW_NAME = "Delin-${{ needs.prepare-release.outputs.version }}-windows-x64-setup.exe"
           $NEW_PATH = Join-Path (Split-Path $INSTALLER_PATH) $NEW_NAME
           Move-Item -Path $INSTALLER_PATH -Destination $NEW_PATH
           echo "installer_path=$NEW_PATH" >> $env:GITHUB_OUTPUT
