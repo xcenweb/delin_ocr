@@ -1,4 +1,4 @@
-import { cv } from "./opencv"
+import { getOpenCv } from "./opencv"
 import type { Point } from "./types"
 
 /**
@@ -68,12 +68,8 @@ class EdgeDetection {
     /**
      * 获取轮廓的四个角点
      */
-    private getCornerPoints(contour: any): {
-        topLeftCorner: Point | null;
-        topRightCorner: Point | null;
-        bottomLeftCorner: Point | null;
-        bottomRightCorner: Point | null;
-    } {
+    private async getCornerPoints(contour: any) {
+        const cv = await getOpenCv()
         const rect = cv.minAreaRect(contour)
         const center = { x: rect.center.x, y: rect.center.y }
 
@@ -118,7 +114,8 @@ class EdgeDetection {
     /**
      * 验证轮廓是否为有效的文档形状
      */
-    private isValidDocumentContour(contour: any, width: number, height: number) {
+    private async isValidDocumentContour(contour: any, width: number, height: number) {
+        const cv = await getOpenCv()
         const area = cv.contourArea(contour)
         const minArea = Math.max(2000, (width * height) * 0.05)
         if (area < minArea || area > (width * height * 0.95)) return false
@@ -155,7 +152,7 @@ class EdgeDetection {
     /**
      * 处理单帧视频
      */
-    public processVideoFrame(videoElement: HTMLVideoElement, canvasElement: HTMLCanvasElement, ctx: CanvasRenderingContext2D, stream: MediaStream | undefined) {
+    public async processVideoFrame(videoElement: HTMLVideoElement, canvasElement: HTMLCanvasElement, ctx: CanvasRenderingContext2D, stream: MediaStream | undefined) {
         if (!this.isProcessing || !stream || !videoElement || videoElement.readyState !== 4) {
             this.isProcessing = false
             return
@@ -163,6 +160,8 @@ class EdgeDetection {
 
         try {
             if (!ctx || !canvasElement) return
+
+            const cv = await getOpenCv()
 
             ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height)
             const imageData = ctx.getImageData(0, 0, canvasElement.width, canvasElement.height)
@@ -190,9 +189,9 @@ class EdgeDetection {
             let currentCorners = null
             for (let i = 0; i < contours.size(); ++i) {
                 const contour = contours.get(i)
-                if (this.isValidDocumentContour(contour, canvasElement.width, canvasElement.height)) {
+                if (await this.isValidDocumentContour(contour, canvasElement.width, canvasElement.height)) {
                     // 获取角点
-                    const { topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner } = this.getCornerPoints(contour)
+                    const { topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner } = await this.getCornerPoints(contour)
                     const corners = [topLeftCorner, topRightCorner, bottomRightCorner, bottomLeftCorner]
                     if (corners.every(p => p)) {
                         currentCorners = corners as Point[]

@@ -1,4 +1,12 @@
-import cvReadyPromise, { type CV } from '@techstark/opencv-js'
+import cvReadyPromise, { type CV } from "@techstark/opencv-js";
 
-// 初始化 OpenCV 实例
-export const cv: CV = await cvReadyPromise
+// 缓存Promise以避免重复初始化
+let cachedCvPromise: Promise<CV> | null = null;
+
+export async function getOpenCv() {
+    if (!cachedCvPromise) {
+        cachedCvPromise = Promise.resolve(cvReadyPromise);
+    }
+    const cv = await cachedCvPromise;
+    return cv;
+}

@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { cv } from './opencv'
+import { getOpenCv } from './opencv'
 import * as Editor from './editor'
 import type { Point, PhotoItem } from './types'
 import { useSnackbar } from '@/components/global/snackbarService'
@@ -52,30 +52,28 @@ const confirm = async () => {
         // 执行透视变换并更新persped_src
         try {
             // 获取原始图片的blob
-            const response = await fetch(cropCurrentImage.value.src);
-            const blob = await response.blob();
+            const response = await fetch(cropCurrentImage.value.src)
+            const blob = await response.blob()
 
             // 执行透视变换
-            const resultBlob = await transform(blob, cropCurrentImage.value.points);
+            const resultBlob = await transform(blob, cropCurrentImage.value.points)
 
             if (resultBlob) {
-                // 更新persped_src
                 if (Editor.currentImage.value.persped_src) {
-                    URL.revokeObjectURL(Editor.currentImage.value.persped_src);
+                    // 释放内存
+                    URL.revokeObjectURL(Editor.currentImage.value.persped_src)
                 }
-                Editor.currentImage.value.persped_src = URL.createObjectURL(resultBlob);
-                useSnackbar().success('矫正成功');
+                Editor.currentImage.value.persped_src = URL.createObjectURL(resultBlob)
+                Editor.currentEditorMode.value = 'edit'
+                useSnackbar().success('矫正成功')
             } else {
-                useSnackbar().error('矫正失败');
+                throw new Error('矫正失败')
             }
         } catch (error) {
-            console.error('矫正过程中发生错误:', error);
-            useSnackbar().error('矫正过程中发生错误');
+            useSnackbar().error('矫正过程中发生错误：' + error)
         }
     }
-
-    Editor.currentEditorMode.value = 'edit'
-};
+}
 
 /**
  * 透视变换校正图片
@@ -85,6 +83,8 @@ const confirm = async () => {
  */
 const transform = async (blob: Blob, points: Point[]) => {
     try {
+        const cv = await getOpenCv()
+
         // 直接通过ImageBitmap高效加载Blob
         const imgBitmap = await createImageBitmap(blob)
 

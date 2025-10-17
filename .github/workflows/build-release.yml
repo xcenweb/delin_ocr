@@ -113,6 +113,62 @@ jobs:
           path: ${{ steps.rename-installer.outputs.installer_path }}
           if-no-files-found: error
 
+  build-macos:
+    needs: prepare-release
+    if: needs.prepare-release.outputs.should_release == 'true'
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            src-tauri/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build macOS app
+        run: |
+          npm run tauri build
+
+      - name: Find and rename DMG file
+        id: rename-dmg
+        run: |
+          DMG_PATH=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" -type f | head -1)
+          NEW_NAME="Delin-${{ needs.prepare-release.outputs.version }}-macos.dmg"
+          NEW_PATH="$(dirname $DMG_PATH)/$NEW_NAME"
+          mv "$DMG_PATH" "$NEW_PATH"
+          echo "dmg_path=$NEW_PATH" >> $GITHUB_OUTPUT
+          echo "dmg_name=$NEW_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: ${{ steps.rename-dmg.outputs.dmg_path }}
+          if-no-files-found: error
+
   build-android:
     needs: prepare-release
     if: needs.prepare-release.outputs.should_release == 'true'
@@ -225,7 +281,7 @@ jobs:
         if-no-files-found: error
 
   create-release:
-    needs: [prepare-release, build-android, build-windows-x64]
+    needs: [prepare-release, build-android, build-windows-x64, build-macos]
     if: needs.prepare-release.outputs.should_release == 'true'
     runs-on: ubuntu-latest
 
@@ -244,6 +300,7 @@ jobs:
           files: |
             artifacts/android-release/*
             artifacts/windows-installer/*
+            artifacts/macos-release/*
           draft: false
           prerelease: false
         env:
