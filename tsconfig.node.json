@@ -6,9 +6,7 @@
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
 
-    // 确保文件名大小写一致，避免在不同操作系统间协作时出现问题
     "forceConsistentCasingInFileNames": true,
-    // 启用所有严格的类型检查选项，帮助减少类型错误
     "strict": true,
   },
   "include": ["vite.config.ts"]

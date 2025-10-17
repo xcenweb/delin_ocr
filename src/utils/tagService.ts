@@ -13,7 +13,7 @@ interface TagConfig {
 export const BASE_TAGS: readonly TagConfig[] = [
     {
         id: 'identity_card',
-        name: i18n.global.t('identity_card'),
+        name: i18n.global.t('tags.identity_card'),
         icon: 'mdi-card-account-details',
         color: '#4285F4',
         keywords: [
@@ -23,7 +23,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'business_license',
-        name: i18n.global.t('business_license'),
+        name: i18n.global.t('tags.business_license'),
         icon: 'mdi-domain',
         color: '#34A853',
         keywords: [
@@ -33,7 +33,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'student_card',
-        name: i18n.global.t('student_card'),
+        name: i18n.global.t('tags.student_card'),
         icon: 'mdi-school',
         color: '#EA4335',
         keywords: [
@@ -43,7 +43,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'contract',
-        name: i18n.global.t('contract'),
+        name: i18n.global.t('tags.contract'),
         icon: 'mdi-file-document-box-multiple',
         color: '#FF0000',
         keywords: [
@@ -52,7 +52,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'report',
-        name: i18n.global.t('report'),
+        name: i18n.global.t('tags.report'),
         icon: 'mdi-file-chart',
         color: '#FFA500',
         keywords: [
@@ -62,7 +62,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'resume',
-        name: i18n.global.t('resume'),
+        name: i18n.global.t('tags.resume'),
         icon: 'mdi-file-document-edit',
         color: '#800080',
         keywords: [
@@ -72,7 +72,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'invoice',
-        name: i18n.global.t('invoice'),
+        name: i18n.global.t('tags.invoice'),
         icon: 'mdi-receipt',
         color: '#00CED1',
         keywords: [
@@ -82,7 +82,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'document',
-        name: i18n.global.t('document'),
+        name: i18n.global.t('tags.document'),
         icon: 'mdi-file',
         color: '#FFA500',
         keywords: [
@@ -92,7 +92,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'education_certificate',
-        name: i18n.global.t('education_certificate'),
+        name: i18n.global.t('tags.education_certificate'),
         icon: 'mdi-school-outline',
         color: '#FFD700',
         keywords: [
@@ -102,7 +102,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
     },
     {
         id: 'professional',
-        name: i18n.global.t('professional'),
+        name: i18n.global.t('tags.professional'),
         icon: 'mdi-certificate',
         color: '#FFA500',
         keywords: [
@@ -114,7 +114,7 @@ export const BASE_TAGS: readonly TagConfig[] = [
         id: 'other',
         icon: 'mdi-tag-multiple',
         color: '#A9A9A9',
-        name: i18n.global.t('other'),
+        name: i18n.global.t('tags.other'),
         keywords: [],
     }
 ]

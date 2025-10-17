@@ -1,36 +1,34 @@
-<!-- 通用编辑器 -->
 <template>
     <v-app>
-        <v-main class="d-flex flex-column overflow-hidden main-no-scroll">
 
-            <v-app-bar :color="editorMode === 'edit' ? '' : 'transparent'">
-                <v-btn icon @click="$router.back()" v-if="editorMode == 'edit'">
-                    <v-icon>mdi-arrow-left</v-icon>
-                </v-btn>
-                <v-app-bar-title>
-                    {{ editorMode === 'edit' ? '编辑' : '' }}
-                </v-app-bar-title>
-            </v-app-bar>
+        <v-app-bar :color="Editor.currentEditorMode.value === 'edit' ? '' : 'transparent'">
+            <v-btn icon="mdi-arrow-left" @click="Editor.goback()" />
+            <v-app-bar-title :text="Editor.currentEditorMode.value === 'edit' ? '编辑' : ''" />
+        </v-app-bar>
 
-            <!-- 多图片显示 -->
+        <v-main class="d-flex flex-column overflow-hidden">
+
+            <!-- swiper -->
             <z-swiper class="h-100 w-100 position-relative flex-grow-1" space-between="32px" :slides-per-view="1.1"
-                centered-slides @slideChange="onSlideChange" @swiper="onSwiper($event)" v-show="editorMode === 'edit'">
-                <z-swiper-item v-for="(image, i) in imageList" :key="i">
-                    <v-img :src="image.filteredSrc || image.processedSrc || image.src" class="w-100 h-100" style="object-fit: contain;" />
+                centered-slides @slideChange="Editor.onSlideChange" @swiper="Editor.onSwiper"
+                v-show="Editor.currentEditorMode.value === 'edit'">
+                <z-swiper-item v-for="(image, i) in Editor.imageList.value" :key="i">
+                    <v-img :src="image.filtered_src || image.persped_src || image.src" class="w-100 h-100"
+                        style="object-fit: contain;" />
                 </z-swiper-item>
             </z-swiper>
 
-            <!-- 矫正模式下的图片选择框 -->
-            <div class="position-relative flex-grow-1 ma-5" ref="containerRef" v-if="editorMode === 'crop'">
-                <!-- 图片容器 -->
+            <!-- 矫正模式 -->
+            <div class="position-relative flex-grow-1 ma-5" v-if="Editor.currentEditorMode.value === 'persp'" ref="containerRef">
                 <div class="position-absolute overflow-hidden w-100 h-100 top-0 left-0" ref="imageContainerRef">
-                    <v-img :src="currentImage.src" ref="imageRef" @load="onImageLoad" class="w-100 h-100"
-                        style="object-fit: contain;" />
 
-                    <!-- 遮罩层 -->
+                    <!-- 图片 -->
+                    <v-img :src="Editor.currentImage.value.src" class="w-100 h-100" style="object-fit: contain;" ref="imageRef" @load="PerspCrop.onImageLoad" />
+
+                    <!-- svg -->
                     <svg class="mask-layer position-absolute" :style="svgStyle"
-                        :viewBox="`0 0 ${displayArea.width} ${displayArea.height}`" @pointerdown="onMaskPointerDown"
-                        @pointermove="onMaskPointerMove" @pointerup="onMaskPointerUp">
+                        :viewBox="`0 0 ${displayArea.width} ${displayArea.height}`" @pointerdown="PerspCrop.onMaskPointerDown"
+                        @pointermove="PerspCrop.onMaskPointerMove" @pointerup="PerspCrop.onMaskPointerUp" v-if="Persp.cropCurrentImage?.value">
 
                         <defs>
                             <mask id="selection-mask">
@@ -49,43 +47,38 @@
 
                         <!-- 角点 -->
                         <circle v-for="(point, index) in displayPoints" :key="index" :cx="point.x" :cy="point.y" r="6"
-                            fill="white" @pointerdown="(e) => onCornerPointerDown(e, index)" class="handle-point" />
+                            fill="white" @pointerdown="(e) => PerspCrop.onCornerPointerDown(e, index)" class="handle-point" />
 
                         <!-- 边中点 -->
                         <rect v-for="(midPoint, index) in displayMidPoints" :key="'mid-' + index" :x="midPoint.x - 12.5"
                             :y="midPoint.y - 5" width="25" height="5" fill="white"
-                            @pointerdown="(e) => onMidPointPointerDown(e, index)" class="handle-point"
+                            @pointerdown="(e) => PerspCrop.onMidPointPointerDown(e, index)" class="handle-point"
                             :transform="`rotate(${midPoint.angle}, ${midPoint.x}, ${midPoint.y})`" />
                     </svg>
                 </div>
             </div>
 
             <!-- 编辑器主操作栏 -->
-            <v-sheet class="pt-2" v-if="editorMode === 'edit'">
+            <v-sheet class="pt-2" v-if="Editor.currentEditorMode.value === 'edit'">
 
-                <!-- swiper控制 -->
-                <div class="text-center pb-2" v-if="imageList.length > 1">
-                    <v-btn icon="mdi-chevron-left" size="x-small"
-                        @click="() => swiperInstance['slidePrev'].slidePrev()" />
-                    <span class="mx-2">{{ swiperslideIn + 1 }}/{{ imageList.length }}</span>
-                    <v-btn icon="mdi-chevron-right" size="x-small"
-                        @click="() => swiperInstance['slideNext'].slideNext()" />
+                <!-- swiper 控制按钮 -->
+                <div class="text-center pb-1" v-if="Editor.imageList.value.length > 1">
+                    <v-btn icon="mdi-chevron-left" size="28px" @click="Editor.swiperInstance.value?.slidePrev()" />
+                    <span class="mx-2">{{ Editor.swiperslideIn.value + 1 }} / {{ Editor.imageList.value.length }}</span>
+                    <v-btn icon="mdi-chevron-right" size="28px" @click="Editor.swiperInstance.value?.slideNext()" />
                 </div>
 
                 <!-- 滤镜列表 -->
-                <v-item-group v-model="selectedFilter" mandatory>
-                    <v-row class="flex-nowrap overflow-x-auto pr-4 pb-1 pl-5 pr-8">
-                        <v-col cols="3" md="2" lg="2" v-for="(f, index) in filterList" :key="index"
-                            class="pl-3 pr-0 pt-4 pb-4">
+                <v-item-group v-model="Filter.currentFilter.value" mandatory>
+                    <v-row class="flex-nowrap overflow-x-auto pb-1 pl-5 pr-8">
+                        <v-col cols="3" sm="2" md="2" lg="1" v-for="(f, index) in Filter.filterList.value" :key="index"
+                            class="pl-3 pr-0 pt-4 pb-2">
                             <v-item v-slot="{ isSelected, toggle }">
                                 <v-card :elevation="isSelected ? 8 : 2" :class="{ 'border-primary': isSelected }"
                                     @click="toggle" :ripple="true">
                                     <v-img :src="f.cover" aspect-ratio="1" cover>
-                                        <v-card-subtitle
-                                            class="position-absolute bottom-0 d-inline-block text-caption w-100 text-center pt-1"
-                                            style="background: rgba(0,0,0,0.7);">
-                                            <p>{{ f.name }}</p>
-                                        </v-card-subtitle>
+                                        <p style="background: rgba(0,0,0,0.6);" class=" position-absolute bottom-0
+                                            d-inline-block text-caption w-100 text-center">{{ f.name }}</p>
                                     </v-img>
                                 </v-card>
                             </v-item>
@@ -93,72 +86,46 @@
                     </v-row>
                 </v-item-group>
 
-                <!-- 按钮栏 -->
-                <div class="d-flex justify-space-between align-center pa-3">
+                <!-- main 按钮栏 -->
+                <div class="d-flex justify-space-between align-center pa-1 pl-3">
                     <v-btn prepend-icon="mdi-crop-free" variant="text" size="small" stacked text="矫正"
-                        @click="editorModeChange('crop', 'crop-enter')" />
-                    <v-btn prepend-icon="mdi-pen" variant="text" size="small" stacked text="水印" />
+                        @click="Persp.enter()" />
                     <v-spacer />
-                    <v-btn prepend-icon="mdi-check" text="保存全部" @click="saveAllImages" />
+                    <v-btn class="mr-3" prepend-icon="mdi-check" text="保存全部" @click="Editor.saveImages()" />
                 </div>
             </v-sheet>
 
             <!-- 矫正 -->
-            <v-sheet class="py-2" v-if="editorMode === 'crop'">
+            <v-sheet class="py-2" v-if="Editor.currentEditorMode.value === 'persp'">
                 <div class="d-flex justify-center align-center mx-5 my-2">
-                    <v-btn icon="mdi-close" size="large" @click="editorModeChange('edit', 'crop-exit')" />
+                    <v-btn icon="mdi-close" size="large" @click="Persp.cancel()" />
                     <v-spacer />
-                    <v-btn prepend-icon="mdi-rotate-left" variant="text" size="x-small" text="左旋转" stacked />
-                    <v-btn prepend-icon="mdi-rotate-right" variant="text" size="x-small" text="右旋转" stacked />
-                    <v-btn prepend-icon="mdi-selection-search" variant="text" size="x-small" text="Ai框选" stacked />
-                    <v-btn prepend-icon="mdi-undo" variant="text" size="x-small" text="重置框选" stacked />
+                    <v-btn prepend-icon="mdi-rotate-left" variant="text" size="small" text="左旋转" stacked />
+                    <v-btn prepend-icon="mdi-rotate-right" variant="text" size="small" text="右旋转" stacked />
+                    <v-btn prepend-icon="mdi-selection-search" variant="text" size="small" text="Ai框选" stacked />
                     <v-spacer />
-                    <v-btn icon="mdi-check" size="large" @click="editorModeChange('edit', 'crop-confirm')" />
+                    <v-btn icon="mdi-check" size="large" @click="Persp.confirm()" />
                 </div>
             </v-sheet>
         </v-main>
-        <LeavePopup :effect="computedShouldShowLeavePopup" :onBeforeLeave="handleBeforeLeave" />
+
+        <leave-popup :leave="true" :dialog="Editor.currentEditorMode.value === 'edit'"
+            @before-leave="Editor.onBeforeLeave" />
     </v-app>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted, ref, computed } from 'vue';
-import router from '@/router';
+import { onMounted, onUnmounted, computed } from 'vue'
+import leavePopup from '@/components/leavePopup.vue'
 
-import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper';
+import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper'
 import '@zebra-ui/swiper/index.scss'
 
-import LeavePopup from '@/components/leavePopup.vue';
+import * as Editor from './ts/editor'
+import * as Filter from './ts/editor-filter'
+import * as Persp from './ts/editor-persp'
+import * as PerspCrop from './ts/editor-persp-crop'
 
-import { useEditor } from '@/views/ocr/ts/editor';
-import { useEditorCrop } from '@/views/ocr/ts/editor-crop';
-import { useEditorFilter } from '@/views/ocr/ts/editor-filter';
-
-import { saveBlobUrlToFile } from '@/utils/fileService';
-import { BaseDirectory } from '@tauri-apps/plugin-fs';
-import { useSnackbar } from '@/components/global/snackbarService';
-
-// 控制LeavePopup是否显示确认对话框
-const shouldShowLeavePopup = ref(true);
-
-// 计算是否应该显示LeavePopup确认对话框
-const computedShouldShowLeavePopup = computed(() => {
-    return shouldShowLeavePopup.value && editorMode.value === 'edit';
-});
-
-// 编辑器通用功能
-const {
-    editorMode,
-    imageList,
-    swiperInstance,
-    swiperslideIn,
-    currentImage,
-    editorModeChange: baseEditorModeChange,
-    onSwiper,
-    onSlideChange: baseOnSlideChange
-} = useEditor();
-
-// 透视矫正功能
 const {
     containerRef,
     imageContainerRef,
@@ -168,117 +135,22 @@ const {
     displayPoints,
     displayMidPoints,
     selectionPath,
-    onImageLoad,
-    onCornerPointerDown,
-    onMidPointPointerDown,
-    onMaskPointerDown,
-    onMaskPointerUp,
-    onMaskPointerMove,
-    handleCropModeChange
-} = useEditorCrop(imageList, swiperslideIn, currentImage, editorMode);
+} = PerspCrop
 
-// 滤镜功能
-const {
-    selectedFilter,
-    filterList,
-    syncFilterWithImage,
-    resetFilterToOriginal,
-    cleanupFilterResources
-} = useEditorFilter(imageList, swiperslideIn);
+onMounted(() => {
+    Editor.imageList.value = JSON.parse(history.state.images) || []
+    console.log(Editor.imageList.value)
+    PerspCrop.mount()
+})
 
-// 编辑模式切换
-const editorModeChange = (toMode: any, event?: string) => {
-    handleCropModeChange(toMode, event);
-
-    if (event === 'crop-confirm') {
-        resetFilterToOriginal();
-    }
-
-    baseEditorModeChange(toMode, event);
-};
-
-// swiper滑动切换事件处理
-const onSlideChange = async (swiper: any) => {
-    baseOnSlideChange(swiper);
-    await syncFilterWithImage();
-};
-
-// 生成文件夹路径
-const generateFolderPath = () => {
-    const now = new Date();
-    const dateStr = now.getFullYear().toString() +
-        (now.getMonth() + 1).toString().padStart(2, '0') +
-        now.getDate().toString().padStart(2, '0');
-    const timestampSuffix = Date.now().toString().slice(-6);
-    return `user/file/扫描文件_${dateStr}_${timestampSuffix}`;
-};
-
-// 保存全部图片
-const saveAllImages = async () => {
-    const folderPath = generateFolderPath();
-    const totalImages = imageList.value.length;
-    console.log(`开始保存 ${totalImages} 张图片到: ${folderPath}`);
-    try {
-        for (let i = 0; i < totalImages; i++) {
-            const image = imageList.value[i];
-            const imageSrc = image.filteredSrc || image.processedSrc || image.src; // 优先使用filteredSrc，然后是processedSrc，最后是原图
-            if (!imageSrc) continue;
-
-            const fileName = `${Date.now() + i}.png`;
-            await saveBlobUrlToFile(imageSrc, fileName, folderPath, BaseDirectory.AppData);
-
-            if (i < totalImages - 1) {
-                await new Promise(resolve => setTimeout(resolve, 5));
-            }
-        }
-        console.log('所有图片保存完成');
-
-        // 保存成功后自动返回到main页面
-        useSnackbar().success('保存成功')
-        shouldShowLeavePopup.value = false;
-        setTimeout(() => {
-            router.go(-2)
-        }, 800);
-
-    } catch (error) {
-        console.error('保存图片时发生错误:', error);
-        useSnackbar().error('保存图片时发生错误'+error)
-    }
-};
-
-// 处理浏览器物理返回键的闭包
-const handleBeforeLeave = (): boolean => {
-    // 如果shouldShowLeavePopup为false（保存后自动返回），直接允许离开
-    if (!shouldShowLeavePopup.value) {
-        cleanupFilterResources();
-        return true;
-    }
-
-    // 如果不在edit模式，先切换到edit模式
-    if (editorMode.value !== 'edit') {
-        editorModeChange('edit', 'exit');
-        return false; // 阻止路由离开
-    }
-    // 在edit模式下，允许继续路由离开流程
-    // 退出页面时清理滤镜资源
-    cleanupFilterResources();
-    return true;
-};
-
-// 组件卸载时清理滤镜资源
 onUnmounted(() => {
-    cleanupFilterResources();
-});
-
+    PerspCrop.unmount()
+})
 </script>
 
 <style scoped>
 .border-primary {
     border: 2px solid rgb(var(--v-theme-primary));
-}
-
-.main-no-scroll {
-    height: 100vh;
 }
 
 .mask-layer,

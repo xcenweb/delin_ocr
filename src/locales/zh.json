@@ -1,14 +1,16 @@
 {
-    "identity_card": "身份证",
-    "business_license": "营业执照",
-    "bank_card": "银行卡",
-    "student_card": "学生证",
-    "education_certificate": "学历证书",
-    "professional": "职业资格证",
-    "invoice": "发票",
-    "document": "文档",
-    "contract": "合同",
-    "report": "报告",
-    "resume": "简历",
-    "other": "其他"
+    "tags": {
+        "identity_card": "身份证",
+        "business_license": "营业执照",
+        "bank_card": "银行卡",
+        "student_card": "学生证",
+        "education_certificate": "学历证书",
+        "professional": "职业资格证",
+        "invoice": "发票",
+        "document": "文档",
+        "contract": "合同",
+        "report": "报告",
+        "resume": "简历",
+        "other": "其他"
+    }
 }

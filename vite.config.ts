@@ -12,7 +12,7 @@ export default defineConfig(async (): Promise<UserConfig> => {
     plugins: [
       vue(),
       vueDevTools(),
-      vuetify({ autoImport: { labs: true } })
+      vuetify({ autoImport: { labs: true } }),
     ],
 
     worker: {

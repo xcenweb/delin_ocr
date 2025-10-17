@@ -2,9 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- AndroidTV support -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
-    <!-- 摄像头依赖 -->
-    <uses-feature android:name="android.hardware.camera"/>
-    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
 
     <!-- 基础权限 -->
     <uses-permission android:name="android.permission.INTERNET" />

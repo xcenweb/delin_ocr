@@ -1,314 +1,418 @@
-import { ref, watch, type Ref } from 'vue';
-import type { PhotoItem } from '@/views/ocr/ts/camera';
+import { ref, computed } from 'vue'
+import * as Editor from './editor'
+import { useSnackbar } from '@/components/global/snackbarService'
 
 /**
- * 图像滤镜处理工具类
+ * 滤镜列表
  */
-class ImageFilterProcessor {
-    /**
-     * 应用滤镜到图片
-     * @param imageSrc 图片源URL
-     * @param filterAlias 滤镜别名
-     * @returns Promise<string> 处理后的blob URL
-     */
-    static async applyFilter(imageSrc: string, filterAlias: string): Promise<string> {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
+const filterList = ref([
+    { id: 'original', name: '原图', cover: '/images/editor/filter.png' },
+    { id: 'enhance', name: '增强', cover: '/images/editor/filter.png' },
+    { id: 'sharpening', name: '锐化', cover: '/images/editor/filter.png' },
+    { id: 'mono', name: '黑白', cover: '/images/editor/filter.png' },
+    { id: 'scan', name: '扫描', cover: '/images/editor/filter.png' },
+    { id: 'remshad', name: '去阴影', cover: '/images/editor/filter.png' }
+])
 
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d')!;
-
-                canvas.width = img.width;
-                canvas.height = img.height;
-
-                // 绘制原图
-                ctx.drawImage(img, 0, 0);
-
-                // 应用滤镜
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const filteredData = this.processImageData(imageData, filterAlias);
-                ctx.putImageData(filteredData, 0, 0);
-
-                // 转换为blob URL
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        resolve(url);
-                    } else {
-                        reject(new Error('Failed to create blob'));
-                    }
-                }, 'image/png');
-            };
-
-            img.onerror = () => reject(new Error('Failed to load image'));
-            img.src = imageSrc;
-        });
+/**
+ * 当前图片所使用的滤镜
+ */
+const currentFilter = computed({
+    get: () => {
+        return filterList.value.findIndex((item) => item.id === Editor.currentImage.value?.use_filter)
+    },
+    set: async (value) => {
+        // 设置滤镜
+        useSnackbar().info('正在应用滤镜...', true)
+        if (await applyFilterToImage(Editor.currentImage.value.persped_src, filterList.value[value].id)) {
+            Editor.currentImage.value.use_filter = filterList.value[value].id
+            useSnackbar().success('滤镜应用成功！')
+        } else {
+            useSnackbar().error('滤镜应用失败！')
+            Editor.currentImage.value.use_filter = 'original'
+        }
     }
+})
 
-    /**
-     * 处理图像数据应用滤镜效果
-     * @param imageData 原始图像数据
-     * @param filterAlias 滤镜别名
-     * @returns 处理后的图像数据
-     */
-    private static processImageData(imageData: ImageData, filterAlias: string): ImageData {
-        const data = imageData.data;
-        const newImageData = new ImageData(new Uint8ClampedArray(data), imageData.width, imageData.height);
-        const newData = newImageData.data;
+/**
+ * 为图片应用滤镜
+ * @param src 图片bloburl
+ * @param filterId 滤镜名
+ * @returns
+ */
+const applyFilterToImage = async (src: string, filterId: string) => {
+    try {
+        // 获取当前图片
+        const currentImage = Editor.currentImage.value;
+        if (!currentImage) return false;
 
-        switch (filterAlias) {
+        // 如果之前有滤镜结果，先释放
+        if (currentImage.filtered_src) {
+            URL.revokeObjectURL(currentImage.filtered_src);
+            currentImage.filtered_src = undefined;
+        }
+
+        switch (filterId) {
             case 'original':
-                // 原图，不做处理
-                break;
-
+                // 原图不需要处理
+                break
             case 'enhance':
-                // 增强：提高对比度和饱和度
-                for (let i = 0; i < newData.length; i += 4) {
-                    // 对比度增强
-                    newData[i] = Math.min(255, (newData[i] - 128) * 1.2 + 128);     // R
-                    newData[i + 1] = Math.min(255, (newData[i + 1] - 128) * 1.2 + 128); // G
-                    newData[i + 2] = Math.min(255, (newData[i + 2] - 128) * 1.2 + 128); // B
-                }
-                break;
-
+                // 增强：提高对比度
+                currentImage.filtered_src = await applyEnhanceFilter(src);
+                break
             case 'sharpening':
-                // 锐化：使用卷积核进行锐化处理
-                this.applySharpenFilter(newImageData);
-                break;
-
+                // 锐化处理
+                currentImage.filtered_src = await applySharpenFilter(src);
+                break
             case 'mono':
-                // 黑白：转换为灰度
-                for (let i = 0; i < newData.length; i += 4) {
-                    const gray = Math.round(0.299 * newData[i] + 0.587 * newData[i + 1] + 0.114 * newData[i + 2]);
-                    newData[i] = gray;     // R
-                    newData[i + 1] = gray; // G
-                    newData[i + 2] = gray; // B
-                }
-                break;
-
-            case 'moire-pattern':
-                // 去摩尔纹：轻微模糊处理
-                this.applyAntiMoireFilter(newImageData);
-                break;
-
+                // 黑白效果
+                currentImage.filtered_src = await applyMonoFilter(src);
+                break
+            case 'scan':
+                // 扫描效果：高对比度凸显文字
+                currentImage.filtered_src = await applyScanFilter(src);
+                break
+            case 'remshad':
+                // 去阴影：使用更有效的算法
+                currentImage.filtered_src = await applyRemshadFilter(src);
+                break
             default:
-                console.warn(`Unknown filter: ${filterAlias}`);
+                return false
         }
 
-        return newImageData;
+        // 如果是原图，确保filtered_src为undefined
+        if (filterId === 'original') {
+            currentImage.filtered_src = undefined;
+        }
+
+        return true
+    } catch (error) {
+        console.error('滤镜应用失败:', error);
+        return false
     }
-
-    /**
-     * 应用锐化滤镜
-     */
-    private static applySharpenFilter(imageData: ImageData): void {
-        const data = imageData.data;
-        const width = imageData.width;
-        const height = imageData.height;
-        const output = new Uint8ClampedArray(data);
-
-        // 锐化卷积核
-        const kernel = [
-            0, -1, 0,
-            -1, 5, -1,
-            0, -1, 0
-        ];
-
-        for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
-                for (let c = 0; c < 3; c++) { // RGB通道
-                    let sum = 0;
-                    for (let ky = -1; ky <= 1; ky++) {
-                        for (let kx = -1; kx <= 1; kx++) {
-                            const idx = ((y + ky) * width + (x + kx)) * 4 + c;
-                            sum += data[idx] * kernel[(ky + 1) * 3 + (kx + 1)];
-                        }
-                    }
-                    const outputIdx = (y * width + x) * 4 + c;
-                    output[outputIdx] = Math.max(0, Math.min(255, sum));
-                }
-            }
-        }
-
-        // 复制处理后的数据
-        for (let i = 0; i < data.length; i++) {
-            data[i] = output[i];
-        }
-    }
-
-    /**
-     * 应用去摩尔纹滤镜
-     */
-    private static applyAntiMoireFilter(imageData: ImageData): void {
-        const data = imageData.data;
-        const width = imageData.width;
-        const height = imageData.height;
-        const output = new Uint8ClampedArray(data);
-
-        // 轻微高斯模糊
-        const kernel = [
-            1, 2, 1,
-            2, 4, 2,
-            1, 2, 1
-        ];
-        const kernelSum = 16;
-
-        for (let y = 1; y < height - 1; y++) {
-            for (let x = 1; x < width - 1; x++) {
-                for (let c = 0; c < 3; c++) { // RGB通道
-                    let sum = 0;
-                    for (let ky = -1; ky <= 1; ky++) {
-                        for (let kx = -1; kx <= 1; kx++) {
-                            const idx = ((y + ky) * width + (x + kx)) * 4 + c;
-                            sum += data[idx] * kernel[(ky + 1) * 3 + (kx + 1)];
-                        }
-                    }
-                    const outputIdx = (y * width + x) * 4 + c;
-                    output[outputIdx] = Math.round(sum / kernelSum);
-                }
-            }
-        }
-
-        // 复制处理后的数据
-        for (let i = 0; i < data.length; i++) {
-            data[i] = output[i];
-        }
-    }
-}
-
-/** 滤镜配置接口 */
-interface FilterConfig {
-    name: string;
-    alias: string;
-    cover: string;
 }
 
 /**
- * 滤镜功能组合式函数
- * @param imageList 图片列表
- * @param swiperslideIn 当前滑块索引
- * @returns 滤镜相关的响应式数据和方法
+ * 应用增强滤镜
+ * @param src 图片源
+ * @returns 处理后的Blob URL
  */
-export function useEditorFilter(
-    imageList: Ref<PhotoItem[]>,
-    swiperslideIn: Ref<number>
-) {
-    /** 当前选中的滤镜索引 */
-    const selectedFilter = ref(0);
+const applyEnhanceFilter = async (src: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return reject(new Error('Canvas 上下文错误'));
 
-    /** 支持的滤镜配置列表 */
-    const filterList = ref<FilterConfig[]>([
-        { name: '原图', alias: 'original', cover: '/images/editor/filter.png' },
-        { name: '增强', alias: 'enhance', cover: '/images/editor/filter.png' },
-        { name: '锐化', alias: 'sharpening', cover: '/images/editor/filter.png' },
-        { name: '黑白', alias: 'mono', cover: '/images/editor/filter.png' },
-        { name: '去摩尔纹', alias: 'moire-pattern', cover: '/images/editor/filter.png' }
-    ]);
+            // 保持原始尺寸
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
 
-    /**
-     * 监听滤镜选择变化，同步到当前图片
-     */
-    watch(
-        () => selectedFilter.value,
-        async (index) => {
-            const currentImage = imageList.value[swiperslideIn.value];
-            const newFilter = filterList.value[index]?.alias;
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
 
-            if (currentImage && newFilter && currentImage.filter !== newFilter) {
-                console.log('滤镜切换:', {
-                    imageIndex: swiperslideIn.value,
-                    from: currentImage.filter,
-                    to: newFilter
-                });
+            // 增强对比度 - 优化算法性能
+            const len = data.length;
+            for (let i = 0; i < len; i += 4) {
+                // 对比度增强
+                data[i] = Math.min(255, (data[i] - 128) * 1.2 + 128);     // R
+                data[i + 1] = Math.min(255, (data[i + 1] - 128) * 1.2 + 128); // G
+                data[i + 2] = Math.min(255, (data[i + 2] - 128) * 1.2 + 128); // B
+            }
 
-                // 清理旧的filteredSrc
-                if (currentImage.filteredSrc) {
-                    URL.revokeObjectURL(currentImage.filteredSrc);
-                    currentImage.filteredSrc = undefined;
+            ctx.putImageData(imageData, 0, 0);
+
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(URL.createObjectURL(blob));
+                } else {
+                    reject(new Error('无法创建Blob'));
                 }
+            }, 'image/png');
+        };
+        img.onerror = () => reject(new Error('图片加载失败'));
+        img.src = src;
+    });
+};
 
-                // 更新滤镜类型
-                currentImage.filter = newFilter;
+/**
+ * 应用锐化滤镜
+ * @param src 图片源
+ * @returns 处理后的Blob URL
+ */
+const applySharpenFilter = async (src: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return reject(new Error('Canvas 上下文错误'));
 
-                // 应用新滤镜
-                await applyFilterToImage(currentImage, newFilter);
-            }
-        }
-    );
+            // 保持原始尺寸
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
 
-    /**
-     * 应用滤镜到指定图片
-     * @param image 图片对象
-     * @param filterAlias 滤镜别名
-     */
-    const applyFilterToImage = async (image: PhotoItem, filterAlias: string) => {
-        try {
-            // 获取源图片URL（优先使用processedSrc，否则使用src）
-            const sourceSrc = image.processedSrc || image.src;
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const output = new Uint8ClampedArray(data);
 
-            if (filterAlias === 'original') {
-                // 原图滤镜，清理filteredSrc
-                if (image.filteredSrc) {
-                    URL.revokeObjectURL(image.filteredSrc);
-                    image.filteredSrc = undefined;
+            // 锐化卷积核
+            const kernel = [
+                0, -1, 0,
+                -1, 5, -1,
+                0, -1, 0
+            ];
+
+            // 优化：只处理内部像素，避免边界检查
+            for (let y = 1; y < height - 1; y++) {
+                const rowOffset = y * width;
+                const prevRowOffset = (y - 1) * width;
+                const nextRowOffset = (y + 1) * width;
+
+                for (let x = 1; x < width - 1; x++) {
+                    for (let c = 0; c < 3; c++) { // RGB通道
+                        let sum = 0;
+                        const idx = (rowOffset + x) * 4 + c;
+
+                        // 优化的卷积计算
+                        sum += data[(prevRowOffset + x - 1) * 4 + c] * kernel[0];
+                        sum += data[(prevRowOffset + x) * 4 + c] * kernel[1];
+                        sum += data[(prevRowOffset + x + 1) * 4 + c] * kernel[2];
+                        sum += data[(rowOffset + x - 1) * 4 + c] * kernel[3];
+                        sum += data[idx] * kernel[4];
+                        sum += data[(rowOffset + x + 1) * 4 + c] * kernel[5];
+                        sum += data[(nextRowOffset + x - 1) * 4 + c] * kernel[6];
+                        sum += data[(nextRowOffset + x) * 4 + c] * kernel[7];
+                        sum += data[(nextRowOffset + x + 1) * 4 + c] * kernel[8];
+
+                        output[idx] = Math.max(0, Math.min(255, sum));
+                    }
                 }
-            } else {
-                // 应用滤镜处理
-                const filteredUrl = await ImageFilterProcessor.applyFilter(sourceSrc, filterAlias);
-                image.filteredSrc = filteredUrl;
             }
-        } catch (error) {
-            console.error('应用滤镜失败:', error);
-        }
-    };
 
-    /**
-     * 同步滤镜选择与当前图片的滤镜状态
-     */
-    const syncFilterWithImage = async () => {
-        const currentImage = imageList.value[swiperslideIn.value];
-        if (!currentImage) return;
-
-        const filterIndex = filterList.value.findIndex(f => f.alias === currentImage.filter);
-        selectedFilter.value = filterIndex >= 0 ? filterIndex : 0;
-
-        // 如果当前图片没有应用滤镜，应用当前选中的滤镜
-        const currentFilter = currentImage.filter || 'original';
-        if (!currentImage.filteredSrc && currentFilter !== 'original') {
-            await applyFilterToImage(currentImage, currentFilter);
-        }
-    };
-
-    /**
-     * 重置当前图片滤镜为原图
-     */
-    const resetFilterToOriginal = () => {
-        selectedFilter.value = 0;
-    };
-
-    /**
-     * 清理所有图片的滤镜资源
-     */
-    const cleanupFilterResources = () => {
-        imageList.value.forEach(image => {
-            if (image.filteredSrc) {
-                URL.revokeObjectURL(image.filteredSrc);
-                image.filteredSrc = undefined;
+            // 复制处理后的数据
+            for (let i = 0; i < data.length; i++) {
+                data[i] = output[i];
             }
-        });
-    };
 
-    return {
-        // 响应式数据
-        selectedFilter,
-        filterList,
+            ctx.putImageData(imageData, 0, 0);
 
-        // 方法
-        applyFilterToImage,
-        syncFilterWithImage,
-        resetFilterToOriginal,
-        cleanupFilterResources
-    };
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(URL.createObjectURL(blob));
+                } else {
+                    reject(new Error('无法创建Blob'));
+                }
+            }, 'image/png');
+        };
+        img.onerror = () => reject(new Error('图片加载失败'));
+        img.src = src;
+    });
+};
+
+/**
+ * 应用黑白滤镜
+ * @param src 图片源
+ * @returns 处理后的Blob URL
+ */
+const applyMonoFilter = async (src: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return reject(new Error('Canvas 上下文错误'));
+
+            // 保持原始尺寸
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // 转换为灰度 - 优化算法性能
+            const len = data.length;
+            for (let i = 0; i < len; i += 4) {
+                const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+                data[i] = gray;     // R
+                data[i + 1] = gray; // G
+                data[i + 2] = gray; // B
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(URL.createObjectURL(blob));
+                } else {
+                    reject(new Error('无法创建Blob'));
+                }
+            }, 'image/png');
+        };
+        img.onerror = () => reject(new Error('图片加载失败'));
+        img.src = src;
+    });
+};
+
+/**
+ * 应用扫描滤镜（高对比度凸显文字）
+ * @param src 图片源
+ * @returns 处理后的Blob URL
+ */
+const applyScanFilter = async (src: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return reject(new Error('Canvas 上下文错误'));
+
+            // 保持原始尺寸
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // 扫描效果：高对比度 + 二值化处理
+            const len = data.length;
+            for (let i = 0; i < len; i += 4) {
+                // 先转为灰度
+                const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+
+                // 高对比度处理
+                let enhancedGray = (gray - 128) * 1.8 + 128; // 提高对比度增强因子
+
+                // 限制在0-255范围内
+                enhancedGray = Math.max(0, Math.min(255, enhancedGray));
+
+                // 二值化处理，增强文字与背景对比
+                const binaryGray = enhancedGray > 100 ? 255 : 0; // 调整阈值使效果更明显
+
+                data[i] = binaryGray;     // R
+                data[i + 1] = binaryGray; // G
+                data[i + 2] = binaryGray; // B
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(URL.createObjectURL(blob));
+                } else {
+                    reject(new Error('无法创建Blob'));
+                }
+            }, 'image/png');
+        };
+        img.onerror = () => reject(new Error('图片加载失败'));
+        img.src = src;
+    });
+};
+
+/**
+ * 应用去阴影滤镜
+ * @param src 图片源
+ * @returns 处理后的Blob URL
+ */
+const applyRemshadFilter = async (src: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return reject(new Error('Canvas 上下文错误'));
+
+            // 保持原始尺寸
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+
+            // 去阴影算法：优化版本，使用更高效的局部处理
+            const radius = 3; // 减小半径以提高性能
+            const output = new Uint8ClampedArray(data.length);
+
+            // 优化：使用更高效的算法，只处理必要的像素
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+
+                    // 简化版去阴影算法：只在必要时进行局部处理
+                    if (data[idx] < 100 || data[idx + 1] < 100 || data[idx + 2] < 100) {
+                        // 对暗区进行处理
+                        let minR = 255, minG = 255, minB = 255;
+
+                        // 限制搜索范围以提高性能
+                        const startY = Math.max(0, y - radius);
+                        const endY = Math.min(height - 1, y + radius);
+                        const startX = Math.max(0, x - radius);
+                        const endX = Math.min(width - 1, x + radius);
+
+                        for (let ky = startY; ky <= endY; ky++) {
+                            for (let kx = startX; kx <= endX; kx++) {
+                                const nIdx = (ky * width + kx) * 4;
+                                minR = Math.min(minR, data[nIdx]);
+                                minG = Math.min(minG, data[nIdx + 1]);
+                                minB = Math.min(minB, data[nIdx + 2]);
+                            }
+                        }
+
+                        // 基于局部最小值调整当前像素
+                        const adjustR = Math.min(255, data[idx] + (128 - minR) * 0.5);
+                        const adjustG = Math.min(255, data[idx + 1] + (128 - minG) * 0.5);
+                        const adjustB = Math.min(255, data[idx + 2] + (128 - minB) * 0.5);
+
+                        output[idx] = adjustR;
+                        output[idx + 1] = adjustG;
+                        output[idx + 2] = adjustB;
+                        output[idx + 3] = data[idx + 3]; // Alpha 保持不变
+                    } else {
+                        // 亮区保持不变
+                        output[idx] = data[idx];
+                        output[idx + 1] = data[idx + 1];
+                        output[idx + 2] = data[idx + 2];
+                        output[idx + 3] = data[idx + 3];
+                    }
+                }
+            }
+
+            // 复制处理后的数据
+            for (let i = 0; i < data.length; i++) {
+                data[i] = output[i];
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    resolve(URL.createObjectURL(blob));
+                } else {
+                    reject(new Error('无法创建Blob'));
+                }
+            }, 'image/png');
+        };
+        img.onerror = () => reject(new Error('图片加载失败'));
+        img.src = src;
+    });
+}
+
+export {
+    currentFilter,
+    filterList,
 }

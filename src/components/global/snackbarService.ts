@@ -28,7 +28,7 @@ class SnackbarService {
   public color = ref<string>('primary')
 
   /** 超时时间 */
-  public timeout = ref(3500)
+  public timeout = ref(3000)
 
   /** 是否显示进度圆圈 */
   public showProgress = ref(false)

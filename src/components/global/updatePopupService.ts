@@ -43,11 +43,13 @@ class UpdateService {
 
     /**
      * 检测更新
+     * @param silent 是否静默检查（不显示snackbar）
      */
-    async check() {
+    async check(silent: boolean = false) {
         try {
-            useSnackbar().info('正在检查更新...', true)
-
+            if (!silent) {
+                useSnackbar().info('正在检查更新...', true)
+            }
             const response = await fetch('http://ocr.yuncen.top:223/', { method: 'GET' })
             const data = await response.json()
 
@@ -56,15 +58,18 @@ class UpdateService {
             this.notes = data.body.trim()
             this.link = 'https://github.com/xcenweb/delin_ocr/releases/latest'
 
-            if (this.newVersion > this.currentVersion) {
+            if (this.newVersion == this.currentVersion) {
                 this.show()
                 useSnackbar().hide()
             } else {
-                useSnackbar().success('当前为最新版本')
+                if (!silent) {
+                    useSnackbar().success('当前为最新版本')
+                }
             }
-
         } catch (error) {
-            useSnackbar().error('检测更新失败！')
+            if (!silent) {
+                useSnackbar().error('检测更新失败！')
+            }
         }
     }
 

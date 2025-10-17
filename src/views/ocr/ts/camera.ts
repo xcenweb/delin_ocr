@@ -1,148 +1,84 @@
-import { ref } from 'vue';
-import { getCurrentDetectedCorners, getDefaultCorners, perspectiveTransform, displayArea, type Point } from './camera-detection';
+// 摄像头、闪光灯控制
+
+import { ref } from 'vue'
+import { useDevicesList, useUserMedia } from '@vueuse/core'
+import * as torch from '@sosweetham/tauri-plugin-torch-api'
+
+const isTorchOn = ref(false)
 
 /**
- * 照片项接口
+ * Toggle torch on/off
  */
-interface PhotoItem {
-    /** 图片blobURL */
-    src: string;
-    /** 校正后的图片blobURL */
-    processedSrc?: string;
-    /** 当前使用的滤镜alias */
-    filter?: string;
-    /** 应用滤镜后的图片blobURL */
-    filteredSrc?: string;
-    /** 边框四角点坐标 [左上, 右上, 右下, 左下] */
-    points: Point[];
+const toggleTorch = async () => {
+    try {
+        await torch.toggle(!isTorchOn.value)
+        isTorchOn.value = !isTorchOn.value
+    } catch (error) {
+        console.error('Failed to toggle torch:', error)
+    }
 }
 
 /**
- * 已拍摄的照片列表
+ * Setup canvas position and size based on video element
+ * @param videoElement - The video element
+ * @param overlayCanvas - The canvas element to position
  */
-const takedPhotos = ref<PhotoItem[]>([]);
+const setupCanvas = (videoElement: HTMLVideoElement, overlayCanvas: HTMLCanvasElement) => {
+    if (!videoElement || !overlayCanvas) return
 
-/**
- * 拍照模式
- * - single
- * - multiple
- */
-const takePhotoModel = ref('single');
+    // Get the actual display size and position of the video
+    const videoRect = videoElement.getBoundingClientRect()
+    const containerRect = videoElement.parentElement!.getBoundingClientRect()
 
-/**
- * 拍照模式选项
- */
-const takePhotoModelOptions = ref([
-    { text: '单张', value: 'single' },
-    { text: '多张', value: 'multiple' },
-]);
+    // Calculate the actual position and size of the video in the container
+    const scaleX = videoRect.width / videoElement.videoWidth
+    const scaleY = videoRect.height / videoElement.videoHeight
+    const scale = Math.min(scaleX, scaleY)
 
-/**
- * 视频元素
- */
-const videoElement = ref<HTMLVideoElement>();
+    const actualWidth = videoElement.videoWidth * scale
+    const actualHeight = videoElement.videoHeight * scale
 
-/**
- * 拍照并保存图片到列表
- */
-const takePhoto = () => {
-    const videoEl: any = videoElement.value
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    const offsetX = (containerRect.width - actualWidth) / 2
+    const offsetY = (containerRect.height - actualHeight) / 2
 
-    if (!ctx) return
+    // Set the position and size of the canvas
+    overlayCanvas.style.width = `${actualWidth}px`
+    overlayCanvas.style.height = `${actualHeight}px`
+    overlayCanvas.style.left = `${offsetX}px`
+    overlayCanvas.style.top = `${offsetY + 0.143}px`
 
-    canvas.width = videoEl.videoWidth
-    canvas.height = videoEl.videoHeight
-
-    // 绘制当前视频帧
-    ctx.drawImage(videoEl, 0, 0)
-
-    // 获取当前检测到的边框坐标，如果没有则使用默认框
-    const detectedCorners = getCurrentDetectedCorners()
-    const points = detectedCorners || getDefaultCorners()
-
-    // 获取原始图像数据用于透视变换
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-
-    // 将显示区域的坐标转换为视频坐标系
-    const { scaleX, scaleY } = displayArea.value
-    const videoPoints = points.map(point => ({
-        x: point.x / scaleX,
-        y: point.y / scaleY
-    }))
-
-    // 执行透视变换校正
-    const correctedImageData = perspectiveTransform(imageData, videoPoints)
-
-    // 生成原图blob
-    canvas.toBlob(blob => {
-        if (!blob) return
-
-        const url = URL.createObjectURL(blob)
-
-        // 如果透视变换成功，生成校正后的图片
-        if (correctedImageData) {
-            const correctedCanvas = document.createElement('canvas')
-            const correctedCtx = correctedCanvas.getContext('2d', { willReadFrequently: true })
-
-            if (correctedCtx) {
-                correctedCanvas.width = correctedImageData.width
-                correctedCanvas.height = correctedImageData.height
-
-                correctedCtx.imageSmoothingEnabled = false // 在文档校正结果上禁用图像平滑以保持文字清晰度FUCK
-                correctedCtx.putImageData(correctedImageData, 0, 0)
-
-                // 转换为blob URL
-                correctedCanvas.toBlob(correctedBlob => {
-                    if (correctedBlob) {
-                        const processedUrl = URL.createObjectURL(correctedBlob)
-
-                        const photoItem: PhotoItem = {
-                            src: url,
-                            processedSrc: processedUrl,
-                            points: [...videoPoints] // 保存视频坐标系的坐标
-                        }
-                        takedPhotos.value.push(photoItem)
-
-                        console.log('📸 原图大小:', canvas.width, 'x', canvas.height)
-                        console.log('📸 校正图大小:', correctedCanvas.width, 'x', correctedCanvas.height)
-                        console.log('📍 显示区域坐标:', points)
-                        console.log('📍 视频坐标系坐标:', videoPoints)
-                    }
-                }, 'image/png')
-            } else {
-                // 无法获取校正canvas上下文，只保存原图
-                const photoItem: PhotoItem = {
-                    src: url,
-                    points: [...videoPoints]
-                }
-                takedPhotos.value.push(photoItem)
-                console.warn('⚠️ 无法创建校正图片上下文，仅保存原图')
-            }
-        } else {
-            // 透视变换失败，只保存原图
-            const photoItem: PhotoItem = {
-                src: url,
-                points: [...videoPoints] // 保存视频坐标系的坐标
-            }
-            takedPhotos.value.push(photoItem)
-
-            console.log('📸 图片大小:', canvas.width, 'x', canvas.height)
-            console.log('📍 显示区域坐标:', points)
-            console.log('📍 视频坐标系坐标:', videoPoints)
-            console.warn('⚠️ 文档校正失败，仅保存原图')
-        }
-    }, 'image/png') // 改为PNG格式
+    // Set the actual drawing size of the canvas
+    overlayCanvas.width = videoElement.videoWidth
+    overlayCanvas.height = videoElement.videoHeight
 }
+
+
+/**
+ * Camera constraints
+ */
+const constraints = {
+    video: {
+        width: { ideal: 1920, max: 3840 },
+        height: { ideal: 1080, max: 2160 },
+        frameRate: { ideal: 30 },
+    } as MediaTrackConstraints,
+    audio: false,
+}
+const { videoInputs: cameras } = useDevicesList({
+    requestPermissions: true,
+    constraints: constraints,
+    onUpdated() {
+        constraints.video.deviceId = cameras.value.find(i => i.label.match(/back/i))?.deviceId || cameras.value[0]?.deviceId
+    },
+})
+const { stream, enabled, stop, start } = useUserMedia({ constraints })
 
 export {
-    type PhotoItem,
-
-    videoElement,
-    takedPhotos,
-    takePhotoModel,
-    takePhotoModelOptions,
-
-    takePhoto,
+    isTorchOn,
+    stream,
+    enabled,
+    stop,
+    start,
+    toggleTorch,
+    setupCanvas,
 }
