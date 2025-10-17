@@ -152,10 +152,33 @@ jobs:
         run: |
           npm run tauri build
 
+      - name: Debug - List bundle directory
+        run: |
+          find src-tauri/target -type d -name "bundle" | xargs -I {} sh -c 'echo "Bundle directory: {}" && ls -la "{}"'
+          find src-tauri/target -type d -name "dmg" | xargs -I {} sh -c 'echo "DMG directory: {}" && ls -la "{}"'
+          find src-tauri/target -name "*.dmg" -type f | xargs -I {} sh -c 'echo "Found DMG: {}"'
+
       - name: Find and rename DMG file
         id: rename-dmg
         run: |
-          DMG_PATH=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" -type f | head -1)
+          # Try multiple possible paths for the DMG file
+          DMG_PATH=$(find src-tauri/target -name "*.dmg" -type f | head -1)
+
+          # If not found, try the original path
+          if [ -z "$DMG_PATH" ]; then
+            DMG_PATH=$(find src-tauri/target/release/bundle/dmg -name "*.dmg" -type f 2>/dev/null | head -1)
+          fi
+
+          # If still not found, exit with error
+          if [ -z "$DMG_PATH" ]; then
+            echo "Error: No DMG file found in any expected location"
+            echo "Contents of src-tauri/target:"
+            find src-tauri/target -type f -name "*.dmg" || true
+            echo "All files in src-tauri/target:"
+            find src-tauri/target -type f | head -20 || true
+            exit 1
+          fi
+
           NEW_NAME="Delin-${{ needs.prepare-release.outputs.version }}-macos.dmg"
           NEW_PATH="$(dirname $DMG_PATH)/$NEW_NAME"
           mv "$DMG_PATH" "$NEW_PATH"
