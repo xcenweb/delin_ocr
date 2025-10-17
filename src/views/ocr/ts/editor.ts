@@ -35,7 +35,10 @@ const onSlideChange = (swiper: any) => {
  * 保存编辑器中所有图片
  */
 const saveImages = () => {
-    alert(JSON.stringify(imageList.value))
+    useSnackbar().info('正在保存图片...', true)
+    imageList.value.forEach(item => {
+        console.log('保存：' + item.filtered_src)
+    })
     useSnackbar().success('保存成功')
 };
 

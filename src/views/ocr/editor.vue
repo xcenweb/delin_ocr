@@ -124,7 +124,7 @@ import '@zebra-ui/swiper/index.scss'
 import * as Editor from './ts/editor'
 import * as Filter from './ts/editor-filter'
 import * as Persp from './ts/editor-persp'
-import * as PerspCrop from './ts/editor-persp-crop'
+import * as PerspCrop from './ts/editor-perspCrop'
 
 const {
     containerRef,
