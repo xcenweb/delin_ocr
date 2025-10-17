@@ -1,10 +1,10 @@
 import { ref } from 'vue'
+import semver from 'semver'
 import { fetch } from '@tauri-apps/plugin-http'
 import { getVersion } from '@tauri-apps/api/app'
-import { type Platform, platform } from '@tauri-apps/plugin-os'
 import { useSnackbar } from './snackbarService'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import semver from 'semver'
+import { type Platform, platform } from '@tauri-apps/plugin-os'
 
 /**
  * 更新服务状态管理
@@ -29,7 +29,7 @@ class UpdateService {
     public link = ''
 
     /** 可更新到的版本渠道 */
-    public channel: 'official' | 'beta' | 'alpha' = 'alpha'
+    public channel: 'official' | 'beta' | 'alpha' = 'beta'
 
     /**
      * 显示更新弹窗

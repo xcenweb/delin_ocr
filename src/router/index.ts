@@ -60,10 +60,6 @@ const router = createRouter({
             component: () => import('@/views/test/path.vue')
         },
         {
-            path: '/test/ocr-worker',
-            component: () => import('@/views/test/ocr-worker.vue')
-        },
-        {
             path: '/test/tag-service',
             component: () => import('@/views/test/tag-service.vue')
         },

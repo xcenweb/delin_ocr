@@ -238,7 +238,7 @@ const openImagePath = async () => {
     try {
         await openPath(imagePath.value);
     } catch (error) {
-        // TODO: 适配安卓、ios
+        // TODO: 外部默认程序打开图片适配安卓、ios
         useSnackbar().error('抱歉，当前系统暂不支持，请等待后续适配！');
     }
 };
