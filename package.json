@@ -1,7 +1,7 @@
 {
   "name": "delin",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -25,6 +25,7 @@
     "@zebra-ui/swiper": "^3.0.2",
     "comlink": "^4.4.2",
     "mime": "^4.1.0",
+    "semver": "^7.7.3",
     "tesseract.js": "^6.0.1",
     "vite-plugin-vuetify": "^2.1.2",
     "vue": "^3.5.13",
@@ -37,6 +38,7 @@
     "@mdi/font": "^7.4.47",
     "@tauri-apps/cli": "^2.8.4",
     "@types/node": "^24.5.2",
+    "@types/semver": "^7.7.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "sass": "^1.90.0",
     "sass-loader": "^16.0.5",
