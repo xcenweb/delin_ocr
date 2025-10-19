@@ -24,7 +24,7 @@ class OcrService {
     async initialize(languages: string[] = ['chi_sim', 'eng']) {
         const status = await this.ocr.getStatus()
         if (status) {
-            useSnackbar().info('OCR已初始化')
+            // useSnackbar().info('OCR已初始化')
             return true
         } else {
             // useSnackbar().info('OCR正在初始化...', true)

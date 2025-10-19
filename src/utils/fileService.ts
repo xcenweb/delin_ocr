@@ -3,7 +3,7 @@ import router from '@/router'
 import { getThumbUrl } from './thumbService'
 import { useSnackbar } from '@/components/global/snackbarService'
 
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { useDateFormat } from '@vueuse/core'
 import { readDir, BaseDirectory, stat, writeFile, mkdir, exists, remove } from '@tauri-apps/plugin-fs'
 import { join, appDataDir } from '@tauri-apps/api/path'
@@ -66,6 +66,13 @@ export const currentPath_fso = ref<FileSystemObject[]>([])
 export const getFullPath = async (relative_path: string) => {
     return await join(await appDataDir(), relative_path)
 }
+
+/**
+ * 数据根目录
+ */
+export const dataPath = reactive({
+    userFile: await join(await appDataDir(), 'user/file'),
+})
 
 /**
  * 根据文件后缀名判断文件类型
@@ -217,72 +224,32 @@ export const getAllFiles = async (path: string) => {
 
 /**
  * 将 Blob URL 保存到本地文件系统
- * @param blobUrl
- * @param fileName - 文件名
- * @param targetPath - 目标路径
- * @param baseDir - 基础目录
+ * @param blobUrl Blob URL
+ * @param full_path 保存到的完整路径
  * @returns 成功时返回保存的完整路径，失败时返回 false
  */
-export const saveBlobUrlToFile = async (blobUrl: string, fileName: string, targetPath: string = '', baseDir: BaseDirectory) => {
+export const saveBlobUrlToFile = async (blobUrl: string, full_path: string = '') => {
     try {
+        const targetDir = full_path.split('/').slice(0, -1).join('/')
         // 从 Blob URL 获取数据
         const response = await fetch(blobUrl)
         const arrayBuffer = await response.arrayBuffer()
         const uint8Array = new Uint8Array(arrayBuffer)
 
         // 目录不存在则创建
-        if (!await exists(targetPath, { baseDir }) as boolean) {
-            await mkdir(targetPath, { baseDir, recursive: true })
-            console.log(`目录已创建: ${targetPath}`)
+        if (!await exists(targetDir) as boolean) {
+            await mkdir(targetDir, { recursive: true })
+            console.log(`目录已创建: ${targetDir}`)
         }
 
-        // 生成唯一文件路径
-        const fullPath = await generateUniqueFilePath(fileName, targetPath, baseDir)
-        await writeFile(fullPath, uint8Array, { baseDir }) // 写入文件
-
-        console.log(`文件已成功保存到: ${fullPath} (大小: ${formatFileSize(arrayBuffer.byteLength)})`)
-        return fullPath
+        // 写入文件
+        await writeFile(full_path, uint8Array)
+        console.log(`文件已成功保存到: ${full_path} (大小: ${formatFileSize(arrayBuffer.byteLength)})`)
+        return full_path
     } catch (error) {
         console.error('保存文件失败:', error)
         return false
     }
-}
-
-/**
- * 生成唯一的文件路径，处理重复文件名
- * @param fileName - 原始文件名
- * @param targetPath - 目标路径
- * @param baseDir - 基础目录
- * @returns 唯一的文件路径
- */
-export const generateUniqueFilePath = async (fileName: string, targetPath: string, baseDir: BaseDirectory): Promise<string> => {
-    const basePath = targetPath ? `${targetPath}/${fileName}` : fileName
-    let fullPath = basePath
-    let counter = 1
-
-    // 检查文件是否存在，如果存在则生成新的文件名
-    while (await exists(fullPath, { baseDir }) as boolean) {
-        const lastDotIndex = fileName.lastIndexOf('.')
-        if (lastDotIndex > 0 && lastDotIndex < fileName.length - 1) {
-            // 有扩展名的文件
-            const nameWithoutExt = fileName.substring(0, lastDotIndex)
-            const ext = fileName.substring(lastDotIndex)
-            const newFileName = `${nameWithoutExt}(${counter})${ext}`
-            fullPath = targetPath ? `${targetPath}/${newFileName}` : newFileName
-        } else {
-            // 无扩展名的文件
-            const newFileName = `${fileName}(${counter})`
-            fullPath = targetPath ? `${targetPath}/${newFileName}` : newFileName
-        }
-        counter++
-
-        // 防止无限循环
-        if (counter > 999) {
-            throw new Error('generateUniqueFilePathError')
-        }
-    }
-
-    return fullPath
 }
 
 /**
@@ -326,9 +293,9 @@ export const getRecentFiles = async (limit: number = 10) => {
             relative_path: item.relative_path,
             full_path: fullPath,
             thumbnail: await getThumbUrl(fullPath),
-            atime: item.atime|| '',
-            mtime: item.mtime|| '',
-            birthtime: item.birthtime|| '',
+            atime: item.atime || '',
+            mtime: item.mtime || '',
+            birthtime: item.birthtime || '',
             size: (await stat(fullPath)).size,
         })
     }

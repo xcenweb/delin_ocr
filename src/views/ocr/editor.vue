@@ -51,8 +51,8 @@
 
                         <!-- 角点 -->
                         <circle v-for="(point, index) in displayPoints" :key="index" :cx="point.x" :cy="point.y" r="4.5"
-                            fill="white" fill-opacity="0.8" stroke="rgba(0,0,0,0)" stroke-width="5" @pointerdown="(e) => PerspCrop.onCornerPointerDown(e, index)"
-                            class="handle-point" />
+                            fill="white" fill-opacity="0.8" stroke="rgba(0,0,0,0)" stroke-width="5"
+                            @pointerdown="(e) => PerspCrop.onCornerPointerDown(e, index)" class="handle-point" />
 
                         <!-- 边中点 -->
                         <rect v-for="(midPoint, index) in displayMidPoints" :key="'mid-' + index" :x="midPoint.x - 12.5"
@@ -114,13 +114,13 @@
             </v-sheet>
         </v-main>
 
-        <leave-popup :leave="true" :dialog="Editor.currentEditorMode.value === 'edit'"
+        <leave-popup :leave="Editor.canLeave.value" :dialog="Editor.currentEditorMode.value === 'edit'"
             @before-leave="Editor.onBeforeLeave" />
     </v-app>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import leavePopup from '@/components/leavePopup.vue'
 
 import { ZSwiper, ZSwiperItem } from '@zebra-ui/swiper'

@@ -26,7 +26,7 @@ const props = withDefaults(defineProps<{
     onConfirm?: () => void,
     onBeforeLeave?: () => Promise<boolean> | boolean,
 }>(), {
-    leave: true,
+    leave: false,
     dialog: true,
     title: '确认退出？',
     message: '是否放弃编辑？未保存的更改将会丢失。',
@@ -55,14 +55,19 @@ const confirm = () => {
 
 onBeforeRouteLeave(async (to, from, next) => {
     try {
+        // 先检查 onBeforeLeave 返回值
         if (!props.onBeforeLeave()){
             next(false)
+            return
         }
 
-        if (!props.leave) {
+        // 如果允许直接离开
+        if (props.leave) {
             next()
+            return
         }
 
+        // 如果需要显示对话框确认
         if (props.dialog) {
             await new Promise((resolve, reject) => {
                 resolveFn = resolve

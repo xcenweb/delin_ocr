@@ -3,6 +3,7 @@
 import { ref } from 'vue'
 import { useDevicesList, useUserMedia } from '@vueuse/core'
 import * as torch from '@sosweetham/tauri-plugin-torch-api'
+import { useSnackbar } from '@/components/global/snackbarService'
 
 const isTorchOn = ref(false)
 
@@ -14,7 +15,7 @@ const toggleTorch = async () => {
         await torch.toggle(!isTorchOn.value)
         isTorchOn.value = !isTorchOn.value
     } catch (error) {
-        console.error('Failed to toggle torch:', error)
+        useSnackbar().error(error as string)
     }
 }
 
