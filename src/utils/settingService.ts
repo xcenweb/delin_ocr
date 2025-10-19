@@ -25,13 +25,13 @@ export const optionsSetting = {
 } as const
 
 // 获取可选设置项的 value
-type ValueOf<T> = T extends readonly { value: infer V }[] ? V : never;
+type ValueOf<T> = T extends readonly { value: infer V }[] ? V : never
 export interface AppSettings {
-    theme: ValueOf<typeof optionsSetting.theme>;
-    language: ValueOf<typeof optionsSetting.language>;
-    ocrLanguages: ValueOf<typeof optionsSetting.ocrLanguages>[];
-    autoCheckUpdate: boolean;
-    updateChannel: ValueOf<typeof optionsSetting.updateChannel>;
+    theme: ValueOf<typeof optionsSetting.theme>
+    language: ValueOf<typeof optionsSetting.language>
+    ocrLanguages: string[]
+    autoCheckUpdate: boolean
+    updateChannel: ValueOf<typeof optionsSetting.updateChannel>
 }
 
 /**
