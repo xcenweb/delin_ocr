@@ -8,10 +8,10 @@ import { useSnackbar } from '@/components/global/snackbarService'
 const filterList = ref([
     { id: 'original', name: '原图', cover: '/images/editor/filter.png' },
     { id: 'enhance', name: '增强', cover: '/images/editor/filter.png' },
+    { id: 'scan', name: '扫描', cover: '/images/editor/filter.png' },
     { id: 'sharpening', name: '锐化', cover: '/images/editor/filter.png' },
     { id: 'mono', name: '黑白', cover: '/images/editor/filter.png' },
-    { id: 'scan', name: '扫描', cover: '/images/editor/filter.png' },
-    { id: 'remshad', name: '去阴影', cover: '/images/editor/filter.png' }
+    { id: 'remshad', name: '去阴影', cover: '/images/editor/filter.png' },
 ])
 
 /**

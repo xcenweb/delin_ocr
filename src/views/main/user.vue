@@ -9,19 +9,21 @@
                     <div class="ml-4 flex-grow-1">
                         <div class="text-h6 font-weight-bold">用户名</div>
                     </div>
-                    <!-- <v-btn icon size="small" variant="text">
-                        <v-icon>mdi-pencil</v-icon>
-                    </v-btn> -->
                 </v-card-text>
             </v-card>
-            <v-card class="ma-3 rounded-lg">
-                <v-card-text class="d-flex align-center">
-                    <div class="text-h6 font-weight-bold">版本信息</div>
-                    <div class="ml-4 flex-grow-1">v{{ appVersion }}</div>
-                    <v-btn icon size="small" variant="text" @click="useUpdatePopup().check()">
-                        <v-icon>mdi-refresh</v-icon>
-                    </v-btn>
-                </v-card-text>
+
+            <v-card class="ma-3 pa-3 d-flex align-center">
+                <p>版本信息</p>
+                <p class="ml-4">v{{ appVersion }}</p>
+                <v-spacer></v-spacer>
+                <v-btn text="检查更新" prepend-icon="mdi-refresh" size="small" @click="useUpdatePopup().check()"
+                    variant="tonal" />
+            </v-card>
+            <v-card class="ma-3 pa-3 d-flex align-center" to="/setting">
+                <p>设置</p>
+                <v-spacer></v-spacer>
+                <v-btn icon="mdi-arrow-right" size="x-small" @click="useUpdatePopup().check()"
+                    variant="text" />
             </v-card>
 
             <v-card v-if="isDev" class="ma-3 rounded-lg">
@@ -40,11 +42,9 @@
 <script setup lang="ts">
 import { getVersion } from '@tauri-apps/api/app';
 import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { useUpdatePopup } from '@/components/global/updatePopupService';
 
 const appVersion = ref('');
-const router = useRouter();
 const isDev = import.meta.env.DEV;
 
 onMounted(async () => {

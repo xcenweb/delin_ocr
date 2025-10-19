@@ -19,16 +19,19 @@
             </z-swiper>
 
             <!-- 矫正模式 -->
-            <div class="position-relative flex-grow-1 ma-5" v-if="Editor.currentEditorMode.value === 'persp'" ref="containerRef">
+            <div class="position-relative flex-grow-1 ma-5" v-if="Editor.currentEditorMode.value === 'persp'"
+                ref="containerRef">
                 <div class="position-absolute overflow-hidden w-100 h-100 top-0 left-0" ref="imageContainerRef">
 
                     <!-- 图片 -->
-                    <v-img :src="Editor.currentImage.value.src" class="w-100 h-100" style="object-fit: contain;" ref="imageRef" @load="PerspCrop.onImageLoad" />
+                    <v-img :src="Editor.currentImage.value.src" class="w-100 h-100" style="object-fit: contain;"
+                        ref="imageRef" @load="PerspCrop.onImageLoad" />
 
                     <!-- svg -->
                     <svg class="mask-layer position-absolute" :style="svgStyle"
-                        :viewBox="`0 0 ${displayArea.width} ${displayArea.height}`" @pointerdown="PerspCrop.onMaskPointerDown"
-                        @pointermove="PerspCrop.onMaskPointerMove" @pointerup="PerspCrop.onMaskPointerUp" v-if="Persp.cropCurrentImage?.value">
+                        :viewBox="`0 0 ${displayArea.width} ${displayArea.height}`"
+                        @pointerdown="PerspCrop.onMaskPointerDown" @pointermove="PerspCrop.onMaskPointerMove"
+                        @pointerup="PerspCrop.onMaskPointerUp" v-if="Persp.cropCurrentImage?.value">
 
                         <defs>
                             <mask id="selection-mask">
@@ -43,15 +46,17 @@
                             mask="url(#selection-mask)" />
 
                         <!-- 选择框 -->
-                        <path :d="selectionPath" fill="none" stroke="white" stroke-width="2" />
+                        <path :d="selectionPath" fill="none" stroke="white" stroke-opacity="0.8" stroke-width="1.5"
+                            stroke-dasharray="6,4" />
 
                         <!-- 角点 -->
-                        <circle v-for="(point, index) in displayPoints" :key="index" :cx="point.x" :cy="point.y" r="6"
-                            fill="white" @pointerdown="(e) => PerspCrop.onCornerPointerDown(e, index)" class="handle-point" />
+                        <circle v-for="(point, index) in displayPoints" :key="index" :cx="point.x" :cy="point.y" r="4.5"
+                            fill="white" fill-opacity="0.8" stroke="rgba(0,0,0,0)" stroke-width="5" @pointerdown="(e) => PerspCrop.onCornerPointerDown(e, index)"
+                            class="handle-point" />
 
                         <!-- 边中点 -->
                         <rect v-for="(midPoint, index) in displayMidPoints" :key="'mid-' + index" :x="midPoint.x - 12.5"
-                            :y="midPoint.y - 5" width="25" height="5" fill="white"
+                            :y="midPoint.y - 3" width="25" height="3.5" fill="white" fill-opacity="0.7"
                             @pointerdown="(e) => PerspCrop.onMidPointPointerDown(e, index)" class="handle-point"
                             :transform="`rotate(${midPoint.angle}, ${midPoint.x}, ${midPoint.y})`" />
                     </svg>

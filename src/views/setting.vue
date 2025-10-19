@@ -6,310 +6,224 @@
         </v-app-bar>
 
         <v-main>
-            <v-container class="pa-4">
-                <!-- 外观设置 -->
-                <v-card class="mb-4" variant="outlined">
-                    <v-card-title class="pb-0">外观</v-card-title>
-                    <v-card-text class="pa-0">
-                        <v-list lines="two">
-                            <!-- 主题设置 -->
-                            <v-list-item>
-                                <template v-slot:title>
-                                    <div class="d-flex align-center">
-                                        <v-icon start>mdi-theme-light-dark</v-icon>
-                                        <span>主题</span>
-                                    </div>
-                                </template>
-                                <template v-slot:append>
-                                    <v-select v-model="settings.theme" :items="themeOptions" item-title="text"
-                                        item-value="value" density="compact" variant="outlined" hide-details single-line
-                                        style="width: 150px" @update:model-value="updateSetting('theme', $event)" />
-                                </template>
-                            </v-list-item>
+            <v-container>
 
-                            <!-- 语言设置 -->
-                            <v-list-item>
-                                <template v-slot:title>
-                                    <div class="d-flex align-center">
-                                        <v-icon start>mdi-translate</v-icon>
-                                        <span>语言</span>
-                                    </div>
-                                </template>
-                                <template v-slot:append>
-                                    <v-select v-model="settings.language" :items="languageOptions" item-title="text"
-                                        item-value="value" density="compact" variant="outlined" hide-details single-line
-                                        style="width: 150px" @update:model-value="updateSetting('language', $event)" />
-                                </template>
-                            </v-list-item>
-                        </v-list>
-                    </v-card-text>
-                </v-card>
-
-                <!-- OCR设置 -->
-                <v-card class="mb-4" variant="outlined">
-                    <v-card-title class="pb-0">OCR</v-card-title>
-                    <v-card-text class="pa-0">
-                        <v-list lines="two">
-                            <!-- OCR语言 -->
-                            <v-list-item>
-                                <template v-slot:title>
-                                    <div class="d-flex align-center">
-                                        <v-icon start>mdi-flag</v-icon>
-                                        <span>识别语言</span>
-                                    </div>
-                                </template>
-                                <template v-slot:append>
-                                    <v-btn variant="outlined" size="small" @click="openLanguageDialog">
-                                        选择语言
-                                    </v-btn>
-                                </template>
-                            </v-list-item>
-                        </v-list>
-                    </v-card-text>
-                </v-card>
-
-                <!-- 更新设置 -->
-                <v-card class="mb-4" variant="outlined">
-                    <v-card-title class="pb-0">更新设置</v-card-title>
-                    <v-card-text class="pa-0">
-                        <v-list lines="two">
-                            <!-- 自动检查更新 -->
-                            <v-list-item>
-                                <template v-slot:title>
-                                    <div class="d-flex align-center">
-                                        <v-icon start>mdi-update</v-icon>
-                                        <span>自动检查更新</span>
-                                    </div>
-                                </template>
-                                <template v-slot:append>
-                                    <v-switch v-model="settings.autoCheckUpdate" color="primary" hide-details
-                                        @update:model-value="handleBooleanUpdate('autoCheckUpdate', $event)" />
-                                </template>
-                            </v-list-item>
-
-                            <!-- 更新渠道 -->
-                            <v-list-item>
-                                <template v-slot:title>
-                                    <div class="d-flex align-center">
-                                        <v-icon start>mdi-source-branch</v-icon>
-                                        <span>更新渠道</span>
-                                    </div>
-                                </template>
-                                <template v-slot:append>
-                                    <v-select v-model="settings.updateChannel" :items="channelOptions" item-title="text"
-                                        item-value="value" density="compact" variant="outlined" hide-details single-line
-                                        style="width: 150px"
-                                        @update:model-value="updateSetting('updateChannel', $event)" />
-                                </template>
-                            </v-list-item>
-                        </v-list>
-                    </v-card-text>
-                </v-card>
-
-                <v-btn block color="error" variant="outlined" @click="resetSettings">
-                    恢复默认设置
-                </v-btn>
-            </v-container>
-        </v-main>
-
-        <!-- OCR语言选择弹窗 -->
-        <v-dialog v-model="languageDialog" max-width="400" max-height="500">
-            <v-card class="pa-1">
-                <v-card-title class="d-flex align-center">
-                    <span>选择OCR识别语言</span>
-                </v-card-title>
-
-                <v-card-text>
-                    <!-- 搜索框 -->
-                    <v-text-field v-model="searchText" label="搜索语言" prepend-inner-icon="mdi-magnify" clearable
-                        density="compact" ></v-text-field>
-
-                    <!-- 语言列表 -->
-                    <v-list height="200">
-                        <v-list-item v-for="language in filteredLanguages" :key="language.value"
-                            @click="toggleLanguageSelection(language.value)">
-                            <template v-slot:prepend>
-                                <v-checkbox-btn :model-value="isLanguageSelected(language.value)"
-                                    @click.stop="toggleLanguageSelection(language.value)"></v-checkbox-btn>
+                <!-- 外观设置卡片 -->
+                <v-card class="mb-4">
+                    <v-card-title class="text-subtitle-1 font-weight-bold">外观</v-card-title>
+                    <v-divider></v-divider>
+                    <v-list lines="two" class="py-0">
+                        <v-list-item>
+                            <template v-slot:title>
+                                <div class="d-flex align-center">
+                                    <v-icon start>mdi-theme-light-dark</v-icon>
+                                    <span>主题</span>
+                                </div>
                             </template>
-                            <v-list-item-title>{{ language.text }}</v-list-item-title>
+                            <template v-slot:append>
+                                <v-select v-model="settings.theme" :items="optionsSetting.theme" item-title="text"
+                                    item-value="value" density="compact" variant="outlined" hide-details
+                                    style="max-width: 150px;"
+                                    @update:model-value="updateSetting('theme', $event === null ? 'system' : $event)" />
+                            </template>
                         </v-list-item>
-                        <v-list-item v-if="filteredLanguages.length === 0">
-                            <v-list-item-title class="text-center text-grey">
-                                未找到匹配的语言
-                            </v-list-item-title>
+                        <v-list-item>
+                            <template v-slot:title>
+                                <div class="d-flex align-center">
+                                    <v-icon start>mdi-translate</v-icon>
+                                    <span>界面语言</span>
+                                </div>
+                            </template>
+                            <template v-slot:append>
+                                <v-select v-model="settings.language" :items="optionsSetting.language" item-title="text"
+                                    item-value="value" density="compact" variant="outlined" hide-details
+                                    style="max-width: 150px;" @update:model-value="updateSetting('language', $event)" />
+                            </template>
                         </v-list-item>
                     </v-list>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn text="取消" variant="text" @click="languageDialog = false" />
-                    <v-btn text="确定" color="primary" variant="flat" @click="saveLanguageSelection" />
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+                </v-card>
+
+                <!-- OCR设置卡片 -->
+                <v-card class="mb-4">
+                    <v-card-title class="text-subtitle-1 font-weight-bold">OCR</v-card-title>
+                    <v-divider></v-divider>
+                    <v-list lines="two" class="py-0">
+                        <v-list-item>
+                            <template v-slot:title>
+                                <div class="d-flex align-center">
+                                    <v-icon start>mdi-text-recognition</v-icon>
+                                    <span>可识别语言</span>
+                                </div>
+                            </template>
+                            <template v-slot:append>
+                                <v-btn color="primary" size="small" @click="showOcrLanguageDialog = true">
+                                    已选{{ settings.ocrLanguages.length }}个
+                                </v-btn>
+                            </template>
+                        </v-list-item>
+                    </v-list>
+                </v-card>
+
+                <!-- 更新设置卡片 -->
+                <v-card class="mb-4">
+                    <v-card-title class="text-subtitle-1 font-weight-bold">更新</v-card-title>
+                    <v-divider></v-divider>
+                    <v-list lines="two" class="py-0">
+                        <v-list-item>
+                            <template v-slot:title>
+                                <div class="d-flex align-center">
+                                    <v-icon start>mdi-update</v-icon>
+                                    <span>自动检查更新</span>
+                                </div>
+                            </template>
+                            <template v-slot:append>
+                                <v-switch v-model="settings.autoCheckUpdate" hide-details color="primary"
+                                    @update:model-value="updateSetting('autoCheckUpdate', $event === null ? false : $event)" />
+                            </template>
+                        </v-list-item>
+                        <v-list-item>
+                            <template v-slot:title>
+                                <div class="d-flex align-center">
+                                    <v-icon start>mdi-source-branch</v-icon>
+                                    <span>更新通道</span>
+                                </div>
+                            </template>
+                            <template v-slot:append>
+                                <v-select v-model="settings.updateChannel" :items="optionsSetting.updateChannel"
+                                    item-title="text" item-value="value" density="compact" variant="outlined"
+                                    hide-details style="max-width: 150px;"
+                                    @update:model-value="updateSetting('updateChannel', $event)" />
+                            </template>
+                        </v-list-item>
+                    </v-list>
+                </v-card>
+                <v-btn prepend-icon="mdi-refresh" block color="error" variant="outlined" @click="confirmReset"
+                    text="恢复默认设置" />
+            </v-container>
+        </v-main>
     </v-app>
+
+    <!-- 确认重置对话框 -->
+    <v-dialog v-model="showResetDialog" max-width="500">
+        <v-card>
+            <v-card-title class="text-subtitle-1 font-weight-bold">确认重置</v-card-title>
+            <v-card-text>确定要将所有设置恢复为默认值吗？</v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn @click="showResetDialog = false">取消</v-btn>
+                <v-btn color="primary" @click="resetSettings">确定</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
+
+    <!-- OCR语言选择对话框 -->
+    <v-dialog v-model="showOcrLanguageDialog" max-width="500">
+        <v-card>
+            <v-card-title class="text-subtitle-1 font-weight-bold">选择OCR语言</v-card-title>
+            <v-card-text>
+                <v-text-field v-model="ocrLanguageSearch" label="搜索语言" prepend-inner-icon="mdi-magnify" clearable
+                    hide-details density="compact" class="mb-4" />
+                <v-list select-strategy="leaf" nav>
+                    <v-list-item v-for="lang in filteredOcrLanguages" :key="lang.value" :value="lang.value"
+                        @click="toggleOcrLanguage(lang.value)">
+                        <template v-slot:prepend>
+                            <v-checkbox-btn :model-value="isLanguageSelected(lang.value)"
+                                @click.stop="toggleOcrLanguage(lang.value)" />
+                        </template>
+                        <v-list-item-title>{{ lang.text }}</v-list-item-title>
+                    </v-list-item>
+                </v-list>
+            </v-card-text>
+            <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn @click="showOcrLanguageDialog = false">关闭</v-btn>
+                <v-btn color="primary" @click="saveOcrLanguages">保存</v-btn>
+            </v-card-actions>
+        </v-card>
+    </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useSnackbar } from '@/components/global/snackbarService';
-import { settingService, type AppSettings } from '@/utils/settingService';
+import { ref, onMounted, computed } from 'vue'
+import { getVersion } from '@tauri-apps/api/app'
+import { settingService, type AppSettings, optionsSetting } from '@/utils/settingService'
+import { useSnackbar } from '@/components/global/snackbarService'
 
-// 设置数据
-const settings = ref<AppSettings>({
-    theme: 'system',
-    language: 'zh',
-    ocrLanguages: ['chi_sim'],
-    autoCheckUpdate: true,
-    updateChannel: 'beta'
-});
+// 应用版本
+const appVersion = ref('')
 
-// 弹窗控制
-const languageDialog = ref(false);
-const searchText = ref('');
+// 设置项
+const settings = ref<AppSettings>(settingService.getAll())
 
-// 临时存储选择的语言
-const tempSelectedLanguages = ref<string[]>([]);
+// 重置确认对话框状态
+const showResetDialog = ref(false)
 
-// 主题选项
-const themeOptions = [
-    { text: '跟随系统', value: 'system' },
-    { text: '浅色模式', value: 'light' },
-    { text: '深色模式', value: 'dark' }
-];
+// OCR语言选择对话框状态
+const showOcrLanguageDialog = ref(false)
 
-// 语言选项
-const languageOptions = [
-    { text: '简体中文', value: 'zh' },
-    { text: 'English', value: 'en' }
-];
+// OCR语言搜索关键词
+const ocrLanguageSearch = ref('')
 
-// OCR语言选项
-const ocrLanguageOptions = [
-    { text: '简体中文', value: 'chi_sim' },
-    { text: '繁体中文', value: 'chi_tra' },
-    { text: 'English', value: 'eng' },
-    { text: 'Japanese', value: 'jpn' },
-    { text: 'Korean', value: 'kor' },
-    { text: 'French', value: 'fra' },
-    { text: 'Spanish', value: 'spa' },
-    { text: 'German', value: 'deu' },
-    { text: 'Russian', value: 'rus' },
-    { text: 'Arabic', value: 'ara' },
-    { text: 'Italian', value: 'ita' },
-    { text: 'Portuguese', value: 'por' },
-    { text: 'Turkish', value: 'tur' },
-    { text: 'Vietnamese', value: 'vie' },
-    { text: 'Thai', value: 'tha' },
-    { text: 'Indonesian', value: 'ind' }
-];
+// 临时存储选中的OCR语言
+const tempSelectedOcrLanguages = ref([...settings.value.ocrLanguages])
 
-// 过滤后的语言列表
-const filteredLanguages = computed(() => {
-    if (!searchText.value) {
-        return ocrLanguageOptions;
+// 过滤后的OCR语言列表
+const filteredOcrLanguages = computed(() => {
+    if (!ocrLanguageSearch.value) {
+        return optionsSetting.ocrLanguages
     }
+    const search = ocrLanguageSearch.value.toLowerCase()
+    return optionsSetting.ocrLanguages.filter(lang =>
+        lang.text.toLowerCase().includes(search) || lang.value.toLowerCase().includes(search)
+    )
+})
 
-    const search = searchText.value.toLowerCase();
-    return ocrLanguageOptions.filter(lang =>
-        lang.text.toLowerCase().includes(search) ||
-        lang.value.toLowerCase().includes(search)
-    );
-});
-
-// 更新渠道选项
-const channelOptions = [
-    { text: '正式版', value: 'official' },
-    { text: 'Beta版', value: 'beta' },
-    { text: 'Alpha版', value: 'alpha' }
-];
-
-// 打开语言选择弹窗
-const openLanguageDialog = () => {
-    tempSelectedLanguages.value = [...settings.value.ocrLanguages];
-    searchText.value = '';
-    languageDialog.value = true;
-};
-
-// 判断语言是否被选中
+// 检查语言是否被选中
 const isLanguageSelected = (language: string) => {
-    return tempSelectedLanguages.value.includes(language);
-};
-
-// 切换语言选择
-const toggleLanguageSelection = (language: string) => {
-    const index = tempSelectedLanguages.value.indexOf(language);
-    if (index > -1) {
-        tempSelectedLanguages.value.splice(index, 1);
-    } else {
-        tempSelectedLanguages.value.push(language);
-    }
-};
-
-// 保存语言选择
-const saveLanguageSelection = async () => {
-    if (tempSelectedLanguages.value.length === 0) {
-        useSnackbar().error('请至少选择一种语言');
-        return;
-    }
-
-    try {
-        await updateSetting('ocrLanguages', tempSelectedLanguages.value);
-        languageDialog.value = false;
-    } catch (error) {
-        console.error('Failed to save language selection:', error);
-        useSnackbar().error('保存语言设置失败');
-    }
-};
-
-// 更新设置
-const updateSetting = async <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    try {
-        await settingService.updateSetting(key, value);
-        // 不再显示"设置已保存"提示，避免过多提示
-    } catch (error) {
-        console.error('Failed to update setting:', error);
-        useSnackbar().error('保存设置失败');
-    }
-};
-
-// 处理布尔值更新
-const handleBooleanUpdate = async <K extends keyof AppSettings>(
-    key: K,
-    value: boolean | null
-) => {
-    const boolValue = value ?? false;
-    await updateSetting(key, boolValue as AppSettings[K]);
-};
-
-// 重置设置
-const resetSettings = async () => {
-    try {
-        await settingService.resetToDefault();
-        const newSettings = await settingService.getSettings();
-        settings.value = { ...newSettings };
-        useSnackbar().success('已恢复默认设置');
-    } catch (error) {
-        console.error('Failed to reset settings:', error);
-        useSnackbar().error('恢复默认设置失败');
-    }
-};
-
-// 初始化设置
-onMounted(async () => {
-    try {
-        const loadedSettings = await settingService.getSettings();
-        settings.value = { ...loadedSettings };
-    } catch (error) {
-        console.error('Failed to load settings:', error);
-        useSnackbar().error('加载设置失败');
-    }
-});
-</script>
-
-<style scoped>
-.v-list-item {
-    min-height: 50px;
+    return tempSelectedOcrLanguages.value.includes(language)
 }
-</style>
+
+// 切换OCR语言选择
+const toggleOcrLanguage = (language: string) => {
+    const index = tempSelectedOcrLanguages.value.indexOf(language)
+    if (index > -1) {
+        // 已选中，移除
+        tempSelectedOcrLanguages.value.splice(index, 1)
+    } else {
+        // 未选中，添加
+        tempSelectedOcrLanguages.value.push(language)
+    }
+}
+
+// 保存OCR语言设置
+const saveOcrLanguages = () => {
+    updateSetting('ocrLanguages', [...tempSelectedOcrLanguages.value])
+    showOcrLanguageDialog.value = false
+    useSnackbar().info('OCR语言设置已更新')
+}
+
+// 更新设置项
+const updateSetting = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
+    settingService.set(key, value)
+    settings.value = settingService.getAll()
+    useSnackbar().info('设置已更新')
+}
+
+// 显示重置确认对话框
+const confirmReset = () => {
+    showResetDialog.value = true
+}
+
+// 恢复默认设置
+const resetSettings = () => {
+    settingService.reset()
+    settings.value = settingService.getAll()
+    showResetDialog.value = false
+    useSnackbar().info('已恢复默认设置')
+}
+
+// 页面加载时获取数据
+onMounted(async () => {
+    appVersion.value = await getVersion()
+})
+</script>

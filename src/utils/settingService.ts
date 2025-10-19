@@ -1,58 +1,85 @@
-import { useStorageAsync } from '@vueuse/core'
+import { useStorage } from '@vueuse/core'
 
-// 设置接口定义
+/**
+ * 可选设置项
+ */
+export const optionsSetting = {
+    theme: [
+        { text: '系统', value: 'system' },
+        { text: '浅色', value: 'light' },
+        { text: '深色', value: 'dark' }
+    ],
+    language: [
+        { text: '简体中文', value: 'zh' },
+        { text: 'English', value: 'en' }
+    ],
+    ocrLanguages: [
+        { text: '简体中文', value: 'chi_sim' },
+        { text: 'English', value: 'eng' },
+    ],
+    updateChannel: [
+        { text: '正式版', value: 'official' },
+        { text: '测试版', value: 'beta' },
+        { text: '内测版', value: 'alpha' }
+    ]
+} as const
+
+// 获取可选设置项的 value
+type ValueOf<T> = T extends readonly { value: infer V }[] ? V : never;
 export interface AppSettings {
-    // 外观设置
-    theme: 'light' | 'dark' | 'system';
-    language: string;
-
-    // OCR设置
-    ocrLanguages: string[];
-
-    // 更新设置
+    theme: ValueOf<typeof optionsSetting.theme>;
+    language: ValueOf<typeof optionsSetting.language>;
+    ocrLanguages: ValueOf<typeof optionsSetting.ocrLanguages>[];
     autoCheckUpdate: boolean;
-    updateChannel: 'official' | 'beta' | 'alpha';
+    updateChannel: ValueOf<typeof optionsSetting.updateChannel>;
 }
 
-// 默认设置
-const DEFAULT_SETTINGS: AppSettings = {
+/**
+ * 默认设置项
+ */
+export const defaultSetting: AppSettings = {
     theme: 'system',
     language: 'zh',
-    ocrLanguages: ['chi_sim'],
+    ocrLanguages: ['chi_sim', 'eng'],
     autoCheckUpdate: true,
     updateChannel: 'beta'
-};
+}
 
 class SettingService {
-    private storage = useStorageAsync('app-settings', DEFAULT_SETTINGS);
+    private storage = useStorage('app-settings', defaultSetting)
 
-    // 获取所有设置
-    async getSettings(): Promise<AppSettings> {
-        return this.storage.value || DEFAULT_SETTINGS;
+    /**
+     * 获取所有设置项
+     * @returns 全部设置项
+     */
+    getAll() {
+        return { ...this.storage.value }
     }
 
-    // 获取单个设置项
-    async getSetting<K extends keyof AppSettings>(key: K): Promise<AppSettings[K]> {
-        const settings = await this.getSettings();
-        return settings[key];
+    /**
+     * 获取一个设置项
+     * @param key
+     */
+    get<K extends keyof AppSettings>(key: K) {
+        return this.storage.value[key]
     }
 
-    // 更新设置
-    async updateSettings(newSettings: Partial<AppSettings>): Promise<void> {
-        const currentSettings = await this.getSettings();
-        this.storage.value = { ...currentSettings, ...newSettings };
+    /**
+     * 设置或更新指定设置项
+     * @param key 设置项键名
+     * @param value 新值
+     */
+    set<K extends keyof AppSettings>(key: K, value: AppSettings[K]): void {
+        if (this.storage.value[key] === value) return
+        this.storage.value[key] = value
     }
 
-    // 更新单个设置项
-    async updateSetting<K extends keyof AppSettings>(key: K, value: AppSettings[K]): Promise<void> {
-        await this.updateSettings({ [key]: value });
-    }
-
-    // 重置为默认设置
-    async resetToDefault(): Promise<void> {
-        this.storage.value = DEFAULT_SETTINGS;
+    /**
+     * 重置所有设置项
+     */
+    reset() {
+        this.storage.value = { ...defaultSetting }
     }
 }
 
-// 导出设置服务实例
-export const settingService = new SettingService();
+export const settingService = new SettingService()

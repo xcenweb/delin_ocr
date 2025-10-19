@@ -27,7 +27,7 @@ class OcrService {
             useSnackbar().info('OCR已初始化')
             return true
         } else {
-            useSnackbar().info('OCR正在初始化...', true)
+            // useSnackbar().info('OCR正在初始化...', true)
         }
         return await this.ocr.init(languages)
     }
