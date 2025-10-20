@@ -237,7 +237,7 @@ jobs:
       run: |
         cd src-tauri
         npx tauri android init
-        npx tauri android build --apk
+        npx tauri android build --apk true
 
     - name: Sign APK
       run: |
