@@ -70,9 +70,9 @@ export const getFullPath = async (relative_path: string) => {
 /**
  * 获取根目录
  */
-export const rootPath = reactive({
-    userFile: (async (path: string = '') => await join(await appDataDir(), 'user/file', path)),
-})
+export const rootPath = {
+    userFile: async (path: string = '') => await join(await appDataDir(), 'user/file', path),
+}
 
 /**
  * 根据文件后缀名判断文件类型
