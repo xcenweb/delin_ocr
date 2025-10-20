@@ -48,7 +48,7 @@ const saveImages = async () => {
         // TODO: 通过OCR识别自动重命名图片，多张图片识别后重命名（xxx_1.png...）归类到文件夹
         imageList.value.forEach(async (item) => {
             const src = item.filtered_src || item.persped_src || item.src
-            fileService.saveBlobUrlToFile(src, await fileService.getUserFilePath(`/test/test.png`))
+            fileService.saveBlobUrlToFile(src, await fileService.rootPath.userFile(`/test/test.png`))
         })
         useSnackbar().success('保存成功')
         canLeave.value = true
