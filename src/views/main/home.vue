@@ -40,7 +40,7 @@
             </div>
             <v-row class="d-flex flex-nowrap overflow-x-auto mb-5 pl-4 pr-8 swiper-no-swiping">
                 <template v-if="recentFiles.length > 0">
-                    <v-col cols="4" sm="3" md="2" lg="2" xl="2" xxl="2" v-for="(fso, index) in recentFiles" :key="index"
+                    <v-col cols="4" sm="2" md="2" lg="2" v-for="(fso, index) in recentFiles" :key="index"
                         class="pl-3 pr-0 pt-4 pb-4">
                         <v-card @click="openFile(fso.relative_path)">
                             <v-img :src="fso.thumbnail" aspect-ratio="0.7" cover>

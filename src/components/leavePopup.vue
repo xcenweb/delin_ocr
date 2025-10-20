@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onBeforeRouteLeave } from 'vue-router';
-import { useSnackbar } from './global/snackbarService';
+import { useSnackbar } from './global/snackbarService'
 
 const props = withDefaults(defineProps<{
     leave?: boolean,

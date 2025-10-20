@@ -13,7 +13,7 @@
 
         <v-main class="d-flex flex-column overflow-hidden">
             <!-- 图片显示区域 -->
-            <v-sheet class="flex-grow-1 d-flex justify-center align-center overflow-hidden position-relative"
+            <div class="flex-grow-1 d-flex justify-center align-center overflow-hidden position-relative"
                 color="background" @wheel.prevent="handleWheel" @mousedown="handleMouseDown"
                 @mousemove="handleMouseMove" @mouseup="handleMouseUp" @mouseleave="handleMouseUp">
                 <v-img v-if="imagePath" :src="imageUrl" :class="['main-image', { 'image-loading': isLoading }]"
@@ -25,12 +25,12 @@
                     <v-progress-circular indeterminate />
                 </v-overlay>
 
-                <v-sheet v-if="!imagePath" class="d-flex flex-column align-center justify-center text-center pa-4"
+                <div v-if="!imagePath" class="d-flex flex-column align-center justify-center text-center pa-4"
                     color="transparent">
                     <v-icon size="64" color="grey">mdi-image-off</v-icon>
                     <p class="text-grey mt-2">无法加载图片</p>
-                </v-sheet>
-            </v-sheet>
+                </div>
+            </div>
         </v-main>
 
         <!-- 底部工具栏 -->
@@ -45,13 +45,13 @@
 </template>
 
 <script setup lang="ts">
-import { useSnackbar } from '@/components/global/snackbarService'
-import { ref, onMounted, computed } from 'vue'
+import mime from 'mime'
 import { useRoute } from 'vue-router'
-import { convertFileSrc } from '@tauri-apps/api/core'
+import { ref, onMounted, computed } from 'vue'
 import { openPath } from '@tauri-apps/plugin-opener'
+import { convertFileSrc } from '@tauri-apps/api/core'
 import { shareFile } from "@choochmeque/tauri-plugin-sharekit-api"
-import mime from 'mime';
+import { useSnackbar } from '@/components/global/snackbarService'
 
 // 路由实例
 const route = useRoute();
@@ -204,21 +204,21 @@ const rotateRight = () => {
 
 const zoomIn = () => {
     if (scale.value < 5) {
-        scale.value = Math.min(5, scale.value + 0.2);
+        scale.value = Math.min(5, scale.value + 0.2)
     }
 };
 
 const zoomOut = () => {
     if (scale.value > 0.2) {
-        scale.value = Math.max(0.2, scale.value - 0.2);
+        scale.value = Math.max(0.2, scale.value - 0.2)
     }
 };
 
 const resetZoom = () => {
-    scale.value = 1;
-    rotation.value = 0;
-    translateX.value = 0;
-    translateY.value = 0;
+    scale.value = 1
+    rotation.value = 0
+    translateX.value = 0
+    translateY.value = 0
 };
 
 // 分享图片
@@ -231,17 +231,17 @@ const shareImage = async () => {
     } catch (error) {
         useSnackbar().error(error as string);
     }
-};
+}
 
 // 调用外部默认程序打开图片
 const openImagePath = async () => {
     try {
-        await openPath(imagePath.value);
+        await openPath(imagePath.value)
     } catch (error) {
         // TODO: 外部默认程序打开图片适配安卓、ios
-        useSnackbar().error('抱歉，当前系统暂不支持，请等待后续适配！');
+        useSnackbar().error('抱歉，当前系统暂不支持，请等待后续适配！')
     }
-};
+}
 </script>
 
 <style scoped>

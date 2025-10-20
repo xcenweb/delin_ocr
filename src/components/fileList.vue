@@ -5,7 +5,7 @@
 
             <!-- 普通文件夹 -->
             <v-card v-if="fso.type == 'dir'" @click="openFolder(fso.relative_path)" :ripple="false"
-                v-on-long-press.prevent="[() => onLongPress(fso.relative_path), { delay: 500 }]">
+                v-on-long-press.prevent="[() => onLongPress(fso), { delay: 500 }]">
                 <template v-slot:prepend>
                     <v-icon icon="mdi-folder" color="#FFA726" size="55" />
                 </template>
@@ -22,7 +22,7 @@
 
             <!-- 普通文件 -->
             <v-card v-if="fso.type == 'file'" @click="openFile(fso.relative_path)" :ripple="false"
-                v-on-long-press.prevent="[() => onLongPress(fso.full_path), { delay: 500 }]">
+                v-on-long-press.prevent="[() => onLongPress(fso), { delay: 500 }]">
                 <template v-slot:prepend>
                     <v-img :src="fso.thumbnail" width="55" aspect-ratio="1" cover rounded class="mr-1">
                         <template v-slot:error>
@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import router from "@/router";
-import { loadDirectory, sortedFiles, formatFileSize } from "@/utils/fileService"
+import { loadDirectory, sortedFiles, formatFileSize, type FileSystemObject } from "@/utils/fileService"
 import { onActivated, onMounted } from 'vue'
 import { vOnLongPress } from '@vueuse/components'
 import { openFile } from "@/utils/fileService"
@@ -79,7 +79,7 @@ const openFolder = (path: string) => {
 }
 
 // TODO: 文件/文件夹 列表长按响应
-const onLongPress = (path: string) => {
-    alert('长按响应' + path)
+const onLongPress = (path: FileSystemObject) => {
+    alert('长按响应' + path.type)
 }
 </script>

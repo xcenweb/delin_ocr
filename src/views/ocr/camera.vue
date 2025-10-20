@@ -62,11 +62,11 @@
 import router from '@/router'
 import { onMounted, ref, watch } from 'vue'
 import type { PhotoItem, Point } from './ts/types'
+import { edgeDetection } from './ts/camera-detection'
 import { onBeforeRouteLeave, useRoute } from 'vue-router'
 
 import * as Camera from './ts/camera'
 import * as Persp from './ts/editor-persp'
-import { edgeDetection } from './ts/camera-detection'
 
 const route = useRoute()
 

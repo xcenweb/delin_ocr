@@ -43,13 +43,13 @@ const currentFilter = computed({
 const applyFilterToImage = async (src: string, filterId: string) => {
     try {
         // 获取当前图片
-        const currentImage = Editor.currentImage.value;
-        if (!currentImage) return false;
+        const currentImage = Editor.currentImage.value
+        if (!currentImage) return false
 
         // 如果之前有滤镜结果，先释放
         if (currentImage.filtered_src) {
-            URL.revokeObjectURL(currentImage.filtered_src);
-            currentImage.filtered_src = undefined;
+            URL.revokeObjectURL(currentImage.filtered_src)
+            currentImage.filtered_src = undefined
         }
 
         switch (filterId) {
@@ -58,23 +58,23 @@ const applyFilterToImage = async (src: string, filterId: string) => {
                 break
             case 'enhance':
                 // 增强：提高对比度
-                currentImage.filtered_src = await applyEnhanceFilter(src);
+                currentImage.filtered_src = await applyEnhanceFilter(src)
                 break
             case 'sharpening':
                 // 锐化处理
-                currentImage.filtered_src = await applySharpenFilter(src);
+                currentImage.filtered_src = await applySharpenFilter(src)
                 break
             case 'mono':
                 // 黑白效果
-                currentImage.filtered_src = await applyMonoFilter(src);
+                currentImage.filtered_src = await applyMonoFilter(src)
                 break
             case 'scan':
                 // 扫描效果：高对比度凸显文字
-                currentImage.filtered_src = await applyScanFilter(src);
+                currentImage.filtered_src = await applyScanFilter(src)
                 break
             case 'remshad':
                 // 去阴影：使用更有效的算法
-                currentImage.filtered_src = await applyRemshadFilter(src);
+                currentImage.filtered_src = await applyRemshadFilter(src)
                 break
             default:
                 return false
@@ -82,12 +82,12 @@ const applyFilterToImage = async (src: string, filterId: string) => {
 
         // 如果是原图，确保filtered_src为undefined
         if (filterId === 'original') {
-            currentImage.filtered_src = undefined;
+            currentImage.filtered_src = undefined
         }
 
         return true
     } catch (error) {
-        console.error('滤镜应用失败:', error);
+        console.error('滤镜应用失败:', error)
         return false
     }
 }

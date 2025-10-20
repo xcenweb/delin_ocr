@@ -25,6 +25,11 @@
                 <v-btn icon="mdi-arrow-right" size="x-small" @click="useUpdatePopup().check()"
                     variant="text" />
             </v-card>
+            <v-card class="ma-3 pa-3 d-flex align-center" to="/about">
+                <p>关于</p>
+                <v-spacer></v-spacer>
+                <v-btn icon="mdi-arrow-right" size="x-small" variant="text" />
+            </v-card>
 
             <v-card v-if="isDev" class="ma-3 rounded-lg">
                 <v-card-text>

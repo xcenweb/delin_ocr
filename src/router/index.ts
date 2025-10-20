@@ -68,12 +68,15 @@ const router = createRouter({
             name: 'update-test',
             component: () => import('@/views/test/updateTest.vue')
         },
-
-        // 设置页面
         {
             path: '/setting',
             name: 'setting',
             component: () => import('@/views/setting.vue')
+        },
+        {
+            path: '/about',
+            name: 'about',
+            component: () => import('@/views/about.vue')
         },
     ]
 })

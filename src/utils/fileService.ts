@@ -52,7 +52,7 @@ export interface FileObject extends BaseFileInfo {
 }
 
 /** 文件系统对象联合类型 */
-type FileSystemObject = DirectoryObject | FileObject
+export type FileSystemObject = DirectoryObject | FileObject
 
 /** 日期格式化模板 */
 const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
@@ -71,7 +71,7 @@ export const getFullPath = async (relative_path: string) => {
  * 获取根目录
  */
 export const rootPath = reactive({
-    userFile:async (path: string = '') => await join(await appDataDir(), 'user/file', path),
+    userFile: async (path: string = '') => await join(await appDataDir(), 'user/file', path),
 })
 
 /**
@@ -230,7 +230,8 @@ export const getAllFiles = async (path: string) => {
  */
 export const saveBlobUrlToFile = async (blobUrl: string, full_path: string = '') => {
     try {
-        const targetDir = full_path.split('/').slice(0, -1).join('/')
+        const targetDir = full_path.split(/[\\/]/).slice(0, -1).join('/')
+        console.log(`正在保存文件到: ${targetDir}`)
         // 从 Blob URL 获取数据
         const response = await fetch(blobUrl)
         const arrayBuffer = await response.arrayBuffer()

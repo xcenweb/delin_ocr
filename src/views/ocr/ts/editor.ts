@@ -5,6 +5,8 @@ import { PhotoItem } from './types'
 import { useSnackbar } from '@/components/global/snackbarService'
 import * as fileService from '@/utils/fileService'
 import { ocrService } from '@/utils/ocrService'
+import { fileCacheDB } from '@/utils/dbService'
+import { useDateFormat } from '@vueuse/core'
 
 /**
  * 所有正在编辑的图片列表
@@ -15,7 +17,7 @@ const imageList = ref<PhotoItem[]>([])
  * 编辑器当前模式
  */
 const currentEditorMode = ref<'edit' | 'persp' | 'watermark'>('edit')
-
+3
 /**
  * 是否可以离开编辑器
  */
@@ -33,7 +35,7 @@ const swiperInstance = ref<any>(null)
 const swiperslideIn = ref(0)
 const onSwiper = (swiper: any) => {
     swiperInstance.value = swiper
-};
+}
 const onSlideChange = (swiper: any) => {
     swiperslideIn.value = swiper.activeIndex
 }
@@ -43,16 +45,25 @@ const onSlideChange = (swiper: any) => {
  */
 const saveImages = async () => {
     try {
-        // alert(await ocrService.ocr.getStatus())
         useSnackbar().info('正在保存图片...', true)
-        // TODO: 通过OCR识别自动重命名图片，多张图片识别后重命名（xxx_1.png...）归类到文件夹
+
         imageList.value.forEach(async (item) => {
+            const timestamp = Date.now()
             const src = item.filtered_src || item.persped_src || item.src
-            fileService.saveBlobUrlToFile(src, await fileService.rootPath.userFile(`/test/test.png`))
+            await ocrService.ocr.recognize(src).then(async (res) => {
+                console.log(res)
+            })
+            await fileService.saveBlobUrlToFile(src, await fileService.rootPath.userFile(`/${timestamp}.png`))
         })
+
         useSnackbar().success('保存成功')
         canLeave.value = true
-        setTimeout(() => router.go(-2), 1000)
+        setTimeout(() => {
+            router.go(-1)
+            setTimeout(() => {
+                router.go(-1)
+            }, 600)
+        }, 900)
     } catch (error) {
         useSnackbar().error(error as string)
         return

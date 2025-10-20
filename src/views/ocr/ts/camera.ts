@@ -1,6 +1,6 @@
 // 摄像头、闪光灯控制
 
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useDevicesList, useUserMedia } from '@vueuse/core'
 import * as torch from '@sosweetham/tauri-plugin-torch-api'
 import { useSnackbar } from '@/components/global/snackbarService'
@@ -69,10 +69,18 @@ const { videoInputs: cameras } = useDevicesList({
     requestPermissions: true,
     constraints: constraints,
     onUpdated() {
-        constraints.video.deviceId = cameras.value.find(i => i.label.match(/back/i))?.deviceId || cameras.value[0]?.deviceId
+        constraints.video.deviceId = cameras.value.find(i => i.label.match(/back/i))?.deviceId
+        restart()
     },
 })
-const { stream, enabled, stop, start } = useUserMedia({ constraints })
+
+// watch(cameras, (newCameras) => {
+//     if (newCameras.length > 0) {
+//         constraints.video.deviceId = newCameras.find(i => i.label.match(/back/i))?.deviceId || newCameras[0]?.deviceId
+//     }
+// }, { immediate: true })
+
+const { stream, enabled, stop, start, restart } = useUserMedia({ constraints })
 
 export {
     isTorchOn,

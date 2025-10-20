@@ -160,8 +160,8 @@ class ClassEngine {
 
     /**
      * 更合理的关键词匹配策略：
-     * 1. 精确子串匹配（最高优先级）
-     * 2. 高相似度模糊匹配（仅用于长词，阈值 0.85）
+     * 1. 精确子串匹配
+     * 2. 高相似度模糊匹配
      */
     static matchScore(normalizedText: string, normalizedKeyword: string): number {
         if (!normalizedKeyword) return 0;
@@ -178,7 +178,7 @@ class ClassEngine {
 
         // 高阈值模糊匹配（减少误报）
         const sim = ClassEngine.similarity(normalizedText, normalizedKeyword);
-        return sim >= 0.85 ? 0.7 * sim : 0;
+        return sim >= 0.88 ? 0.7 * sim : 0;
     }
 }
 

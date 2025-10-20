@@ -45,7 +45,13 @@ export const defaultSetting: AppSettings = {
     updateChannel: 'beta'
 }
 
+/**
+ * 设置服务
+ */
 class SettingService {
+    /**
+     * 存储
+     */
     private storage = useStorage('app-settings', defaultSetting)
 
     /**
@@ -61,7 +67,7 @@ class SettingService {
      * @param key
      */
     get<K extends keyof AppSettings>(key: K) {
-        return this.storage.value[key]
+        return this.storage.value[key] || defaultSetting[key]
     }
 
     /**
