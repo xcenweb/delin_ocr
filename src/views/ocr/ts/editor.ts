@@ -43,15 +43,16 @@ const onSlideChange = (swiper: any) => {
  */
 const saveImages = async () => {
     try {
-        await ocrService.initialize()
+        // alert(await ocrService.ocr.getStatus())
         useSnackbar().info('正在保存图片...', true)
         // TODO: 通过OCR识别自动重命名图片，多张图片识别后重命名（xxx_1.png...）归类到文件夹
-        imageList.value.forEach(item => {
-            fileService.saveBlobUrlToFile(item.filtered_src || item.persped_src || item.src, fileService.dataPath.userFile + '/test.png')
+        imageList.value.forEach(async (item) => {
+            const src = item.filtered_src || item.persped_src || item.src
+            fileService.saveBlobUrlToFile(src, await fileService.rootPath.userFile(`/test/test.png`))
         })
         useSnackbar().success('保存成功')
         canLeave.value = true
-        router.go(-2)
+        setTimeout(() => router.go(-2), 1000)
     } catch (error) {
         useSnackbar().error(error as string)
         return

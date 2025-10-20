@@ -68,10 +68,10 @@ export const getFullPath = async (relative_path: string) => {
 }
 
 /**
- * 数据根目录
+ * 获取根目录
  */
-export const dataPath = reactive({
-    userFile: await join(await appDataDir(), 'user/file'),
+export const rootPath = reactive({
+    userFile: async (path: string = '') => await join(await appDataDir(), 'user/file', path),
 })
 
 /**

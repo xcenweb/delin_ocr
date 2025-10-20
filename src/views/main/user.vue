@@ -16,7 +16,7 @@
                 <p>版本信息</p>
                 <p class="ml-4">v{{ appVersion }}</p>
                 <v-spacer></v-spacer>
-                <v-btn text="检查更新" prepend-icon="mdi-refresh" size="small" @click="useUpdatePopup().check()"
+                <v-btn text="检查更新" prepend-icon="mdi-refresh" @click="useUpdatePopup().check()"
                     variant="tonal" />
             </v-card>
             <v-card class="ma-3 pa-3 d-flex align-center" to="/setting">
