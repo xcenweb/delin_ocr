@@ -13,28 +13,13 @@
     display: none;
 }
 
-body {
-    padding-top: var(--inset-top) !important;
-    padding-bottom: var(--inset-bottom) !important;
-}
-
 .v-main {
-    overflow-y: auto !important;
     overflow-x: hidden !important;
     height: 100vh !important;
-    position: relative !important;
 }
 
-.v-app-bar:not(.v-app-bar--bottom) {
+.v-app-bar {
     padding-top: var(--inset-top) !important;
-}
-
-.v-app-bar--bottom {
-    padding-bottom: var(--inset-bottom) !important;
-}
-
-.v-sheet {
-    margin-bottom: var(--inset-top) !important;
 }
 
 .v-snackbar {

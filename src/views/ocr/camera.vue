@@ -1,11 +1,11 @@
 <template>
     <v-app>
 
-        <v-app-bar>
+        <v-app-bar app>
             <v-btn icon="mdi-arrow-left" @click="$router.back()" />
         </v-app-bar>
 
-        <v-main class="d-flex flex-column position-relative">
+        <v-main class="d-flex flex-column position-relative" app>
 
             <div class="flex-grow-1 bg-black position-relative">
                 <!-- 摄像画面容器 -->
@@ -27,31 +27,24 @@
 
             <!-- 控制区域 -->
             <v-sheet class="py-9 px-4">
-
                 <div class="d-flex justify-space-around align-center">
                     <!-- 相册 -->
-                    <v-btn icon="mdi-image-multiple" size="large" class="bg-grey-darken-3" />
-
+                    <v-btn icon="mdi-image-multiple" size="large" />
                     <!-- 拍照 -->
-                    <v-badge bordered location="top right" color="error" :content="takedPhotos.length"
+                    <v-badge location="top right" color="error" :content="takedPhotos.length"
                         :model-value="takePhotoModel === 'multiple'">
-                        <v-btn icon size="x-large" class="bg-grey-darken-3" @click="takePhoto()"
+                        <v-btn icon size="x-large" @click="takePhoto()"
                             :disabled="!Camera.stream.value">
                             <v-icon size="large">mdi-camera</v-icon>
                         </v-btn>
                     </v-badge>
-
                     <!-- 确认按钮 -->
                     <v-fade-transition>
-                        <v-btn icon size="x-large" class="bg-grey-darken-3" :disabled="takedPhotos.length === 0"
+                        <v-btn icon size="x-large" :disabled="takedPhotos.length === 0"
                             v-if="takePhotoModel === 'multiple'" @click="gotoEditor()">
                             <v-icon size="large">mdi-check</v-icon>
                         </v-btn>
                     </v-fade-transition>
-
-                    <!-- 闪光灯控制 -->
-                    <v-btn :icon="Camera.isTorchOn.value ? 'mdi-flashlight' : 'mdi-flashlight-off'" size="large"
-                        class="bg-grey-darken-3" @click="Camera.toggleTorch()" />
                 </div>
             </v-sheet>
         </v-main>

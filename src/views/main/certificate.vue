@@ -79,7 +79,7 @@
                 </v-col>
             </v-row>
 
-            <div class="text-center py-8" v-else>
+            <div class="text-center pt-16" v-else>
                 <v-icon size="80" color="grey-lighten-2">{{ emptyStateConfig.icon }}</v-icon>
                 <p class="text-h6 mt-4 mb-2">{{ emptyStateConfig.title }}</p>
             </div>

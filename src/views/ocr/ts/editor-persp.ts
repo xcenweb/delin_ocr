@@ -84,8 +84,6 @@ const confirm = async () => {
 const transform = async (blob: Blob, points: Point[]) => {
     try {
         const cv = await getOpenCv()
-
-        // 直接通过ImageBitmap高效加载Blob
         const imgBitmap = await createImageBitmap(blob)
 
         // 创建源Canvas并绘制图像

@@ -1,12 +1,12 @@
 <template>
     <v-app>
 
-        <v-app-bar :color="Editor.currentEditorMode.value === 'edit' ? '' : 'transparent'">
+        <v-app-bar :color="Editor.currentEditorMode.value === 'edit' ? '' : 'transparent'" app>
             <v-btn icon="mdi-arrow-left" @click="Editor.goback()" />
             <v-app-bar-title :text="Editor.currentEditorMode.value === 'edit' ? '编辑' : ''" />
         </v-app-bar>
 
-        <v-main class="d-flex flex-column overflow-hidden">
+        <v-main class="d-flex flex-column overflow-hidden" app>
 
             <!-- swiper -->
             <z-swiper class="h-100 w-100 position-relative flex-grow-1" space-between="32px" :slides-per-view="1.1"
@@ -82,8 +82,8 @@
                                 <v-card :elevation="isSelected ? 8 : 2" :class="{ 'border-primary': isSelected }"
                                     @click="toggle" :ripple="true">
                                     <v-img :src="f.cover" aspect-ratio="1" cover>
-                                        <p style="background: rgba(0,0,0,0.6);" class=" position-absolute bottom-0
-                                            d-inline-block text-caption w-100 text-center">{{ f.name }}</p>
+                                        <p style="background: rgba(0,0,0,0.6);" class="position-absolute bottom-0
+                                            d-inline-block text-caption w-100 text-center text-white">{{ f.name }}</p>
                                     </v-img>
                                 </v-card>
                             </v-item>

@@ -136,8 +136,10 @@ onMounted(async () => {
 </style>
 
 <style>
-html,
-body {
+html {
+    padding-top: env(safe-area-inset-top) !important;
+}
+html, body {
     height: 100%;
     overflow: hidden;
     margin: 0;

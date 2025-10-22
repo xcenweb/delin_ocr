@@ -284,21 +284,26 @@ export const openFile = async (relative_path: string) => {
  * @param limit 限制数量
  */
 export const getRecentFiles = async (limit: number = 10) => {
-    const result = await fileCacheDB.getRecentFiles(limit)
-    const files: FileObject[] = []
-    for (const item of result) {
-        const fullPath = await getFullPath(item.relative_path)
-        files.push({
-            name: item.relative_path.split('/').pop() || item.relative_path,
-            type: 'file',
-            relative_path: item.relative_path,
-            full_path: fullPath,
-            thumbnail: await getThumbUrl(fullPath),
-            atime: item.atime || '',
-            mtime: item.mtime || '',
-            birthtime: item.birthtime || '',
-            size: (await stat(fullPath)).size,
-        })
+    try {
+        const result = await fileCacheDB.getRecentFiles(limit)
+        const files: FileObject[] = []
+        for (const item of result) {
+            const fullPath = await getFullPath(item.relative_path)
+            files.push({
+                name: item.relative_path.split('/').pop() || item.relative_path,
+                type: 'file',
+                relative_path: item.relative_path,
+                full_path: fullPath,
+                thumbnail: await getThumbUrl(fullPath),
+                atime: item.atime || '',
+                mtime: item.mtime || '',
+                birthtime: item.birthtime || '',
+                size: (await stat(fullPath)).size,
+            })
+        }
+        return files
+    } catch (error) {
+        console.error('获取最近访问的文件失败:', error)
+        return []
     }
-    return files
 }

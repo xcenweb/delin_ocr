@@ -1,11 +1,11 @@
 <template>
-    <router-view v-slot="{ Component }">
-      <transition :name="slideTransition">
-        <vue-page-stack @back="onBack" @forward="onForward">
-          <component :is="Component" :key="$route.fullPath"></component>
-        </vue-page-stack>
-      </transition>
-    </router-view>
+  <router-view v-slot="{ Component }">
+    <transition :name="slideTransition">
+      <vue-page-stack @back="onBack" @forward="onForward">
+        <component :is="Component" :key="$route.fullPath"></component>
+      </vue-page-stack>
+    </transition>
+  </router-view>
 
   <globalSnackbar />
   <globalUpdatePopup />
@@ -17,16 +17,15 @@ import globalSnackbar from '@/components/global/snackbar.vue'
 import globalUpdatePopup from '@/components/global/updatePopup.vue'
 
 const slideTransition = ref('slide-left')
-
 const onBack = () => {
   console.log('back')
   slideTransition.value = 'slide-right'
-};
+}
 
 const onForward = () => {
   console.log('forward')
   slideTransition.value = 'slide-left'
-};
+}
 </script>
 
 <style scoped>

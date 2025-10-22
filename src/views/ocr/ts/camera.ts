@@ -1,23 +1,5 @@
-// 摄像头、闪光灯控制
-
-import { ref, watch } from 'vue'
+// 摄像头控制
 import { useDevicesList, useUserMedia } from '@vueuse/core'
-import * as torch from '@sosweetham/tauri-plugin-torch-api'
-import { useSnackbar } from '@/components/global/snackbarService'
-
-const isTorchOn = ref(false)
-
-/**
- * Toggle torch on/off
- */
-const toggleTorch = async () => {
-    try {
-        await torch.toggle(!isTorchOn.value)
-        isTorchOn.value = !isTorchOn.value
-    } catch (error) {
-        useSnackbar().error(error as string)
-    }
-}
 
 /**
  * Setup canvas position and size based on video element
@@ -57,37 +39,42 @@ const setupCanvas = (videoElement: HTMLVideoElement, overlayCanvas: HTMLCanvasEl
 /**
  * Camera constraints
  */
-const constraints = {
-    video: {
-        width: { ideal: 1920, max: 3840 },
-        height: { ideal: 1080, max: 2160 },
-        frameRate: { ideal: 30 },
-    } as MediaTrackConstraints,
-    audio: false,
-}
-const { videoInputs: cameras } = useDevicesList({
-    requestPermissions: true,
-    constraints: constraints,
-    onUpdated() {
-        constraints.video.deviceId = cameras.value.find(i => i.label.match(/back/i))?.deviceId
-        restart()
-    },
+// const constraints = {
+//     video: {
+//         deviceId: '',
+//         facingMode: 'environment',
+//         width: { ideal: 1920, max: 3840 },
+//         height: { ideal: 1080, max: 2160 },
+//         frameRate: { ideal: 30 },
+//     },
+//     audio: false,
+// }
+// const { videoInputs: cameras } = useDevicesList({
+//     requestPermissions: true,
+//     constraints: constraints,
+//     onUpdated() {
+//         constraints.video.deviceId = cameras.value.find(i => i.label.match(/back/i))?.deviceId || cameras.value[0]?.deviceId
+//         alert(JSON.stringify(cameras.value))
+//         restart()
+//     },
+// })
+// const { stream, enabled, stop, start, restart } = useUserMedia({ constraints })
+const { stream, enabled, stop, start } = useUserMedia({
+    constraints: {
+        video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1920, max: 3840 },
+            height: { ideal: 1080, max: 2160 },
+            frameRate: { ideal: 30 }
+        },
+        audio: false
+    }
 })
 
-// watch(cameras, (newCameras) => {
-//     if (newCameras.length > 0) {
-//         constraints.video.deviceId = newCameras.find(i => i.label.match(/back/i))?.deviceId || newCameras[0]?.deviceId
-//     }
-// }, { immediate: true })
-
-const { stream, enabled, stop, start, restart } = useUserMedia({ constraints })
-
 export {
-    isTorchOn,
     stream,
     enabled,
     stop,
     start,
-    toggleTorch,
     setupCanvas,
 }

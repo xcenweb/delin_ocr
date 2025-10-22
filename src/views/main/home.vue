@@ -54,8 +54,8 @@
                     </v-col>
                 </template>
                 <template v-else>
-                    <v-col cols="12" class="text-center py-8">
-                        <v-icon color="grey" size="48">mdi-file-document-outline</v-icon>
+                    <v-col cols="12" class="text-center pt-12">
+                        <v-icon color="grey" size="48">mdi-clock-outline</v-icon>
                         <div class="text-grey-darken-1 mt-2">暂无最近文件</div>
                     </v-col>
                 </template>
@@ -73,7 +73,6 @@ import { useFileDialog } from '@vueuse/core'
 import { useSnackbar } from '@/components/global/snackbarService'
 import { openFile, type FileObject } from '@/utils/fileService'
 import { getRecentFiles } from '@/utils/fileService'
-import { on } from 'events'
 
 const router = useRouter()
 
