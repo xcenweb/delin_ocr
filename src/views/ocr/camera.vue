@@ -5,36 +5,35 @@
             <v-btn icon="mdi-arrow-left" @click="$router.back()" />
         </v-app-bar>
 
-        <v-main class="d-flex flex-column position-relative" app>
+        <v-main class="d-flex flex-column overflow-hidden" app>
 
-            <div class="flex-grow-1 bg-black position-relative">
+            <div class="h-100 w-100 flex-grow-1 position-relative bg-black">
                 <!-- 摄像画面容器 -->
-                <div class="position-absolute overflow-hidden w-100 h-100 top-0 left-0">
-                    <video autoplay playsinline muted ref="videoElement" class="w-100 h-100 left-0 top-0"
-                        :srcObject="Camera.stream.value" @loadedmetadata="setupCanvas()"></video>
+                <div class="position-absolute w-100 h-100 top-0 left-0">
                     <canvas ref="overlayCanvas" class="position-absolute"></canvas>
+                    <video autoplay playsinline muted ref="videoElement" class="w-100 h-100"
+                        :srcObject="Camera.stream.value" @loadedmetadata="setupCanvas()"
+                        style="object-fit: scale-down;"></video>
                 </div>
-
                 <!-- 拍照模式选择 -->
                 <div class="d-flex position-absolute" style="bottom: 18px; left: 50%; transform: translateX(-50%)">
-                    <v-btn-toggle rounded="xl" v-model="takePhotoModel" mandatory base-color="grey-darken-1"
+                    <v-btn-toggle rounded="xl" v-model="takePhotoModel" mandatory base-color="grey-darken-3"
                         style="height: 30px;" :disabled="takedPhotos.length > 0">
                         <v-btn v-for="mod in takePhotoModelOptions" :key="mod.value" :value="mod.value" :text="mod.text"
-                            flat color="primary" />
+                            flat color="secondary"/>
                     </v-btn-toggle>
                 </div>
             </div>
 
             <!-- 控制区域 -->
-            <v-sheet class="py-9 px-4">
+            <v-sheet class="pa-9" app>
                 <div class="d-flex justify-space-around align-center">
                     <!-- 相册 -->
                     <v-btn icon="mdi-image-multiple" size="large" />
                     <!-- 拍照 -->
                     <v-badge location="top right" color="error" :content="takedPhotos.length"
                         :model-value="takePhotoModel === 'multiple'">
-                        <v-btn icon size="x-large" @click="takePhoto()"
-                            :disabled="!Camera.stream.value">
+                        <v-btn icon size="x-large" @click="takePhoto()" :disabled="!Camera.stream.value">
                             <v-icon size="large">mdi-camera</v-icon>
                         </v-btn>
                     </v-badge>

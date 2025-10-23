@@ -20,7 +20,6 @@ export const optionsSetting = {
     updateChannel: [
         { text: '正式版', value: 'official' },
         { text: '测试版', value: 'beta' },
-        { text: '内测版', value: 'alpha' }
     ]
 } as const
 
@@ -67,8 +66,12 @@ class SettingService {
      * @param key
      */
     get<K extends keyof AppSettings>(key: K) {
-        return this.storage.value[key] || defaultSetting[key]
+        if (key in this.storage.value) {
+            return this.storage.value[key]
+        }
+        return defaultSetting[key]
     }
+
 
     /**
      * 设置或更新指定设置项

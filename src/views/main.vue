@@ -61,7 +61,7 @@
         </v-main>
 
         <!-- mobile 底部导航栏 -->
-        <v-bottom-navigation grow mandatory v-model="swiperslideIn" class="d-sm-none">
+        <v-bottom-navigation grow mandatory v-model="swiperslideIn" class="d-sm-none" :style="{ paddingBottom: 'env(safe-area-inset-bottom)' }">
             <template v-for="(item, index) in navigator_list" :key="item.id">
                 <v-btn color="primary" :ripple="false" @click="() => swiperInstance.slideTo.slideTo(item.id)">
                     <v-icon>{{ item.icon }}</v-icon>
@@ -80,7 +80,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useUpdatePopup } from '@/components/global/updatePopupService'
 
 // 导入视图组件
 import homeView from './main/home.vue'
@@ -114,7 +113,6 @@ const onSlideChange = (swiper: any) => {
 // 全局ocr服务初始化
 import { ocrService } from '@/utils/ocrService'
 onMounted(async () => {
-    useUpdatePopup().check(true)
     await ocrService.initialize()
     await ocrService.indexNewFiles()
 })
@@ -122,7 +120,7 @@ onMounted(async () => {
 
 <style scoped>
 .nav-bottom-fab {
-    bottom: 18px;
+    bottom: 24px;
     inset-inline: 50%;
     transform: translateX(-50%);
     z-index: 1010;

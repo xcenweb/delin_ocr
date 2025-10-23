@@ -23,11 +23,11 @@ rustflags = ["-Zthreads=16"]
 [profile.release]
 codegen-units = 1
 lto = true
-opt-level = "z"
+opt-level = "s"
 panic = "abort"
 strip = true
 trim-paths = "all"
-rustflags = ["-Cdebuginfo=0", "-Zthreads=16"]
+rustflags = ["-Cdebuginfo=0", "-Zthreads=8"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

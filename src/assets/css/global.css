@@ -1,6 +1,6 @@
 :root {
-    --inset-top: env(safe-area-inset-top);
-    --inset-bottom: env(safe-area-inset-bottom);
+    --inset-top: env(safe-area-inset-top, 20px);
+    --inset-bottom: env(safe-area-inset-bottom, 0px);
 
     -webkit-touch-callout: none !important;
     -webkit-user-select: none !important;
@@ -23,7 +23,7 @@
 }
 
 .v-snackbar {
-    margin-top: calc(20px + var(--inset-top)) !important;
+    margin-top: calc(var(--inset-top) + 20px) !important;
 }
 
 /* 暂时允许长按复制 */

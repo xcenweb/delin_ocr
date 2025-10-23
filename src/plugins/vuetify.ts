@@ -17,13 +17,15 @@ const light_theme: ThemeDefinition = {
     colors: {
         primary: colors.purple.lighten2,
         secondary: colors.grey.lighten4,
+        surface: colors.grey.lighten5,
     },
 }
 const dark_theme: ThemeDefinition = {
     dark: true,
     colors: {
         primary: colors.purple.lighten4,
-        secondary: colors.grey.lighten2,
+        secondary: colors.purple.lighten2,
+        surface: colors.grey.darken4,
     },
 }
 // TODO 用户自定义主题颜色

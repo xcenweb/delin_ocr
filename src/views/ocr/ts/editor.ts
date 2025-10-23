@@ -5,8 +5,6 @@ import { PhotoItem } from './types'
 import { useSnackbar } from '@/components/global/snackbarService'
 import * as fileService from '@/utils/fileService'
 import { ocrService } from '@/utils/ocrService'
-import { fileCacheDB } from '@/utils/dbService'
-import { useDateFormat } from '@vueuse/core'
 
 /**
  * 所有正在编辑的图片列表
